@@ -11,15 +11,30 @@ const { testConnection } = require('./config/db');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
 const { sendSuccess } = require('./utils/responseHandler');
 
+// Route Handlers
+const authRoutes = require('./routes/authRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const assessmentRoutes = require('./routes/assessmentRoutes');
+const skillRoutes = require('./routes/skillRoutes');
+const internshipRoutes = require('./routes/internshipRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
+const academicianRoutes = require('./routes/academicianRoutes');
+const institutionRoutes = require('./routes/institutionRoutes');
+const collaborationRoutes = require('./routes/collaborationRoutes');
+const portfolioRoutes = require('./routes/portfolioRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security & Utility Middlewares
 app.use(helmet({
-  crossOriginResourcePolicy: false, // allow loading uploads / avatars
+  crossOriginResourcePolicy: false,
 }));
 app.use(cors({
-  origin: '*', // Allow frontend Vite client
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -42,10 +57,20 @@ app.get('/api/health', async (req, res) => {
   }, 'Academia-Industry Collaboration Portal API is healthy');
 });
 
-// Placeholder for feature routes (will be mounted in following phases)
-// app.use('/api/auth', authRoutes);
-// app.use('/api/students', studentRoutes);
-// ...
+// Mount Feature API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/assessments', assessmentRoutes);
+app.use('/api/skills', skillRoutes);
+app.use('/api/internships', internshipRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/academician', academicianRoutes);
+app.use('/api/institution', institutionRoutes);
+app.use('/api/collaborations', collaborationRoutes);
+app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 & Error Handlers
 app.use(notFoundHandler);
@@ -59,8 +84,6 @@ app.listen(PORT, async () => {
   console.log(`Health Check: http://localhost:${PORT}/api/health`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`====================================================`);
-  
-  // Test MySQL connection on boot
   await testConnection();
 });
 

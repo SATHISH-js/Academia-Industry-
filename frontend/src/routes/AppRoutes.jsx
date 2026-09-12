@@ -11,9 +11,21 @@ import { RegisterPage } from '../pages/public/RegisterPage';
 
 // Dashboards
 import { StudentDashboard } from '../pages/student/StudentDashboard';
+import { SkillAssessmentPage } from '../pages/student/SkillAssessmentPage';
+import { StudentInternshipsPage } from '../pages/student/StudentInternshipsPage';
+import { StudentApplicationsPage } from '../pages/student/StudentApplicationsPage';
+import { DigitalPortfolioPage } from '../pages/student/DigitalPortfolioPage';
+
 import { AcademicianDashboard } from '../pages/academician/AcademicianDashboard';
+import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOpportunitiesPage';
+
 import { IndustryDashboard } from '../pages/industry/IndustryDashboard';
+import { CandidateMatchingPage } from '../pages/industry/CandidateMatchingPage';
+import { IndustryApplicationsPage } from '../pages/industry/IndustryApplicationsPage';
+
 import { InstitutionDashboard } from '../pages/institution/InstitutionDashboard';
+import { StudentDirectoryPage } from '../pages/institution/StudentDirectoryPage';
+import { IndustryPartnersPage } from '../pages/institution/IndustryPartnersPage';
 
 export const AppRoutes = () => {
   return (
@@ -29,6 +41,14 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route path="/student/assessment" element={<SkillAssessmentPage />} />
+          <Route path="/student/skills" element={<StudentDashboard />} />
+          <Route path="/student/skill-gap" element={<StudentDashboard />} />
+          <Route path="/student/learning" element={<StudentDashboard />} />
+          <Route path="/student/internships" element={<StudentInternshipsPage />} />
+          <Route path="/student/jobs" element={<StudentInternshipsPage />} />
+          <Route path="/student/applications" element={<StudentApplicationsPage />} />
+          <Route path="/student/portfolio" element={<DigitalPortfolioPage />} />
           <Route path="/student/*" element={<StudentDashboard />} />
         </Route>
       </Route>
@@ -37,6 +57,9 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['ACADEMICIAN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/academician/dashboard" element={<AcademicianDashboard />} />
+          <Route path="/academician/opportunities" element={<AcademicianOpportunitiesPage />} />
+          <Route path="/academician/collaboration" element={<AcademicianOpportunitiesPage />} />
+          <Route path="/academician/applications" element={<AcademicianDashboard />} />
           <Route path="/academician/*" element={<AcademicianDashboard />} />
         </Route>
       </Route>
@@ -45,6 +68,12 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['INDUSTRY']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/industry/dashboard" element={<IndustryDashboard />} />
+          <Route path="/industry/internships" element={<CandidateMatchingPage />} />
+          <Route path="/industry/jobs" element={<CandidateMatchingPage />} />
+          <Route path="/industry/candidates" element={<CandidateMatchingPage />} />
+          <Route path="/industry/applications" element={<IndustryApplicationsPage />} />
+          <Route path="/industry/collaborations" element={<IndustryDashboard />} />
+          <Route path="/industry/analytics" element={<IndustryDashboard />} />
           <Route path="/industry/*" element={<IndustryDashboard />} />
         </Route>
       </Route>
@@ -53,11 +82,16 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['INSTITUTION']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/institution/dashboard" element={<InstitutionDashboard />} />
+          <Route path="/institution/students" element={<StudentDirectoryPage />} />
+          <Route path="/institution/academicians" element={<InstitutionDashboard />} />
+          <Route path="/institution/skills" element={<InstitutionDashboard />} />
+          <Route path="/institution/placements" element={<InstitutionDashboard />} />
+          <Route path="/institution/partners" element={<IndustryPartnersPage />} />
           <Route path="/institution/*" element={<InstitutionDashboard />} />
         </Route>
       </Route>
 
-      {/* Catch-all redirect */}
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
