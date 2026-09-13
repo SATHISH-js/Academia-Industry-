@@ -61,12 +61,11 @@ export const Sidebar = ({ isOpen, onClose }) => {
       case 'INDUSTRY':
         return [
           { name: 'Dashboard', path: '/industry/dashboard', icon: LayoutDashboard },
-          { name: 'Company Profile', path: '/industry/profile', icon: Building2 },
-          { name: 'Manage Internships', path: '/industry/internships', icon: Briefcase },
-          { name: 'Manage Jobs', path: '/industry/jobs', icon: Layers },
           { name: 'Candidate Matching', path: '/industry/candidates', icon: Sparkles },
-          { name: 'Applications', path: '/industry/applications', icon: FileText },
-          { name: 'Programs & Collab', path: '/industry/collaborations', icon: Users },
+          { name: 'Post & Manage Roles', path: '/industry/opportunities', icon: Briefcase },
+          { name: 'Institution Placements', path: '/industry/placements', icon: Building2 },
+          { name: 'Direct Outreach', path: '/industry/outreach', icon: FileText },
+          { name: 'Applications Received', path: '/industry/applications', icon: Layers },
           { name: 'Recruitment Analytics', path: '/industry/analytics', icon: TrendingUp },
         ];
       case 'INSTITUTION':

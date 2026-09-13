@@ -65,6 +65,15 @@
   --header-height: 70px;
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
+
+  /* Tiered Z-Index Architecture to eliminate overlapping bugs */
+  --z-dropdown: 200;
+  --z-sticky: 300;
+  --z-header: 400;
+  --z-sidebar: 500;
+  --z-modal-backdrop: 1000;
+  --z-modal: 1050;
+  --z-toast: 1200;
 }
 
 /* Reset and Base Styles */

@@ -26,6 +26,9 @@ import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOp
 import { IndustryDashboard } from '../pages/industry/IndustryDashboard';
 import { CandidateMatchingPage } from '../pages/industry/CandidateMatchingPage';
 import { IndustryApplicationsPage } from '../pages/industry/IndustryApplicationsPage';
+import { PostOpportunityPage } from '../pages/industry/PostOpportunityPage';
+import { InstitutionPlacementPage } from '../pages/industry/InstitutionPlacementPage';
+import { IndustryOutreachPage } from '../pages/industry/IndustryOutreachPage';
 
 import { InstitutionDashboard } from '../pages/institution/InstitutionDashboard';
 import { StudentDirectoryPage } from '../pages/institution/StudentDirectoryPage';
@@ -76,9 +79,12 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['INDUSTRY']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/industry/dashboard" element={<IndustryDashboard />} />
-          <Route path="/industry/internships" element={<CandidateMatchingPage />} />
-          <Route path="/industry/jobs" element={<CandidateMatchingPage />} />
           <Route path="/industry/candidates" element={<CandidateMatchingPage />} />
+          <Route path="/industry/opportunities" element={<PostOpportunityPage />} />
+          <Route path="/industry/internships" element={<PostOpportunityPage />} />
+          <Route path="/industry/jobs" element={<PostOpportunityPage />} />
+          <Route path="/industry/placements" element={<InstitutionPlacementPage />} />
+          <Route path="/industry/outreach" element={<IndustryOutreachPage />} />
           <Route path="/industry/applications" element={<IndustryApplicationsPage />} />
           <Route path="/industry/collaborations" element={<IndustryDashboard />} />
           <Route path="/industry/analytics" element={<IndustryDashboard />} />

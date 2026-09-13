@@ -29,6 +29,7 @@ const roadmapRoutes = require('./routes/roadmapRoutes');
 const mockInterviewRoutes = require('./routes/mockInterviewRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
 const activityRoutes = require('./routes/activityRoutes');
+const industryRoutes = require('./routes/industryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -79,6 +80,7 @@ app.use('/api/roadmaps', roadmapRoutes);
 app.use('/api/mock-interview', mockInterviewRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/industry', industryRoutes);
 
 // 404 & Error Handlers
 app.use(notFoundHandler);

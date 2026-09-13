@@ -648,5 +648,53 @@ CREATE TABLE login_history (
     INDEX idx_lh_user (user_id, created_at)
 ) ENGINE=InnoDB;
 
+-- ----------------------------------------------------------
+-- 23. Industry Student Direct Outreach Messages
+-- ----------------------------------------------------------
+DROP TABLE IF EXISTS industry_student_messages;
+CREATE TABLE industry_student_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    industry_id INT NOT NULL,
+    student_id INT NOT NULL,
+    opportunity_type ENUM('INTERNSHIP', 'JOB', 'GENERAL') DEFAULT 'GENERAL',
+    opportunity_id INT DEFAULT NULL,
+    subject VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    message_type ENUM('INTERVIEW_INVITE', 'ROLE_INQUIRY', 'OFFER', 'GENERAL') DEFAULT 'ROLE_INQUIRY',
+    status ENUM('SENT', 'READ', 'REPLIED') DEFAULT 'SENT',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ism_industry FOREIGN KEY (industry_id) REFERENCES industry_profiles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ism_student FOREIGN KEY (student_id) REFERENCES student_profiles(id) ON DELETE CASCADE,
+    INDEX idx_ism_ind (industry_id),
+    INDEX idx_ism_stu (student_id)
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------
+-- 24. Institution Placement Requests & Campus Drives
+-- ----------------------------------------------------------
+DROP TABLE IF EXISTS institution_placement_requests;
+CREATE TABLE institution_placement_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    industry_id INT NOT NULL,
+    institution_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    target_batch VARCHAR(60) DEFAULT '2025 - 2026',
+    target_departments VARCHAR(255) DEFAULT 'Computer Science, IT, Electronics',
+    expected_hires INT DEFAULT 10,
+    salary_package VARCHAR(100) DEFAULT '8 - 14 LPA',
+    proposed_date DATE DEFAULT NULL,
+    proposal_details TEXT NOT NULL,
+    status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+    response_note TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ipr_industry FOREIGN KEY (industry_id) REFERENCES industry_profiles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ipr_institution FOREIGN KEY (institution_id) REFERENCES institution_profiles(id) ON DELETE CASCADE,
+    INDEX idx_ipr_ind (industry_id),
+    INDEX idx_ipr_inst (institution_id)
+) ENGINE=InnoDB;
+
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;
+
