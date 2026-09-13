@@ -74,6 +74,8 @@ async function register(req, res) {
  */
 async function login(req, res) {
   const { email, password } = req.body;
+  const ipAddress = req.ip || req.connection?.remoteAddress || '127.0.0.1';
+  const userAgent = req.headers['user-agent'] || 'Unknown Browser';
 
   try {
     const [users] = await pool.query(
@@ -82,20 +84,38 @@ async function login(req, res) {
     );
 
     if (users.length === 0) {
+      await pool.query(
+        'INSERT INTO login_history (email, ip_address, user_agent, status) VALUES (?, ?, ?, "FAILED")',
+        [email, ipAddress, userAgent]
+      );
       return sendError(res, 'Invalid credentials. Please verify your email and password.', 401);
     }
 
     const user = users[0];
 
     if (!user.is_active) {
+      await pool.query(
+        'INSERT INTO login_history (user_id, email, ip_address, user_agent, status) VALUES (?, ?, ?, ?, "FAILED")',
+        [user.id, email, ipAddress, userAgent]
+      );
       return sendError(res, 'Your account has been deactivated. Please contact support.', 403);
     }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      await pool.query(
+        'INSERT INTO login_history (user_id, email, ip_address, user_agent, status) VALUES (?, ?, ?, ?, "FAILED")',
+        [user.id, email, ipAddress, userAgent]
+      );
       return sendError(res, 'Invalid credentials. Please verify your email and password.', 401);
     }
+
+    // Record successful login audit
+    await pool.query(
+      'INSERT INTO login_history (user_id, email, ip_address, user_agent, status) VALUES (?, ?, ?, ?, "SUCCESS")',
+      [user.id, email, ipAddress, userAgent]
+    );
 
     // Load role profile details
     let profile = null;
@@ -128,6 +148,22 @@ async function login(req, res) {
   } catch (error) {
     console.error('[Auth Login Error]', error);
     return sendError(res, 'Login failed: ' + error.message, 500);
+  }
+}
+
+/**
+ * Get user recent login history
+ */
+async function getLoginHistory(req, res) {
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, ip_address, user_agent, status, created_at FROM login_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 15',
+      [req.user.id]
+    );
+    return sendSuccess(res, rows, 'Login history retrieved');
+  } catch (error) {
+    console.error('[Auth getLoginHistory Error]', error);
+    return sendError(res, 'Failed to fetch login history', 500);
   }
 }
 
@@ -172,5 +208,6 @@ async function getMe(req, res) {
 module.exports = {
   register,
   login,
-  getMe
+  getMe,
+  getLoginHistory
 };

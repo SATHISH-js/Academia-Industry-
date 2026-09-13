@@ -15,6 +15,10 @@ import { SkillAssessmentPage } from '../pages/student/SkillAssessmentPage';
 import { StudentInternshipsPage } from '../pages/student/StudentInternshipsPage';
 import { StudentApplicationsPage } from '../pages/student/StudentApplicationsPage';
 import { DigitalPortfolioPage } from '../pages/student/DigitalPortfolioPage';
+import { StudentRoadmapPage } from '../pages/student/StudentRoadmapPage';
+import { MockInterviewPage } from '../pages/student/MockInterviewPage';
+import { ResumeBuilderPage } from '../pages/student/ResumeBuilderPage';
+import { StudentProfilePage } from '../pages/student/StudentProfilePage';
 
 import { AcademicianDashboard } from '../pages/academician/AcademicianDashboard';
 import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOpportunitiesPage';
@@ -41,6 +45,10 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route path="/student/profile" element={<StudentProfilePage />} />
+          <Route path="/student/roadmap" element={<StudentRoadmapPage />} />
+          <Route path="/student/mock-interview" element={<MockInterviewPage />} />
+          <Route path="/student/resume-builder" element={<ResumeBuilderPage />} />
           <Route path="/student/assessment" element={<SkillAssessmentPage />} />
           <Route path="/student/skills" element={<StudentDashboard />} />
           <Route path="/student/skill-gap" element={<StudentDashboard />} />

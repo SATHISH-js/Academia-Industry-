@@ -42,7 +42,19 @@ async function updateStudentProfile(req, res) {
       graduation_year,
       cgpa,
       github_url,
-      linkedin_url
+      linkedin_url,
+      tenth_board,
+      tenth_school,
+      tenth_year,
+      tenth_percentage,
+      twelfth_board,
+      twelfth_college,
+      twelfth_year,
+      twelfth_percentage,
+      ug_university,
+      ug_college,
+      address,
+      phone
     } = req.body;
 
     await pool.query(
@@ -56,12 +68,39 @@ async function updateStudentProfile(req, res) {
         cgpa = COALESCE(?, cgpa),
         github_url = COALESCE(?, github_url),
         linkedin_url = COALESCE(?, linkedin_url),
-        profile_completed_pct = 90
+        tenth_board = COALESCE(?, tenth_board),
+        tenth_school = COALESCE(?, tenth_school),
+        tenth_year = COALESCE(?, tenth_year),
+        tenth_percentage = COALESCE(?, tenth_percentage),
+        twelfth_board = COALESCE(?, twelfth_board),
+        twelfth_college = COALESCE(?, twelfth_college),
+        twelfth_year = COALESCE(?, twelfth_year),
+        twelfth_percentage = COALESCE(?, twelfth_percentage),
+        ug_university = COALESCE(?, ug_university),
+        ug_college = COALESCE(?, ug_college),
+        address = COALESCE(?, address),
+        profile_completed_pct = 95
        WHERE user_id = ?`,
-      [headline, bio, department, degree, enrollment_number, graduation_year, cgpa, github_url, linkedin_url, userId]
+      [
+        headline, bio, department, degree, enrollment_number, graduation_year, cgpa,
+        github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
+        twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
+        ug_university, ug_college, address, userId
+      ]
     );
 
-    return sendSuccess(res, null, 'Student profile updated successfully');
+    if (phone) {
+      await pool.query('UPDATE users SET phone = ? WHERE id = ?', [phone, userId]);
+    }
+
+    // Log profile update in user_activity_logs
+    await pool.query(
+      `INSERT INTO user_activity_logs (user_id, action_type, title, description)
+       VALUES (?, 'PROFILE_UPDATE', 'Updated Educational Profile', 'Updated academic qualifications, portfolio links, and career preferences.')`,
+      [userId]
+    );
+
+    return sendSuccess(res, null, 'Student profile and qualifications updated successfully');
   } catch (error) {
     console.error('[Student updateProfile Error]', error);
     return sendError(res, 'Failed to update student profile', 500);

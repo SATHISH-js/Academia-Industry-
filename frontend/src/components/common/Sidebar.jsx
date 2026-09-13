@@ -37,7 +37,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
       case 'STUDENT':
         return [
           { name: 'Dashboard', path: '/student/dashboard', icon: LayoutDashboard },
-          { name: 'Profile', path: '/student/profile', icon: User },
+          { name: 'Roadmap', path: '/student/roadmap', icon: Compass },
+          { name: 'AI Mock Interview', path: '/student/mock-interview', icon: Sparkles },
+          { name: 'Resume Builder', path: '/student/resume-builder', icon: FileText },
+          { name: 'Profile & Education', path: '/student/profile', icon: User },
           { name: 'Skill Assessment', path: '/student/assessment', icon: Award },
           { name: 'My Skills', path: '/student/skills', icon: Target },
           { name: 'Skill Gap Analysis', path: '/student/skill-gap', icon: BarChart2 },

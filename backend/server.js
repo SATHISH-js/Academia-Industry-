@@ -25,6 +25,10 @@ const institutionRoutes = require('./routes/institutionRoutes');
 const collaborationRoutes = require('./routes/collaborationRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const roadmapRoutes = require('./routes/roadmapRoutes');
+const mockInterviewRoutes = require('./routes/mockInterviewRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
+const activityRoutes = require('./routes/activityRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,6 +75,10 @@ app.use('/api/institution', institutionRoutes);
 app.use('/api/collaborations', collaborationRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/roadmaps', roadmapRoutes);
+app.use('/api/mock-interview', mockInterviewRoutes);
+app.use('/api/resume', resumeRoutes);
+app.use('/api/activity', activityRoutes);
 
 // 404 & Error Handlers
 app.use(notFoundHandler);

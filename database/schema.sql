@@ -76,6 +76,17 @@ CREATE TABLE student_profiles (
     soft_skill_score INT DEFAULT 0,
     is_placed BOOLEAN DEFAULT FALSE,
     profile_completed_pct INT DEFAULT 40,
+    tenth_board VARCHAR(100) DEFAULT 'CBSE',
+    tenth_school VARCHAR(200) DEFAULT 'Delhi Public School',
+    tenth_year INT DEFAULT 2020,
+    tenth_percentage DECIMAL(5,2) DEFAULT 92.50,
+    twelfth_board VARCHAR(100) DEFAULT 'CBSE (Science)',
+    twelfth_college VARCHAR(200) DEFAULT 'National Junior College',
+    twelfth_year INT DEFAULT 2022,
+    twelfth_percentage DECIMAL(5,2) DEFAULT 94.20,
+    ug_university VARCHAR(200) DEFAULT 'Apex Technical University',
+    ug_college VARCHAR(200) DEFAULT 'Apex Institute of Technology',
+    address TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_stu_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -524,6 +535,117 @@ CREATE TABLE institution_industry_connections (
     CONSTRAINT fk_conn_inst FOREIGN KEY (institution_id) REFERENCES institution_profiles(id) ON DELETE CASCADE,
     CONSTRAINT fk_conn_ind FOREIGN KEY (industry_id) REFERENCES industry_profiles(id) ON DELETE CASCADE,
     UNIQUE KEY uq_inst_ind (institution_id, industry_id)
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------
+-- 19. Career & Company Roadmaps
+-- ----------------------------------------------------------
+DROP TABLE IF EXISTS student_roadmap_tasks;
+DROP TABLE IF EXISTS roadmap_tasks;
+DROP TABLE IF EXISTS roadmap_milestones;
+DROP TABLE IF EXISTS roadmap_paths;
+
+CREATE TABLE roadmap_paths (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category ENUM('CAREER_PATH', 'COMPANY_TRACK') NOT NULL,
+    title VARCHAR(180) NOT NULL,
+    company_name VARCHAR(150) DEFAULT NULL,
+    target_role VARCHAR(150) NOT NULL,
+    description TEXT NOT NULL,
+    icon VARCHAR(60) DEFAULT 'Compass',
+    difficulty ENUM('BEGINNER', 'INTERMEDIATE', 'ADVANCED') DEFAULT 'INTERMEDIATE',
+    estimated_weeks INT DEFAULT 12,
+    target_skills JSON DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE roadmap_milestones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    roadmap_id INT NOT NULL,
+    step_order INT NOT NULL,
+    title VARCHAR(180) NOT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_rm_roadmap FOREIGN KEY (roadmap_id) REFERENCES roadmap_paths(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE roadmap_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    milestone_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT DEFAULT NULL,
+    resource_url VARCHAR(255) DEFAULT NULL,
+    skill_id INT DEFAULT NULL,
+    estimated_hours INT DEFAULT 5,
+    difficulty ENUM('EASY', 'MEDIUM', 'HARD') DEFAULT 'MEDIUM',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_rt_milestone FOREIGN KEY (milestone_id) REFERENCES roadmap_milestones(id) ON DELETE CASCADE,
+    CONSTRAINT fk_rt_skill FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE student_roadmap_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    task_id INT NOT NULL,
+    roadmap_id INT NOT NULL,
+    is_completed BOOLEAN DEFAULT FALSE,
+    completed_at TIMESTAMP NULL DEFAULT NULL,
+    CONSTRAINT fk_srt_student FOREIGN KEY (student_id) REFERENCES student_profiles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_srt_task FOREIGN KEY (task_id) REFERENCES roadmap_tasks(id) ON DELETE CASCADE,
+    CONSTRAINT fk_srt_roadmap FOREIGN KEY (roadmap_id) REFERENCES roadmap_paths(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_student_task (student_id, task_id)
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------
+-- 20. AI Mock Interviews
+-- ----------------------------------------------------------
+DROP TABLE IF EXISTS mock_interviews;
+CREATE TABLE mock_interviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    role_title VARCHAR(150) NOT NULL,
+    company_name VARCHAR(150) DEFAULT 'General Industry',
+    overall_score INT NOT NULL,
+    confidence_score INT NOT NULL,
+    technical_score INT NOT NULL,
+    communication_score INT NOT NULL,
+    words_analyzed INT DEFAULT 0,
+    filler_words_count INT DEFAULT 0,
+    feedback_summary TEXT NOT NULL,
+    transcript JSON DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_mi_student FOREIGN KEY (student_id) REFERENCES student_profiles(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------
+-- 21. User In-App Activity Logs
+-- ----------------------------------------------------------
+DROP TABLE IF EXISTS user_activity_logs;
+CREATE TABLE user_activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    action_type ENUM('ASSESSMENT', 'APPLICATION', 'ROADMAP_TASK', 'MOCK_INTERVIEW', 'RESUME_EXPORT', 'PROFILE_UPDATE') NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ual_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_ual_user_date (user_id, created_at)
+) ENGINE=InnoDB;
+
+-- ----------------------------------------------------------
+-- 22. Login Security Audit History
+-- ----------------------------------------------------------
+DROP TABLE IF EXISTS login_history;
+CREATE TABLE login_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT DEFAULT NULL,
+    email VARCHAR(160) NOT NULL,
+    ip_address VARCHAR(60) DEFAULT '127.0.0.1',
+    user_agent VARCHAR(255) DEFAULT NULL,
+    status ENUM('SUCCESS', 'FAILED') DEFAULT 'SUCCESS',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_lh_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_lh_user (user_id, created_at)
 ) ENGINE=InnoDB;
 
 -- Re-enable foreign key checks
