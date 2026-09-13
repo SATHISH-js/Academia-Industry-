@@ -531,6 +531,8 @@ CREATE TABLE institution_industry_connections (
     partnership_type ENUM('MOU', 'PLACEMENT_PARTNER', 'LAB_COLLABORATION', 'RESEARCH_SPONSOR') DEFAULT 'MOU',
     status ENUM('ACTIVE', 'PENDING', 'EXPIRED') DEFAULT 'ACTIVE',
     notes TEXT DEFAULT NULL,
+    proposal_note TEXT DEFAULT NULL,
+    initiator ENUM('INSTITUTION', 'INDUSTRY') DEFAULT 'INSTITUTION',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_conn_inst FOREIGN KEY (institution_id) REFERENCES institution_profiles(id) ON DELETE CASCADE,
     CONSTRAINT fk_conn_ind FOREIGN KEY (industry_id) REFERENCES industry_profiles(id) ON DELETE CASCADE,

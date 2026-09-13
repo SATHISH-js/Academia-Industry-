@@ -32,7 +32,9 @@ import { IndustryOutreachPage } from '../pages/industry/IndustryOutreachPage';
 
 import { InstitutionDashboard } from '../pages/institution/InstitutionDashboard';
 import { StudentDirectoryPage } from '../pages/institution/StudentDirectoryPage';
+import { AcademicianDirectoryPage } from '../pages/institution/AcademicianDirectoryPage';
 import { IndustryPartnersPage } from '../pages/institution/IndustryPartnersPage';
+import { SearchCollaborationsPage } from '../pages/institution/SearchCollaborationsPage';
 
 export const AppRoutes = () => {
   return (
@@ -97,10 +99,11 @@ export const AppRoutes = () => {
         <Route element={<DashboardLayout />}>
           <Route path="/institution/dashboard" element={<InstitutionDashboard />} />
           <Route path="/institution/students" element={<StudentDirectoryPage />} />
-          <Route path="/institution/academicians" element={<InstitutionDashboard />} />
+          <Route path="/institution/academicians" element={<AcademicianDirectoryPage />} />
+          <Route path="/institution/partners" element={<IndustryPartnersPage />} />
+          <Route path="/institution/collaborations-search" element={<SearchCollaborationsPage />} />
           <Route path="/institution/skills" element={<InstitutionDashboard />} />
           <Route path="/institution/placements" element={<InstitutionDashboard />} />
-          <Route path="/institution/partners" element={<IndustryPartnersPage />} />
           <Route path="/institution/*" element={<InstitutionDashboard />} />
         </Route>
       </Route>

@@ -23,6 +23,7 @@ export const StudentProfilePage = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loginHistory, setLoginHistory] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -50,6 +51,7 @@ export const StudentProfilePage = () => {
     department: '',
     ug_university: '',
     ug_college: '',
+    institution_id: '',
     cgpa: '',
     graduation_year: ''
   });
@@ -61,10 +63,15 @@ export const StudentProfilePage = () => {
   const fetchProfileAndSecurity = async () => {
     try {
       setLoading(true);
-      const [profileRes, historyRes] = await Promise.all([
+      const [profileRes, historyRes, instListRes] = await Promise.all([
         api.get('/students/profile'),
-        api.get('/auth/login-history')
+        api.get('/auth/login-history'),
+        api.get('/institution/public-list').catch(() => ({ data: { success: false, data: [] } }))
       ]);
+
+      if (instListRes.data.success) {
+        setInstitutions(instListRes.data.data || []);
+      }
 
       if (profileRes.data.success) {
         const p = profileRes.data.data;
@@ -88,6 +95,7 @@ export const StudentProfilePage = () => {
           department: p.department || '',
           ug_university: p.ug_university || '',
           ug_college: p.ug_college || '',
+          institution_id: p.institution_id ? String(p.institution_id) : '',
           cgpa: p.cgpa || '',
           graduation_year: p.graduation_year || ''
         });
@@ -195,6 +203,38 @@ export const StudentProfilePage = () => {
                 1. Undergraduate Degree (Current / Highest)
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
+                    <Building size={16} color="var(--primary-600)" />
+                    <span>Affiliated College / Educational Institution (Links account to your Institution Portal)</span>
+                  </label>
+                  <select
+                    className="form-control"
+                    name="institution_id"
+                    value={formData.institution_id}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const matched = institutions.find(inst => String(inst.id) === String(selectedId));
+                      setFormData({
+                        ...formData,
+                        institution_id: selectedId,
+                        ug_college: matched ? matched.institution_name : formData.ug_college
+                      });
+                    }}
+                    style={{ borderColor: formData.institution_id ? 'var(--primary-500)' : 'var(--border-color)', fontWeight: 600, backgroundColor: formData.institution_id ? 'rgba(37, 99, 235, 0.04)' : '#ffffff' }}
+                  >
+                    <option value="">-- Select Your College / Institute --</option>
+                    {institutions.map(inst => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.institution_name} ({inst.city}, {inst.state || 'India'}) - {inst.institution_type}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
+                    Selecting your registered institution allows your college administrators, department deans, and placement cells to monitor your roadmap completion, mock interview reports, and application activity.
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label className="form-label">Degree (e.g. B.Tech, B.E., B.Sc)</label>
                   <input type="text" className="form-control" name="degree" value={formData.degree} onChange={handleChange} placeholder="e.g. B.Tech" />
@@ -204,7 +244,7 @@ export const StudentProfilePage = () => {
                   <input type="text" className="form-control" name="department" value={formData.department} onChange={handleChange} placeholder="e.g. Computer Science" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">College / Institute Name</label>
+                  <label className="form-label">College / Institute Name (Display)</label>
                   <input type="text" className="form-control" name="ug_college" value={formData.ug_college} onChange={handleChange} placeholder="e.g. National Institute of Technology" />
                 </div>
                 <div className="form-group">

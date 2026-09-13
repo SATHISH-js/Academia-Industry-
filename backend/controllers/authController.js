@@ -7,7 +7,7 @@ const { sendSuccess, sendError } = require('../utils/responseHandler');
  * Register a new user and initialize role-specific profile
  */
 async function register(req, res) {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, institution_id } = req.body;
   const connection = await pool.getConnection();
 
   try {
@@ -34,8 +34,8 @@ async function register(req, res) {
     // Create corresponding profile record
     if (role === 'STUDENT') {
       await connection.query(
-        'INSERT INTO student_profiles (user_id, headline, bio) VALUES (?, ?, ?)',
-        [userId, 'Student Scholar', 'Enthusiastic learner focusing on industry-ready skills.']
+        'INSERT INTO student_profiles (user_id, headline, bio, institution_id) VALUES (?, ?, ?, ?)',
+        [userId, 'Student Scholar', 'Enthusiastic learner focusing on industry-ready skills.', institution_id || null]
       );
     } else if (role === 'ACADEMICIAN') {
       await connection.query(

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import { GraduationCap, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, UserPlus, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
 
 export const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -13,13 +13,25 @@ export const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: initialRole
+    role: initialRole,
+    institution_id: ''
   });
 
+  const [institutions, setInstitutions] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/institution/public-list')
+      .then(res => {
+        if (res.data.success) {
+          setInstitutions(res.data.data || []);
+        }
+      })
+      .catch(err => console.error('Failed to load institutions list', err));
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -42,12 +54,17 @@ export const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/register', {
+      const payload = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role
-      });
+      };
+      if (formData.role === 'STUDENT' && formData.institution_id) {
+        payload.institution_id = formData.institution_id;
+      }
+
+      const response = await api.post('/auth/register', payload);
 
       if (response.data.success) {
         const { user, token } = response.data.data;
@@ -171,6 +188,31 @@ export const RegisterPage = () => {
               <option value="INSTITUTION">Institution (College / University Placement & Analytics)</option>
             </select>
           </div>
+
+          {formData.role === 'STUDENT' && (
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Building2 size={16} color="var(--primary-600)" />
+                <span>Your College / Educational Institution</span>
+              </label>
+              <select
+                name="institution_id"
+                className="form-control"
+                value={formData.institution_id}
+                onChange={handleChange}
+              >
+                <option value="">-- Select Your College (Optional during signup) --</option>
+                {institutions.map(inst => (
+                  <option key={inst.id} value={inst.id}>
+                    {inst.institution_name} ({inst.city}, {inst.state || 'India'})
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
+                Linking your college enables your campus administrators to monitor your skill assessments and roadmap milestones.
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <div className="form-group">

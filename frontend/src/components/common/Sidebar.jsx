@@ -18,7 +18,9 @@ import {
   Target,
   Sparkles,
   Calendar,
-  Layers
+  Layers,
+  GraduationCap,
+  Handshake
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose }) => {
@@ -71,11 +73,12 @@ export const Sidebar = ({ isOpen, onClose }) => {
       case 'INSTITUTION':
         return [
           { name: 'Dashboard', path: '/institution/dashboard', icon: LayoutDashboard },
-          { name: 'Student Directory', path: '/institution/students', icon: Users },
-          { name: 'Academician Directory', path: '/institution/academicians', icon: User },
+          { name: 'Student Roster & Activity', path: '/institution/students', icon: Users },
+          { name: 'Faculty Directory', path: '/institution/academicians', icon: GraduationCap },
+          { name: 'Industry MoUs & Partners', path: '/institution/partners', icon: Handshake },
+          { name: 'Search Collaborations', path: '/institution/collaborations-search', icon: Compass },
           { name: 'Skill Gap Analytics', path: '/institution/skills', icon: BarChart2 },
           { name: 'Placement Analytics', path: '/institution/placements', icon: TrendingUp },
-          { name: 'Industry Partners', path: '/institution/partners', icon: Building2 },
         ];
       default:
         return [];

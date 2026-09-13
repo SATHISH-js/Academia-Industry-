@@ -41,6 +41,7 @@ async function updateStudentProfile(req, res) {
       enrollment_number,
       graduation_year,
       cgpa,
+      institution_id,
       github_url,
       linkedin_url,
       tenth_board,
@@ -66,6 +67,7 @@ async function updateStudentProfile(req, res) {
         enrollment_number = COALESCE(?, enrollment_number),
         graduation_year = COALESCE(?, graduation_year),
         cgpa = COALESCE(?, cgpa),
+        institution_id = COALESCE(?, institution_id),
         github_url = COALESCE(?, github_url),
         linkedin_url = COALESCE(?, linkedin_url),
         tenth_board = COALESCE(?, tenth_board),
@@ -82,7 +84,7 @@ async function updateStudentProfile(req, res) {
         profile_completed_pct = 95
        WHERE user_id = ?`,
       [
-        headline, bio, department, degree, enrollment_number, graduation_year, cgpa,
+        headline, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id || null,
         github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
         twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
         ug_university, ug_college, address, userId
