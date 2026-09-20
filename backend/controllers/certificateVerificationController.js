@@ -1,7 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { GoogleGenAI } = require('@google/genai');
+let GoogleGenAI = null;
+try {
+  ({ GoogleGenAI } = require('@google/genai'));
+} catch (e) {
+  console.warn('[CertificateVerification] Notice: @google/genai optional module not loaded, using built-in assessment engine.');
+}
 const { pool } = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/responseHandler');
 const { generate20QuestionsForTopic } = require('../services/topicAssessmentService');
@@ -20,7 +25,7 @@ const MEMORY_FEED_POSTS = [];
 // Initialize Google GenAI client if key is configured
 const GEMINI_API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
 let genAI = null;
-if (GEMINI_API_KEY) {
+if (GEMINI_API_KEY && GoogleGenAI) {
   try {
     genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   } catch (e) {
