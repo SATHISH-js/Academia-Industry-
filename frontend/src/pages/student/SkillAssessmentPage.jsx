@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { Award, Clock, CheckCircle2, AlertCircle, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { Award, Clock, CheckCircle2, AlertCircle, ArrowRight, Check, Sparkles, ShieldCheck } from 'lucide-react';
 
 export const SkillAssessmentPage = () => {
+  const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeQuiz, setActiveQuiz] = useState(null);
@@ -220,11 +222,114 @@ export const SkillAssessmentPage = () => {
   // Catalog View
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--slate-900)' }}>Verified Skill Assessments</h1>
-        <p style={{ color: 'var(--slate-500)', fontSize: '0.95rem' }}>
-          Standardized objective tests to benchmark your knowledge and discover potential skill gaps.
-        </p>
+      {/* AI Verifier Promotion Banner */}
+      <div className="card" style={{
+        background: 'linear-gradient(135deg, var(--slate-900), var(--primary-900))',
+        color: '#ffffff',
+        padding: '2rem',
+        borderRadius: 'var(--radius-lg)',
+        border: 'none',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1.5rem',
+        boxShadow: 'var(--shadow-md)'
+      }}>
+        <div style={{ maxWidth: '600px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-300)', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.35rem' }}>
+            <ShieldCheck size={18} color="var(--primary-400)" />
+            AI Certificate Verifier (New Feature from Hack 1)
+          </div>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff' }}>
+            Earn an Official Verified Skill Badge from any Course Certificate
+          </h2>
+          <p style={{ fontSize: '0.88rem', color: 'var(--slate-300)', marginTop: '0.35rem' }}>
+            Upload your course certificate image. Our multimodal AI will generate 20 customized aptitude questions and award an instant Verified Skill Badge when you score 90%+.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => navigate('/student/certificate-verify')}
+            className="btn btn-primary"
+            style={{
+              backgroundColor: '#ffffff',
+              color: 'var(--primary-900)',
+              fontWeight: 800,
+              padding: '0.75rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: 'var(--shadow-md)'
+            }}
+          >
+            <ShieldCheck size={18} color="var(--primary-700)" /> Start AI Verification
+          </button>
+          <button
+            onClick={() => navigate('/student/feed')}
+            className="btn btn-secondary"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.12)',
+              color: '#ffffff',
+              borderColor: 'rgba(255, 255, 255, 0.25)',
+              padding: '0.75rem 1.1rem'
+            }}
+          >
+            View Credential Feed
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--slate-900)' }}>Curated Domain Assessments</h1>
+          <p style={{ color: 'var(--slate-500)', fontSize: '0.95rem' }}>
+            Standardized objective tests to benchmark your knowledge and discover potential skill gaps.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className="btn"
+            style={{
+              padding: '0.45rem 1rem',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              backgroundColor: 'var(--primary-600)',
+              color: '#ffffff',
+              borderRadius: 'var(--radius-xl)'
+            }}
+          >
+            Curated Tests
+          </button>
+          <button
+            onClick={() => navigate('/student/certificate-verify')}
+            className="btn"
+            style={{
+              padding: '0.45rem 1rem',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              backgroundColor: 'var(--slate-100)',
+              color: 'var(--slate-700)',
+              borderRadius: 'var(--radius-xl)'
+            }}
+          >
+            AI Certificate Verifier
+          </button>
+          <button
+            onClick={() => navigate('/student/feed')}
+            className="btn"
+            style={{
+              padding: '0.45rem 1rem',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              backgroundColor: 'var(--slate-100)',
+              color: 'var(--slate-700)',
+              borderRadius: 'var(--radius-xl)'
+            }}
+          >
+            Credential Feed
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>

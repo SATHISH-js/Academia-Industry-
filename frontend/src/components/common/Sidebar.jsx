@@ -20,7 +20,8 @@ import {
   Calendar,
   Layers,
   GraduationCap,
-  Handshake
+  Handshake,
+  ShieldCheck
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose }) => {
@@ -44,6 +45,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
           { name: 'Resume Builder', path: '/student/resume-builder', icon: FileText },
           { name: 'Profile & Education', path: '/student/profile', icon: User },
           { name: 'Skill Assessment', path: '/student/assessment', icon: Award },
+          { name: 'AI Certificate Verifier', path: '/student/certificate-verify', icon: ShieldCheck },
+          { name: 'Credential Feed', path: '/student/feed', icon: Sparkles },
           { name: 'My Skills', path: '/student/skills', icon: Target },
           { name: 'Skill Gap Analysis', path: '/student/skill-gap', icon: BarChart2 },
           { name: 'Learning Programs', path: '/student/learning', icon: BookOpen },

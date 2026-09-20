@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   FolderGit2, 
@@ -15,10 +16,13 @@ import {
   Layers,
   GraduationCap,
   MapPin,
-  Clock
+  Clock,
+  BadgeCheck,
+  ShieldCheck
 } from 'lucide-react';
 
 export const DigitalPortfolioPage = () => {
+  const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState(null);
   const [activities, setActivities] = useState([]);
   const [activeTab, setActiveTab] = useState('PORTFOLIO'); // 'PORTFOLIO', 'ACTIVITY_HISTORY'
@@ -261,14 +265,73 @@ export const DigitalPortfolioPage = () => {
           {/* Certifications & Achievements */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
             <div className="card">
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Award size={20} color="var(--primary-600)" /> Certifications
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Award size={20} color="var(--primary-600)" /> Certifications & Credentials
+                </h2>
+                <button
+                  onClick={() => navigate('/student/certificate-verify')}
+                  className="btn btn-secondary"
+                  style={{
+                    fontSize: '0.78rem',
+                    padding: '0.35rem 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    color: 'var(--primary-700)',
+                    borderColor: 'var(--primary-300)'
+                  }}
+                >
+                  <ShieldCheck size={15} color="var(--primary-600)" /> + AI Verify Certificate
+                </button>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {certifications?.map((c) => (
-                  <div key={c.id} style={{ padding: '0.85rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--slate-900)' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)' }}>{c.issuing_organization} • {c.issue_date ? new Date(c.issue_date).toLocaleDateString() : ''}</div>
+                  <div
+                    key={c.id}
+                    style={{
+                      padding: '0.9rem 1rem',
+                      border: `1.5px solid ${c.badge_awarded || c.is_verified ? 'var(--primary-300)' : 'var(--border-color)'}`,
+                      backgroundColor: c.badge_awarded ? 'var(--primary-50)' : '#ffffff',
+                      borderRadius: 'var(--radius-md)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--slate-900)' }}>{c.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.15rem' }}>
+                          {c.issuing_organization} • {c.issue_date ? new Date(c.issue_date).toLocaleDateString() : ''}
+                        </div>
+                      </div>
+                      {(c.badge_awarded || c.is_verified) && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          backgroundColor: 'var(--primary-600)',
+                          color: '#ffffff',
+                          padding: '0.25rem 0.6rem',
+                          borderRadius: 'var(--radius-xl)',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          flexShrink: 0
+                        }}>
+                          <BadgeCheck size={14} /> {c.score_percentage ? `${c.score_percentage}% Verified` : 'Verified'}
+                        </div>
+                      )}
+                    </div>
+                    {c.certificate_url && (
+                      <div style={{ marginTop: '0.6rem' }}>
+                        <a
+                          href={c.certificate_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--primary-600)', fontWeight: 600 }}
+                        >
+                          <ExternalLink size={13} /> View Verified Document
+                        </a>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
