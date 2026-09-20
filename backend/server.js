@@ -89,7 +89,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start Server
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`====================================================`);
   console.log(`Academia–Industry Collaboration Portal Backend Server`);
   console.log(`Running on: http://localhost:${PORT}`);
@@ -97,6 +97,15 @@ app.listen(PORT, async () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`====================================================`);
   await testConnection();
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[Server Error] Port ${PORT} is already in use by another running process.`);
+    console.error(`Please close any existing Node instances using port ${PORT}, or set a different PORT in .env (e.g. PORT=5001).`);
+  } else {
+    console.error(`[Server Error]`, err.message);
+  }
 });
 
 module.exports = app;
