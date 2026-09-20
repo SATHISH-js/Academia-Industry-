@@ -19,6 +19,8 @@ import { StudentRoadmapPage } from '../pages/student/StudentRoadmapPage';
 import { MockInterviewPage } from '../pages/student/MockInterviewPage';
 import { ResumeBuilderPage } from '../pages/student/ResumeBuilderPage';
 import { StudentProfilePage } from '../pages/student/StudentProfilePage';
+import { CertificateVerificationPage } from '../pages/student/CertificateVerificationPage';
+import { CommunityFeedPage } from '../pages/student/CommunityFeedPage';
 
 import { AcademicianDashboard } from '../pages/academician/AcademicianDashboard';
 import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOpportunitiesPage';
@@ -55,6 +57,8 @@ export const AppRoutes = () => {
           <Route path="/student/mock-interview" element={<MockInterviewPage />} />
           <Route path="/student/resume-builder" element={<ResumeBuilderPage />} />
           <Route path="/student/assessment" element={<SkillAssessmentPage />} />
+          <Route path="/student/certificate-verify" element={<CertificateVerificationPage />} />
+          <Route path="/student/feed" element={<CommunityFeedPage />} />
           <Route path="/student/skills" element={<StudentDashboard />} />
           <Route path="/student/skill-gap" element={<StudentDashboard />} />
           <Route path="/student/learning" element={<StudentDashboard />} />
