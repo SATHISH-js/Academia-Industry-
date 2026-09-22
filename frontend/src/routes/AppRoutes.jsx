@@ -29,7 +29,7 @@ import { IndustryDashboard } from '../pages/industry/IndustryDashboard';
 import { CandidateMatchingPage } from '../pages/industry/CandidateMatchingPage';
 import { IndustryApplicationsPage } from '../pages/industry/IndustryApplicationsPage';
 import { PostOpportunityPage } from '../pages/industry/PostOpportunityPage';
-import { InstitutionPlacementPage } from '../pages/industry/InstitutionPlacementPage';
+import { InstitutionPlacementPage as IndustryPlacementDrivesPage } from '../pages/industry/InstitutionPlacementPage';
 import { IndustryOutreachPage } from '../pages/industry/IndustryOutreachPage';
 
 import { InstitutionDashboard } from '../pages/institution/InstitutionDashboard';
@@ -37,6 +37,8 @@ import { StudentDirectoryPage } from '../pages/institution/StudentDirectoryPage'
 import { AcademicianDirectoryPage } from '../pages/institution/AcademicianDirectoryPage';
 import { IndustryPartnersPage } from '../pages/institution/IndustryPartnersPage';
 import { SearchCollaborationsPage } from '../pages/institution/SearchCollaborationsPage';
+import { InstitutionSkillGapPage } from '../pages/institution/InstitutionSkillGapPage';
+import { InstitutionPlacementPage } from '../pages/institution/InstitutionPlacementPage';
 
 export const AppRoutes = () => {
   return (
@@ -89,7 +91,7 @@ export const AppRoutes = () => {
           <Route path="/industry/opportunities" element={<PostOpportunityPage />} />
           <Route path="/industry/internships" element={<PostOpportunityPage />} />
           <Route path="/industry/jobs" element={<PostOpportunityPage />} />
-          <Route path="/industry/placements" element={<InstitutionPlacementPage />} />
+          <Route path="/industry/placements" element={<IndustryPlacementDrivesPage />} />
           <Route path="/industry/outreach" element={<IndustryOutreachPage />} />
           <Route path="/industry/applications" element={<IndustryApplicationsPage />} />
           <Route path="/industry/collaborations" element={<IndustryDashboard />} />
@@ -106,8 +108,8 @@ export const AppRoutes = () => {
           <Route path="/institution/academicians" element={<AcademicianDirectoryPage />} />
           <Route path="/institution/partners" element={<IndustryPartnersPage />} />
           <Route path="/institution/collaborations-search" element={<SearchCollaborationsPage />} />
-          <Route path="/institution/skills" element={<InstitutionDashboard />} />
-          <Route path="/institution/placements" element={<InstitutionDashboard />} />
+          <Route path="/institution/skills" element={<InstitutionSkillGapPage />} />
+          <Route path="/institution/placements" element={<InstitutionPlacementPage />} />
           <Route path="/institution/*" element={<InstitutionDashboard />} />
         </Route>
       </Route>

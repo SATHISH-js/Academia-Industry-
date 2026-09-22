@@ -49,6 +49,7 @@ export const StudentProfilePage = () => {
     // UG
     degree: '',
     department: '',
+    enrollment_number: '',
     ug_university: '',
     ug_college: '',
     institution_id: '',
@@ -93,6 +94,7 @@ export const StudentProfilePage = () => {
           twelfth_percentage: p.twelfth_percentage || '',
           degree: p.degree || '',
           department: p.department || '',
+          enrollment_number: p.enrollment_number || '',
           ug_university: p.ug_university || '',
           ug_college: p.ug_college || '',
           institution_id: p.institution_id ? String(p.institution_id) : '',
@@ -242,6 +244,21 @@ export const StudentProfilePage = () => {
                 <div className="form-group">
                   <label className="form-label">Department / Branch</label>
                   <input type="text" className="form-control" name="department" value={formData.department} onChange={handleChange} placeholder="e.g. Computer Science" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Student Register / Enrollment Number</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="enrollment_number"
+                    value={formData.enrollment_number}
+                    onChange={handleChange}
+                    placeholder="e.g. 2024-CSE-042"
+                    style={{ fontWeight: 600, fontFamily: 'monospace' }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)', marginTop: '0.2rem' }}>
+                    Used by your institution for identification, academic grading, and placement drives.
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">College / Institute Name (Display)</label>

@@ -7,7 +7,7 @@ const { sendSuccess, sendError } = require('../utils/responseHandler');
  * Register a new user and initialize role-specific profile
  */
 async function register(req, res) {
-  const { name, email, password, role, institution_id } = req.body;
+  const { name, email, password, role, institution_id, enrollment_number, employee_id, department, designation } = req.body;
   const connection = await pool.getConnection();
 
   try {
@@ -34,13 +34,26 @@ async function register(req, res) {
     // Create corresponding profile record
     if (role === 'STUDENT') {
       await connection.query(
-        'INSERT INTO student_profiles (user_id, headline, bio, institution_id) VALUES (?, ?, ?, ?)',
-        [userId, 'Student Scholar', 'Enthusiastic learner focusing on industry-ready skills.', institution_id || null]
+        'INSERT INTO student_profiles (user_id, headline, bio, institution_id, enrollment_number, department) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+          userId,
+          'Student Scholar',
+          'Enthusiastic learner focusing on industry-ready skills.',
+          institution_id || null,
+          enrollment_number || null,
+          department || 'Computer Science & Engineering'
+        ]
       );
     } else if (role === 'ACADEMICIAN') {
       await connection.query(
-        'INSERT INTO academician_profiles (user_id, designation, department) VALUES (?, ?, ?)',
-        [userId, 'Assistant Professor', 'Computer Science & Engineering']
+        'INSERT INTO academician_profiles (user_id, designation, department, institution_id, employee_id) VALUES (?, ?, ?, ?, ?)',
+        [
+          userId,
+          designation || 'Assistant Professor',
+          department || 'Computer Science & Engineering',
+          institution_id || null,
+          employee_id || null
+        ]
       );
     } else if (role === 'INDUSTRY') {
       await connection.query(

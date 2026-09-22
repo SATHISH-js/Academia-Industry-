@@ -14,7 +14,11 @@ export const RegisterPage = () => {
     password: '',
     confirmPassword: '',
     role: initialRole,
-    institution_id: ''
+    institution_id: '',
+    enrollment_number: '',
+    employee_id: '',
+    department: 'Computer Science & Engineering',
+    designation: 'Assistant Professor'
   });
 
   const [institutions, setInstitutions] = useState([]);
@@ -60,8 +64,15 @@ export const RegisterPage = () => {
         password: formData.password,
         role: formData.role
       };
-      if (formData.role === 'STUDENT' && formData.institution_id) {
-        payload.institution_id = formData.institution_id;
+      if (formData.role === 'STUDENT') {
+        if (formData.institution_id) payload.institution_id = formData.institution_id;
+        if (formData.enrollment_number) payload.enrollment_number = formData.enrollment_number.trim();
+        if (formData.department) payload.department = formData.department;
+      } else if (formData.role === 'ACADEMICIAN') {
+        if (formData.institution_id) payload.institution_id = formData.institution_id;
+        if (formData.employee_id) payload.employee_id = formData.employee_id.trim();
+        if (formData.department) payload.department = formData.department;
+        if (formData.designation) payload.designation = formData.designation;
       }
 
       const response = await api.post('/auth/register', payload);
@@ -190,28 +201,135 @@ export const RegisterPage = () => {
           </div>
 
           {formData.role === 'STUDENT' && (
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Building2 size={16} color="var(--primary-600)" />
-                <span>Your College / Educational Institution</span>
-              </label>
-              <select
-                name="institution_id"
-                className="form-control"
-                value={formData.institution_id}
-                onChange={handleChange}
-              >
-                <option value="">-- Select Your College (Optional during signup) --</option>
-                {institutions.map(inst => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.institution_name} ({inst.city}, {inst.state || 'India'})
-                  </option>
-                ))}
-              </select>
-              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
-                Linking your college enables your campus administrators to monitor your skill assessments and roadmap milestones.
+            <>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Building2 size={16} color="var(--primary-600)" />
+                  <span>Select Your College / Institution</span>
+                </label>
+                <select
+                  name="institution_id"
+                  className="form-control"
+                  value={formData.institution_id}
+                  onChange={handleChange}
+                >
+                  <option value="">-- Select Your College (By College ID) --</option>
+                  {institutions.map(inst => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.institution_name} (ID: #{inst.id} • {inst.city}, {inst.state || 'India'})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
+                  Selecting your college links your profile directly to your campus administration portal.
+                </div>
               </div>
-            </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Student Register / Enrollment Number</label>
+                  <input
+                    type="text"
+                    name="enrollment_number"
+                    className="form-control"
+                    placeholder="e.g. 2024-CSE-042"
+                    value={formData.enrollment_number}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Department</label>
+                  <select
+                    name="department"
+                    className="form-control"
+                    value={formData.department}
+                    onChange={handleChange}
+                  >
+                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Data Science / AI">Data Science / AI</option>
+                    <option value="Electronics & Communication">Electronics & Communication</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+
+          {formData.role === 'ACADEMICIAN' && (
+            <>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Building2 size={16} color="#0d9488" />
+                  <span>Affiliated College / Educational Institution</span>
+                </label>
+                <select
+                  name="institution_id"
+                  className="form-control"
+                  value={formData.institution_id}
+                  onChange={handleChange}
+                >
+                  <option value="">-- Select Your College (By College ID) --</option>
+                  {institutions.map(inst => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.institution_name} (ID: #{inst.id} • {inst.city}, {inst.state || 'India'})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
+                  Select your college to link your faculty profile to your institution's governance portal.
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Faculty Register / Employee ID</label>
+                  <input
+                    type="text"
+                    name="employee_id"
+                    className="form-control"
+                    placeholder="e.g. FAC-CSE-102"
+                    value={formData.employee_id}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Department</label>
+                  <select
+                    name="department"
+                    className="form-control"
+                    value={formData.department}
+                    onChange={handleChange}
+                  >
+                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Data Science / AI">Data Science / AI</option>
+                    <option value="Electronics & Communication">Electronics & Communication</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Academic Designation</label>
+                <select
+                  name="designation"
+                  className="form-control"
+                  value={formData.designation}
+                  onChange={handleChange}
+                >
+                  <option value="Professor">Professor</option>
+                  <option value="Associate Professor">Associate Professor</option>
+                  <option value="Assistant Professor">Assistant Professor</option>
+                  <option value="Head of Department (HOD)">Head of Department (HOD)</option>
+                  <option value="Lecturer / Research Fellow">Lecturer / Research Fellow</option>
+                </select>
+              </div>
+            </>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
