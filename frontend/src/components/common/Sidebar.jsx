@@ -80,8 +80,7 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
           { name: 'Student Roster & Activity', path: '/institution/students', icon: Users },
           { name: 'Faculty Directory', path: '/institution/academicians', icon: GraduationCap },
           { name: 'Industry MoUs & Partners', path: '/institution/partners', icon: Handshake },
-          { name: 'Search Collaborations', path: '/institution/collaborations-search', icon: Compass },
-          { name: 'Skill Gap Analytics', path: '/institution/skills', icon: BarChart2 },
+          { name: 'Training Programs', path: '/institution/training-programs', icon: BookOpen },
           { name: 'Placement Analytics', path: '/institution/placements', icon: TrendingUp },
         ];
       default:

@@ -136,11 +136,14 @@ export const InstitutionDashboard = () => {
           <Link to="/institution/students" className="btn btn-primary" style={{ gap: '0.4rem' }}>
             <Users size={17} /> Student Directory & Monitor
           </Link>
-          <Link to="/institution/partners" className="btn btn-secondary" style={{ gap: '0.4rem' }}>
-            <Handshake size={17} /> Industry MoUs
+          <Link to="/institution/training-programs" className="btn btn-secondary" style={{ gap: '0.4rem' }}>
+            <Award size={17} /> Training Programs
           </Link>
-          <Link to="/institution/collaborations-search" className="btn btn-outline" style={{ gap: '0.4rem', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.3)' }}>
-            <Compass size={17} /> Search Collaborations
+          <Link to="/institution/placements" className="btn btn-outline" style={{ gap: '0.4rem', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.3)' }}>
+            <TrendingUp size={17} /> Placement Analytics
+          </Link>
+          <Link to="/institution/partners" className="btn btn-outline" style={{ gap: '0.4rem', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.3)' }}>
+            <Handshake size={17} /> Industry MoUs
           </Link>
         </div>
       </div>

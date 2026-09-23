@@ -37,6 +37,8 @@ import { StudentDirectoryPage } from '../pages/institution/StudentDirectoryPage'
 import { AcademicianDirectoryPage } from '../pages/institution/AcademicianDirectoryPage';
 import { IndustryPartnersPage } from '../pages/institution/IndustryPartnersPage';
 import { SearchCollaborationsPage } from '../pages/institution/SearchCollaborationsPage';
+import { TrainingProgramsPage } from '../pages/institution/TrainingProgramsPage';
+import { PlacementAnalyticsPage } from '../pages/institution/PlacementAnalyticsPage';
 
 export const AppRoutes = () => {
   return (
@@ -105,9 +107,10 @@ export const AppRoutes = () => {
           <Route path="/institution/students" element={<StudentDirectoryPage />} />
           <Route path="/institution/academicians" element={<AcademicianDirectoryPage />} />
           <Route path="/institution/partners" element={<IndustryPartnersPage />} />
-          <Route path="/institution/collaborations-search" element={<SearchCollaborationsPage />} />
+          <Route path="/institution/training-programs" element={<TrainingProgramsPage />} />
+          <Route path="/institution/collaborations-search" element={<Navigate to="/institution/training-programs" replace />} />
           <Route path="/institution/skills" element={<InstitutionDashboard />} />
-          <Route path="/institution/placements" element={<InstitutionDashboard />} />
+          <Route path="/institution/placements" element={<PlacementAnalyticsPage />} />
           <Route path="/institution/*" element={<InstitutionDashboard />} />
         </Route>
       </Route>
