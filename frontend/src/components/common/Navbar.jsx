@@ -62,9 +62,11 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
               <Menu size={20} className="menu-icon-svg icon-menu" />
               <X size={20} className="menu-icon-svg icon-close" />
             </div>
-            <span className="menu-toggle-label">
-              {isSidebarOpen ? 'Close' : 'Menu'}
-            </span>
+            {!isSidebarOpen && (
+              <span className="menu-toggle-label">
+                Menu
+              </span>
+            )}
           </button>
         )}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
