@@ -12,7 +12,7 @@ import {
   Layers 
 } from 'lucide-react';
 
-export const Navbar = ({ onToggleSidebar }) => {
+export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -50,19 +50,21 @@ export const Navbar = ({ onToggleSidebar }) => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         {isAuthenticated && onToggleSidebar && (
           <button 
+            type="button"
             onClick={onToggleSidebar}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--slate-600)',
-              padding: '0.5rem',
-              display: 'flex',
-              alignItems: 'center'
-            }}
-            aria-label="Toggle Sidebar"
+            className={`menu-toggle-btn ${isSidebarOpen ? 'is-open' : 'is-closed'}`}
+            aria-expanded={isSidebarOpen}
+            aria-controls="app-sidebar"
+            aria-label={isSidebarOpen ? "Close side menu" : "Open side menu"}
+            title={isSidebarOpen ? "Close side menu (Ctrl+B)" : "Reopen side menu (Ctrl+B)"}
           >
-            <Menu size={22} />
+            <div className="menu-toggle-icon-wrap">
+              <Menu size={20} className="menu-icon-svg icon-menu" />
+              <X size={20} className="menu-icon-svg icon-close" />
+            </div>
+            <span className="menu-toggle-label">
+              {isSidebarOpen ? 'Close' : 'Menu'}
+            </span>
           </button>
         )}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>

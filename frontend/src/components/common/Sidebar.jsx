@@ -21,10 +21,11 @@ import {
   Layers,
   GraduationCap,
   Handshake,
-  ShieldCheck
+  ShieldCheck,
+  X
 } from 'lucide-react';
 
-export const Sidebar = ({ isOpen, onClose }) => {
+export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -92,58 +93,45 @@ export const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
+      {/* Backdrop Overlay for mobile drawer */}
       {isOpen && (
         <div
           onClick={onClose}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.5)',
-            zIndex: 45,
-            transition: 'opacity 0.2s'
-          }}
+          className="sidebar-backdrop"
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        style={{
-          width: 'var(--sidebar-width)',
-          backgroundColor: 'var(--bg-sidebar)',
-          color: '#ffffff',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
-          zIndex: 50,
-          transition: 'transform var(--transition-normal)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: 'var(--shadow-md)'
-        }}
-        className={`sidebar-container ${isOpen ? 'sidebar-open' : ''}`}
+        id="app-sidebar"
+        className={`sidebar-container ${isOpen ? 'sidebar-open' : 'sidebar-closed'} ${isReopening ? 'sidebar-reopening' : ''}`}
       >
-        {/* Sidebar Header */}
-        <div
-          style={{
-            padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.25rem'
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate-400)' }}>
-            Role Portal
+        {/* Sidebar Header with Title & Close Button */}
+        <div className="sidebar-header">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate-400)', fontWeight: 600 }}>
+              Role Portal
+            </div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user.role} PORTAL
+            </div>
           </div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
-            {user.role} PORTAL
-          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="sidebar-close-btn"
+            title="Close side menu"
+            aria-label="Close side menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Navigation List */}
+        {/* Navigation List with Staggered Entrance Animations */}
         <nav
+          className="sidebar-nav"
           style={{
             flex: 1,
             padding: '1rem 0.75rem',
@@ -153,7 +141,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
             gap: '0.35rem'
           }}
         >
-          {navLinks.map((item) => {
+          {navLinks.map((item, index) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -162,6 +150,9 @@ export const Sidebar = ({ isOpen, onClose }) => {
                 onClick={() => {
                   if (window.innerWidth < 1024 && onClose) onClose();
                 }}
+                className={({ isActive }) => 
+                  `sidebar-nav-link ${isActive ? 'active' : ''} ${isOpen || isReopening ? 'sidebar-item-animate' : ''}`
+                }
                 style={({ isActive }) => ({
                   display: 'flex',
                   alignItems: 'center',
@@ -173,11 +164,32 @@ export const Sidebar = ({ isOpen, onClose }) => {
                   fontWeight: isActive ? 600 : 500,
                   fontSize: '0.875rem',
                   textDecoration: 'none',
-                  transition: 'all var(--transition-fast)'
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animationDelay: `${index * 25}ms`,
+                  transition: 'background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast)'
                 })}
               >
-                <Icon size={18} />
-                <span>{item.name}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon size={18} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
+                    {isActive && (
+                      <span 
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: '15%',
+                          bottom: '15%',
+                          width: '3px',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '0 4px 4px 0',
+                          boxShadow: '0 0 8px rgba(255, 255, 255, 0.8)'
+                        }} 
+                      />
+                    )}
+                  </>
+                )}
               </NavLink>
             );
           })}
