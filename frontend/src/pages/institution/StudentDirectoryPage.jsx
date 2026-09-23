@@ -353,7 +353,8 @@ export const StudentDirectoryPage = () => {
               borderBottom: '1px solid var(--border-color)',
               padding: '0.5rem 1.5rem',
               gap: '0.5rem',
-              overflowX: 'auto'
+              overflowX: 'auto',
+              flexWrap: 'wrap'
             }}>
               {[
                 { id: 'ACTIVITIES', label: 'Activity Log', icon: Activity },

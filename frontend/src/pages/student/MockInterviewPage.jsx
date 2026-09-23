@@ -259,7 +259,7 @@ export const MockInterviewPage = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.25rem' }}>
+          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.25rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setActiveTab('STUDIO')}
               style={{
@@ -315,7 +315,7 @@ export const MockInterviewPage = () => {
       </div>
 
       {activeTab === 'STUDIO' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '320px minmax(0, 1fr)', gap: '1.75rem', alignItems: 'start' }}>
+        <div className="interview-studio-grid">
           {/* Left Column: Preset Track Selector */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="card">
@@ -515,7 +515,8 @@ export const MockInterviewPage = () => {
       )}
 
       {/* Tab: Detailed AI Diagnostic Report */}
-      {activeTab === 'REPORT' && report && (
+      {activeTab === 'REPORT' && (
+        report ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* Top Score Summary Banner */}
           <div className="card" style={{
@@ -674,6 +675,20 @@ export const MockInterviewPage = () => {
             </div>
           </div>
         </div>
+        ) : (
+          <div className="card" style={{ textAlign: 'center', padding: '3.5rem 2rem' }}>
+            <Brain size={48} style={{ margin: '0 auto 1rem', color: 'var(--primary-400)' }} />
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '0.5rem' }}>
+              No Active Diagnostic Report
+            </h3>
+            <p style={{ color: 'var(--slate-600)', maxWidth: '480px', margin: '0 auto 1.5rem', fontSize: '0.95rem' }}>
+              Complete a mock interview round in the Interview Studio or select a past session from your history to view its AI diagnostic evaluation.
+            </p>
+            <button onClick={() => setActiveTab('STUDIO')} className="btn btn-primary" style={{ margin: '0 auto' }}>
+              Launch Interview Studio
+            </button>
+          </div>
+        )
       )}
 
       {/* Tab: Past Sessions History */}

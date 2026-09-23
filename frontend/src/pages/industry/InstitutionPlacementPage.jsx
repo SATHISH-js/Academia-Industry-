@@ -123,7 +123,7 @@ export const InstitutionPlacementPage = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.25rem' }}>
+          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.25rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setActiveTab('DIRECTORY')}
               style={{

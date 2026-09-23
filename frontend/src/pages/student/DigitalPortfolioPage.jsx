@@ -138,7 +138,7 @@ export const DigitalPortfolioPage = () => {
           </div>
 
           {/* Navigation Pill */}
-          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.35rem' }}>
+          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.35rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setActiveTab('PORTFOLIO')}
               style={{
