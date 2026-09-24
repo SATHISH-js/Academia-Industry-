@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { CompanyLogo } from '../../components/roadmap/CompanyLogo';
+import { AiDollGraphic, AiDollGreetingModal, AiDollCornerAssistant } from '../../components/roadmap/AiDollMascot';
+import { AiCaptainBikeMap } from '../../components/roadmap/AiCaptainBikeMap';
 import {
   Compass,
   Building2,
@@ -135,6 +139,8 @@ function ScoreRing({ percentage, badgeAwarded }) {
 
 export const StudentRoadmapPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [roadmaps, setRoadmaps] = useState([]);
   const [selectedRoadmapId, setSelectedRoadmapId] = useState(null);
   const [roadmapDetail, setRoadmapDetail] = useState(null);
@@ -143,10 +149,12 @@ export const StudentRoadmapPage = () => {
   const [togglingTaskId, setTogglingTaskId] = useState(null);
 
   // Filters & Search
-  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL', 'RECOMMENDED', 'COMPANY', 'CAREER_PATH'
+  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL', 'RECOMMENDED', 'COMPANY', 'CAREER_PATH', 'MY_CUSTOM'
   const [selectedDept, setSelectedDept] = useState('ALL');
   const [selectedDomain, setSelectedDomain] = useState('ALL');
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDollGreeting, setShowDollGreeting] = useState(false);
 
   // 20-Question Topic Assessment Modal States
   const [assessmentModalOpen, setAssessmentModalOpen] = useState(false);
@@ -287,15 +295,12 @@ export const StudentRoadmapPage = () => {
         const list = res.data.data;
         setRoadmaps(list);
         if (list.length > 0) {
-          // Keep current selected if still present, or pick first recommended or first item
-          const stillExists = list.find(r => r.id === selectedRoadmapId);
-          if (stillExists) {
-            fetchRoadmapDetail(selectedRoadmapId);
-          } else {
-            const recommended = list.find(r => r.isRecommended) || list[0];
-            setSelectedRoadmapId(recommended.id);
-            fetchRoadmapDetail(recommended.id);
-          }
+          const queryId = searchParams.get('id') ? parseInt(searchParams.get('id'), 10) : null;
+          const matchQuery = queryId ? list.find(r => r.id === queryId) : null;
+          const stillExists = selectedRoadmapId ? list.find(r => r.id === selectedRoadmapId) : null;
+          const target = matchQuery || stillExists || list.find(r => r.isRecommended) || list[0];
+          setSelectedRoadmapId(target.id);
+          fetchRoadmapDetail(target.id);
         } else {
           setRoadmapDetail(null);
         }
@@ -551,6 +556,14 @@ export const StudentRoadmapPage = () => {
         if (r.domain !== selectedDomain) return false;
       }
 
+      // Company Filter
+      if (selectedCompanyFilter !== 'ALL') {
+        const comp = (r.company_name || '').toLowerCase();
+        const titleStr = (r.title || '').toLowerCase();
+        const selComp = selectedCompanyFilter.toLowerCase();
+        if (!comp.includes(selComp) && !titleStr.includes(selComp)) return false;
+      }
+
       // Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -564,7 +577,7 @@ export const StudentRoadmapPage = () => {
 
       return true;
     });
-  }, [roadmaps, activeTab, selectedDept, selectedDomain, searchQuery]);
+  }, [roadmaps, activeTab, selectedDept, selectedDomain, selectedCompanyFilter, searchQuery]);
 
   // Selected Roadmap details normalization
   const roadmapInfo = roadmapDetail?.roadmap || roadmapDetail;
@@ -1056,17 +1069,18 @@ export const StudentRoadmapPage = () => {
         <div className="card" style={{
           background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%)',
           color: '#ffffff',
-          padding: '1.5rem 2rem',
+          padding: '1.75rem 2.25rem',
           borderRadius: 'var(--radius-lg)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '1.25rem',
+          gap: '1.5rem',
           boxShadow: 'var(--shadow-md)',
-          border: '1px solid rgba(255, 255, 255, 0.15)'
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          position: 'relative'
         }}>
-          <div style={{ flex: '1 1 500px' }}>
+          <div style={{ flex: '1 1 480px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
               <span className="badge" style={{ backgroundColor: '#4f46e5', color: '#ffffff', fontWeight: 800 }}>
                 ✨ Dynamic Goal Generator
@@ -1075,60 +1089,166 @@ export const StudentRoadmapPage = () => {
                 Create Custom Milestone Roadmap
               </span>
             </div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 0.35rem 0' }}>
+            <h3 style={{ fontSize: '1.45rem', fontWeight: 800, margin: '0 0 0.35rem 0' }}>
               What is your target career or learning goal?
             </h3>
-            <p style={{ color: '#c7d2fe', fontSize: '0.9rem', margin: 0, lineHeight: 1.5 }}>
-              Enter your target role, dream company, or tech stack — generate a tailored 4-phase milestone roadmap with interactive assessments and verifiable mastery badges.
+            <p style={{ color: '#c7d2fe', fontSize: '0.92rem', margin: '0 0 1.25rem 0', lineHeight: 1.55 }}>
+              Enter your target role, dream company (Wipro, Google, Amazon...), or tech stack — our AI Captain generates a tailored 4-phase milestone roadmap with interactive assessments and live Rapido bike tracking!
             </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setShowDollGreeting(true)}
+                className="btn"
+                style={{
+                  backgroundColor: '#4f46e5',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.5)',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.4rem',
+                  fontSize: '0.95rem'
+                }}
+              >
+                <Sparkles size={18} />
+                Create / Generate Dynamic Roadmap
+              </button>
+
+              <button
+                onClick={() => navigate('/student/roadmap/create')}
+                className="btn"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.2rem',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Open Dedicated Generator Page 🚀
+              </button>
+
+              <button
+                onClick={() => setShowGenerator(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#c7d2fe',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                Quick Inline Form
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button
-              onClick={() => setShowGenerator(true)}
-              className="btn"
-              style={{
-                backgroundColor: '#4f46e5',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.5)',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.4rem',
-                fontSize: '0.95rem'
-              }}
-            >
-              <Sparkles size={18} />
-              Create / Generate Dynamic Roadmap
-            </button>
+
+          {/* AI Doll Banner Preview */}
+          <div
+            onClick={() => setShowDollGreeting(true)}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '20px',
+              padding: '0.85rem 1.25rem',
+              border: '1.5px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
+              transition: 'transform 0.2s ease',
+              textAlign: 'center'
+            }}
+            title="Click to talk with Captain Sparky!"
+          >
+            <div style={{
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              color: '#fde047',
+              marginBottom: '4px',
+              backgroundColor: '#1e1b4b',
+              padding: '0.2rem 0.6rem',
+              borderRadius: '9999px',
+              border: '1px solid #facc15'
+            }}>
+              🛵 Captain Sparky
+            </div>
+            <AiDollGraphic size={76} isWaving={true} />
+            <span style={{ fontSize: '0.72rem', color: '#c7d2fe', marginTop: '4px', fontWeight: 600 }}>
+              Click to Launch! ✨
+            </span>
           </div>
         </div>
       )}
 
       {/* Horizontal Roadmap Picker Strip */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--slate-800)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Layers size={18} color="var(--primary-600)" />
-            Available Curriculum Tracks ({filteredRoadmaps.length})
-          </h2>
-          {(selectedDept !== 'ALL' || selectedDomain !== 'ALL' || searchQuery) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+              <Layers size={20} color="var(--primary-600)" />
+              Available Curriculum Tracks ({filteredRoadmaps.length})
+            </h2>
+            <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--slate-500)' }}>
+              Select any company track or career pathway to load milestone tasks and live bike tracking
+            </p>
+          </div>
+
+          {(selectedDept !== 'ALL' || selectedDomain !== 'ALL' || selectedCompanyFilter !== 'ALL' || searchQuery) && (
             <button
-              onClick={() => { setSelectedDept('ALL'); setSelectedDomain('ALL'); setSearchQuery(''); }}
-              style={{ background: 'none', border: 'none', color: 'var(--primary-600)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => { setSelectedDept('ALL'); setSelectedDomain('ALL'); setSelectedCompanyFilter('ALL'); setSearchQuery(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--primary-600)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
             >
-              Reset Filters
+              Reset All Filters
             </button>
           )}
+        </div>
+
+        {/* Company Quick Filter Pills */}
+        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.65rem', marginBottom: '0.75rem', scrollbarWidth: 'thin' }}>
+          {['ALL', 'Wipro', 'Google', 'Amazon', 'Microsoft', 'TCS', 'TechCorp'].map(comp => (
+            <button
+              key={comp}
+              type="button"
+              onClick={() => setSelectedCompanyFilter(comp)}
+              style={{
+                padding: '0.4rem 0.95rem',
+                borderRadius: '9999px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                border: `1.5px solid ${selectedCompanyFilter === comp ? 'var(--primary-600)' : 'var(--border-color)'}`,
+                backgroundColor: selectedCompanyFilter === comp ? 'var(--primary-50)' : '#ffffff',
+                color: selectedCompanyFilter === comp ? 'var(--primary-700)' : 'var(--slate-700)',
+                boxShadow: selectedCompanyFilter === comp ? '0 2px 6px rgba(79, 70, 229, 0.15)' : 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {comp !== 'ALL' && <CompanyLogo companyName={comp} size={16} />}
+              {comp === 'ALL' ? '🏢 All Companies & Pathways' : `${comp} Tracks`}
+            </button>
+          ))}
         </div>
 
         {filteredRoadmaps.length === 0 ? (
           <div className="card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--slate-500)' }}>
             <Filter size={32} style={{ margin: '0 auto 0.75rem', color: 'var(--slate-400)' }} />
-            <p style={{ fontWeight: 600 }}>No roadmaps match the selected department or domain criteria.</p>
+            <p style={{ fontWeight: 600 }}>No roadmaps match the selected criteria.</p>
             <button
-              onClick={() => { setSelectedDept('ALL'); setSelectedDomain('ALL'); setSearchQuery(''); }}
+              onClick={() => { setSelectedDept('ALL'); setSelectedDomain('ALL'); setSelectedCompanyFilter('ALL'); setSearchQuery(''); }}
               className="btn btn-outline btn-sm"
               style={{ marginTop: '1rem' }}
             >
@@ -1140,7 +1260,7 @@ export const StudentRoadmapPage = () => {
             display: 'flex',
             gap: '1rem',
             overflowX: 'auto',
-            paddingBottom: '0.75rem',
+            paddingBottom: '0.85rem',
             scrollbarWidth: 'thin'
           }}>
             {filteredRoadmaps.map(r => {
@@ -1155,8 +1275,8 @@ export const StudentRoadmapPage = () => {
                   key={r.id}
                   onClick={() => handleSelectRoadmap(r.id)}
                   style={{
-                    minWidth: '280px',
-                    maxWidth: '320px',
+                    minWidth: '290px',
+                    maxWidth: '330px',
                     flex: '0 0 auto',
                     padding: '1.15rem 1.25rem',
                     borderRadius: 'var(--radius-md)',
@@ -1168,48 +1288,62 @@ export const StudentRoadmapPage = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    gap: '0.65rem',
+                    gap: '0.75rem',
                     position: 'relative'
                   }}
                 >
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                        {r.isCustom && (
-                          <span className="badge" style={{ backgroundColor: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                            <Sparkles size={11} color="#059669" /> Custom Goal
+                    {/* Top Row: Company Image + Name Underneath + Badges */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '0.65rem' }}>
+                      {/* Preferred Company Image with Company Name Underneath */}
+                      <CompanyLogo
+                        companyName={r.company_name}
+                        title={r.title}
+                        size={48}
+                        showNameBelow={true}
+                        nameStyle={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--slate-800)', marginTop: '0.2rem' }}
+                      />
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
+                          {r.isCustom && (
+                            <span className="badge" style={{ backgroundColor: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <Sparkles size={11} color="#059669" /> Custom Goal
+                            </span>
+                          )}
+                          <span className="badge" style={{
+                            backgroundColor: isCompany ? '#0284c7' : '#e0e7ff',
+                            color: isCompany ? '#ffffff' : '#3730a3',
+                            fontSize: '0.65rem',
+                            fontWeight: 700
+                          }}>
+                            {isCompany ? (r.company_name || 'Big Tech') : 'Curriculum Track'}
                           </span>
-                        )}
-                        <span className="badge" style={{
-                          backgroundColor: isCompany ? '#0284c7' : '#e0e7ff',
-                          color: isCompany ? '#ffffff' : '#3730a3',
-                          fontSize: '0.68rem',
-                          fontWeight: 700
-                        }}>
-                          {isCompany ? (r.company_name || 'Big Tech') : 'Curriculum Track'}
-                        </span>
-                        {r.isRecommended && (
-                          <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                            <Star size={11} fill="#d97706" color="#d97706" /> Recommended
-                          </span>
-                        )}
-                        {pct === 100 && (
-                          <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontSize: '0.68rem', fontWeight: 800 }}>
-                            ✅ Completed
-                          </span>
-                        )}
+                          {r.isRecommended && (
+                            <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <Star size={11} fill="#d97706" color="#d97706" /> Recommended
+                            </span>
+                          )}
+                          {pct === 100 && (
+                            <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontSize: '0.65rem', fontWeight: 800 }}>
+                              ✅ Completed
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--slate-900)', lineHeight: 1.35, margin: 0 }}>
+                          {r.title}
+                        </h3>
                       </div>
+
                       {isSelected && (
-                        <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Check size={13} color="#ffffff" strokeWidth={3} />
                         </div>
                       )}
                     </div>
 
-                    <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--slate-900)', lineHeight: 1.35, marginBottom: '0.35rem' }}>
-                      {r.title}
-                    </h3>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.2rem' }}>
                       <Target size={13} color="var(--primary-600)" /> {r.target_role}
                     </div>
                   </div>
@@ -1250,28 +1384,40 @@ export const StudentRoadmapPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Header Summary Card */}
             <div className="card" style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
-                    <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-                      {roadmapInfo?.title}
-                    </h2>
-                    {roadmapInfo?.isCustom && (
-                      <span className="badge" style={{ backgroundColor: '#e0e7ff', color: '#4338ca', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <Sparkles size={12} /> Custom Generated
-                      </span>
-                    )}
-                    <span className="badge badge-primary">{roadmapInfo?.difficulty || roadmapInfo?.difficulty_level || 'INTERMEDIATE'}</span>
-                    {roadmapInfo?.department && (
-                      <span className="badge" style={{ backgroundColor: 'var(--slate-100)', color: 'var(--slate-700)' }}>
-                        {roadmapInfo.department}
-                      </span>
-                    )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', flex: 1, minWidth: '280px' }}>
+                  {/* Preferred Company Logo with Name Underneath */}
+                  <CompanyLogo
+                    companyName={roadmapInfo?.company_name}
+                    title={roadmapInfo?.title}
+                    size={58}
+                    showNameBelow={true}
+                    nameStyle={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--slate-800)', marginTop: '0.3rem' }}
+                  />
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                      <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 }}>
+                        {roadmapInfo?.title}
+                      </h2>
+                      {roadmapInfo?.isCustom && (
+                        <span className="badge" style={{ backgroundColor: '#e0e7ff', color: '#4338ca', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <Sparkles size={12} /> Custom Generated
+                        </span>
+                      )}
+                      <span className="badge badge-primary">{roadmapInfo?.difficulty || roadmapInfo?.difficulty_level || 'INTERMEDIATE'}</span>
+                      {roadmapInfo?.department && (
+                        <span className="badge" style={{ backgroundColor: 'var(--slate-100)', color: 'var(--slate-700)' }}>
+                          {roadmapInfo.department}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ color: 'var(--slate-600)', fontSize: '0.92rem', lineHeight: 1.55, maxWidth: '700px', margin: 0 }}>
+                      {roadmapInfo?.description}
+                    </p>
                   </div>
-                  <p style={{ color: 'var(--slate-600)', fontSize: '0.92rem', lineHeight: 1.55, maxWidth: '700px' }}>
-                    {roadmapInfo?.description}
-                  </p>
                 </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1283,10 +1429,7 @@ export const StudentRoadmapPage = () => {
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                     <button
-                      onClick={() => {
-                        setShowGenerator(true);
-                        window.scrollTo({ top: 350, behavior: 'smooth' });
-                      }}
+                      onClick={() => setShowDollGreeting(true)}
                       className="btn btn-outline btn-sm"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem' }}
                     >
@@ -1328,6 +1471,19 @@ export const StudentRoadmapPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Rapido Bike Captain Live Highway Map */}
+            <AiCaptainBikeMap
+              roadmap={roadmapInfo}
+              milestones={milestones}
+              completedTasks={completedTasks}
+              totalTasks={totalTasks}
+              progressPercentage={progressPercentage}
+              onSelectMilestone={(mIdx) => {
+                const el = document.getElementById(`milestone-card-${mIdx}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
 
             {/* 100% Completion Celebration Banner */}
             {progressPercentage === 100 && (
@@ -1441,6 +1597,7 @@ export const StudentRoadmapPage = () => {
                 return (
                   <div
                     key={milestone.id}
+                    id={`milestone-card-${mIdx}`}
                     className="card"
                     style={{
                       padding: '1.5rem',
@@ -2224,6 +2381,25 @@ export const StudentRoadmapPage = () => {
           </div>
         </div>
       )}
+
+      {/* Animated AI Doll Greeting Modal */}
+      <AiDollGreetingModal
+        isOpen={showDollGreeting}
+        onClose={() => setShowDollGreeting(false)}
+        onProceed={() => {
+          setShowDollGreeting(false);
+          navigate('/student/roadmap/create');
+        }}
+      />
+
+      {/* Floating AI Doll Corner Assistant */}
+      <AiDollCornerAssistant
+        roadmapTitle={roadmapInfo?.title}
+        progressPercentage={progressPercentage}
+        onOpenCreateModal={() => {
+          setShowDollGreeting(true);
+        }}
+      />
     </div>
   );
 };
