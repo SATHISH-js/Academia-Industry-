@@ -11,7 +11,8 @@ import {
   Sparkles,
   X,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react';
 
 export const IndustryPartnersPage = () => {
@@ -23,6 +24,10 @@ export const IndustryPartnersPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+
+  // Industry Search State (No Dropdown)
+  const [industrySearch, setIndustrySearch] = useState('');
+  const [selectedIndustry, setSelectedIndustry] = useState(null);
 
   const [proposalData, setProposalData] = useState({
     industry_id: '',
@@ -44,7 +49,9 @@ export const IndustryPartnersPage = () => {
         setPartners(res.data.data.connections || []);
         setAvailableCompanies(res.data.data.availableCompanies || []);
         if (res.data.data.availableCompanies?.length > 0) {
-          setProposalData(prev => ({ ...prev, industry_id: String(res.data.data.availableCompanies[0].id) }));
+          const first = res.data.data.availableCompanies[0];
+          setSelectedIndustry(first);
+          setProposalData(prev => ({ ...prev, industry_id: String(first.id) }));
         }
       }
     } catch (err) {
@@ -251,20 +258,133 @@ export const IndustryPartnersPage = () => {
             {/* Form */}
             <form onSubmit={handleProposeSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.85rem' }}>Select Industry Partner *</label>
-                  <select
-                    className="form-control"
-                    value={proposalData.industry_id}
-                    onChange={(e) => setProposalData({ ...proposalData, industry_id: e.target.value })}
-                    required
-                  >
-                    {availableCompanies.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.company_name} ({c.industry_domain})
-                      </option>
-                    ))}
-                  </select>
+                <div className="form-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                  <label className="form-label" style={{ fontSize: '0.85rem' }}>Search & Select Industry Partner *</label>
+                  {selectedIndustry ? (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      backgroundColor: 'var(--slate-50)',
+                      border: '1.5px solid var(--primary-500)',
+                      borderRadius: 'var(--radius-md)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--primary-100)',
+                          color: 'var(--primary-700)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800
+                        }}>
+                          <Building2 size={20} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--slate-900)' }}>
+                            {selectedIndustry.company_name}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>
+                            {selectedIndustry.industry_domain} • {selectedIndustry.city || 'Corporate Partner'}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedIndustry(null);
+                          setProposalData(prev => ({ ...prev, industry_id: '' }));
+                          setIndustrySearch('');
+                        }}
+                        className="btn btn-outline"
+                        style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                      >
+                        Change Enterprise
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ position: 'relative' }}>
+                        <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search industry by enterprise name, technology domain, or location..."
+                          style={{ paddingLeft: '2.5rem' }}
+                          value={industrySearch}
+                          onChange={(e) => setIndustrySearch(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Autocomplete Search Results */}
+                      <div style={{
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: '#ffffff'
+                      }}>
+                        {availableCompanies.filter(c =>
+                          !industrySearch.trim() ||
+                          c.company_name.toLowerCase().includes(industrySearch.toLowerCase()) ||
+                          (c.industry_domain && c.industry_domain.toLowerCase().includes(industrySearch.toLowerCase())) ||
+                          (c.city && c.city.toLowerCase().includes(industrySearch.toLowerCase()))
+                        ).length === 0 ? (
+                          <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--slate-500)', fontSize: '0.85rem' }}>
+                            No industry enterprises match your search query.
+                          </div>
+                        ) : (
+                          availableCompanies
+                            .filter(c =>
+                              !industrySearch.trim() ||
+                              c.company_name.toLowerCase().includes(industrySearch.toLowerCase()) ||
+                              (c.industry_domain && c.industry_domain.toLowerCase().includes(industrySearch.toLowerCase())) ||
+                              (c.city && c.city.toLowerCase().includes(industrySearch.toLowerCase()))
+                            )
+                            .map(c => (
+                              <div
+                                key={c.id}
+                                onClick={() => {
+                                  setSelectedIndustry(c);
+                                  setProposalData(prev => ({ ...prev, industry_id: String(c.id) }));
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '0.65rem 1rem',
+                                  borderBottom: '1px solid var(--border-light)',
+                                  cursor: 'pointer',
+                                  transition: 'background-color 0.15s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--slate-50)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                  <Building2 size={16} color="var(--primary-600)" />
+                                  <div>
+                                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--slate-900)' }}>
+                                      {c.company_name}
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
+                                      {c.industry_domain} {c.city ? `• ${c.city}` : ''}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="btn btn-outline" style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem' }}>
+                                  Select
+                                </span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>

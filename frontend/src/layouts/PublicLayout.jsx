@@ -4,7 +4,7 @@ import { Navbar } from '../components/common/Navbar';
 
 export const PublicLayout = () => {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-main)' }}>
+    <div className="public-layout-container">
       <Navbar />
       <div style={{ flex: 1 }}>
         <Outlet />

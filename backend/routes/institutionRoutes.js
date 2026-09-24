@@ -15,7 +15,15 @@ const {
   getInstitutionPartners,
   proposeMou,
   searchIndustryCollaborations,
-  getPublicInstitutions
+  getPublicInstitutions,
+  createInstitutionStudent,
+  createInstitutionAcademician,
+  getInstitutionDepartments,
+  createInstitutionDepartment,
+  searchIndustries,
+  getIndustryTrainingPrograms,
+  requestTrainingEnrollment,
+  getPlacementFieldAnalytics
 } = require('../controllers/institutionController');
 
 const { authenticateUser } = require('../middleware/authMiddleware');
@@ -28,17 +36,33 @@ router.get('/public-list', getPublicInstitutions);
 router.use(authenticateUser, requireRole('INSTITUTION'));
 
 router.get('/analytics', getInstitutionAnalytics);
-router.get('/activities', getInstitutionActivities);
+
+// Students
 router.get('/students', getInstitutionStudents);
-router.get('/students/by-reg-number/:regNumber', getStudentByRegisterNumber);
+router.post('/students', createInstitutionStudent);
 router.get('/students/:studentId/activity', getStudentActivityHistory);
+
+// Academicians / Faculty
 router.get('/academicians', getInstitutionAcademicians);
-router.post('/academicians', addInstitutionAcademician);
-router.post('/contact/student', contactStudent);
-router.post('/contact/academician', contactAcademician);
-router.get('/messages', getSentMessages);
+router.post('/academicians', createInstitutionAcademician);
+
+// Dynamic Departments
+router.get('/departments', getInstitutionDepartments);
+router.post('/departments', createInstitutionDepartment);
+
+// Industry Search (Autocomplete) & MoU
+router.get('/industries-search', searchIndustries);
 router.get('/partners', getInstitutionPartners);
 router.post('/mou/propose', proposeMou);
+
+// Training Programs (Industry-provided)
+router.get('/training-programs', getIndustryTrainingPrograms);
+router.post('/training-programs/enroll', requestTrainingEnrollment);
+
+// Collaborations search (backward compatibility)
 router.get('/collaborations/search', searchIndustryCollaborations);
+
+// Placements Field Visual Analytics
+router.get('/placements/analytics', getPlacementFieldAnalytics);
 
 module.exports = router;

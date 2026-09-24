@@ -171,14 +171,14 @@ export const InstitutionDashboard = () => {
           <Link to="/institution/students" className="btn btn-primary" style={{ gap: '0.4rem' }}>
             <Users size={16} /> Students ({analytics?.totalStudents || 0})
           </Link>
-          <Link to="/institution/academicians" className="btn btn-secondary" style={{ gap: '0.4rem' }}>
-            <GraduationCap size={16} /> Faculty ({analytics?.totalFaculty || 0})
+          <Link to="/institution/training-programs" className="btn btn-secondary" style={{ gap: '0.4rem' }}>
+            <Award size={17} /> Training Programs
           </Link>
-          <Link to="/institution/skills" className="btn" style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', color: '#ffffff', gap: '0.4rem' }}>
-            <BarChart2 size={16} /> Skill Gaps
+          <Link to="/institution/placements" className="btn btn-outline" style={{ gap: '0.4rem', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.3)' }}>
+            <TrendingUp size={17} /> Placement Analytics
           </Link>
-          <Link to="/institution/placements" className="btn" style={{ backgroundColor: '#10b981', color: '#ffffff', fontWeight: 700, gap: '0.4rem' }}>
-            <TrendingUp size={16} /> Placements
+          <Link to="/institution/partners" className="btn btn-outline" style={{ gap: '0.4rem', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.3)' }}>
+            <Handshake size={17} /> Industry MoUs
           </Link>
         </div>
       </div>
