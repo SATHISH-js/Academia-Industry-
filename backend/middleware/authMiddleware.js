@@ -40,6 +40,33 @@ async function authenticateUser(req, res, next) {
   }
 }
 
+/**
+ * Optional Auth Middleware
+ * Attaches user to req.user if a valid token is provided, but allows unauthenticated requests
+ */
+async function optionalAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = verifyToken(token);
+      if (decoded && decoded.id) {
+        const [rows] = await pool.query(
+          'SELECT id, name, email, role, avatar_url, phone, is_active FROM users WHERE id = ? LIMIT 1',
+          [decoded.id]
+        );
+        if (rows.length > 0 && rows[0].is_active) {
+          req.user = rows[0];
+        }
+      }
+    }
+  } catch (error) {
+    // Ignore and continue without user attached
+  }
+  next();
+}
+
 module.exports = {
-  authenticateUser
+  authenticateUser,
+  optionalAuth
 };
