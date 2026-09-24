@@ -330,16 +330,65 @@ async function getInterviewRoles(req, res) {
 }
 
 /**
+ * Generate tailored questions for standard or custom company & role combinations
+ */
+function generateTailoredQuestions(targetCompany, targetRole) {
+  const bankMatch = QUESTION_BANK[targetRole];
+  if (bankMatch) {
+    return bankMatch.map(q => {
+      const customQ = q.question.replace(/Google|Wipro|Amazon|Microsoft|our enterprise/gi, targetCompany || 'our enterprise');
+      const customAns = q.idealAnswer.replace(/Google|Wipro|Amazon|Microsoft/gi, targetCompany || 'the company');
+      return {
+        id: q.id,
+        question: customQ,
+        category: q.category,
+        idealAnswer: customAns
+      };
+    });
+  }
+
+  // Dynamic custom questions for any user-added company & custom role
+  return [
+    {
+      id: 1,
+      question: `In your experience as a ${targetRole}, how do you architect resilient and high-throughput systems for ${targetCompany || 'enterprise scale'}?`,
+      category: 'System Architecture & Design',
+      idealAnswer: `For ${targetCompany || 'enterprise scale'}, I architect services with clear domain boundaries, event streaming with Kafka or RabbitMQ, distributed caching with Redis, and resilient connection pooling with circuit breakers to achieve sub-50ms latency.`
+    },
+    {
+      id: 2,
+      question: `Explain how you diagnose and eliminate database bottlenecks, query latencies, or deadlocks in ${targetRole} projects.`,
+      category: 'Databases & Performance',
+      idealAnswer: `I profile queries using EXPLAIN ANALYZE, implement covering indexes, ensure proper transaction isolation levels, and use optimistic locking or distributed locks to prevent deadlocks under high concurrency.`
+    },
+    {
+      id: 3,
+      question: `Why are you targeting ${targetCompany || 'our company'} for the ${targetRole} position, and how does your tech stack align with our engineering culture?`,
+      category: 'Company Alignment & Culture',
+      idealAnswer: `I admire ${targetCompany || 'the company'}'s engineering excellence and innovation. My experience in clean architecture, automated testing, and agile collaboration enables me to make an immediate impact on core product initiatives.`
+    },
+    {
+      id: 4,
+      question: `Describe a challenging technical problem you solved using the STAR methodology (Situation, Task, Action, Result).`,
+      category: 'STAR Method & Problem Solving',
+      idealAnswer: `Situation: During a high-load simulation, service latency spiked significantly. Task: I was responsible for diagnosing the bottleneck within a strict window. Action: I analyzed APM telemetry, identified unindexed queries and lock contention, and implemented non-blocking concurrency with caching. Result: Latency decreased by 80% and system throughput doubled.`
+    }
+  ];
+}
+
+/**
  * Get questions tailored for role and company
  */
 async function getInterviewQuestions(req, res) {
   const { role, company } = req.query;
   const targetRole = role || 'Wipro Elite & Turbo SDE';
-  const questions = QUESTION_BANK[targetRole] || QUESTION_BANK['Full Stack Software Engineer'];
+  const targetCompany = company || 'Wipro';
+
+  const questions = generateTailoredQuestions(targetCompany, targetRole);
 
   return sendSuccess(res, {
     role: targetRole,
-    company: company || 'Wipro',
+    company: targetCompany,
     questions: questions.map(q => ({
       id: q.id,
       question: q.question,
@@ -391,8 +440,7 @@ async function submitInterview(req, res) {
     const allGrammarMistakes = [];
     const allDetectedFillers = [];
 
-    const analyzedQuestions = [];
-    const targetQuestions = QUESTION_BANK[targetRole] || QUESTION_BANK['Wipro Elite & Turbo SDE'] || QUESTION_BANK['Full Stack Software Engineer'];
+    const targetQuestions = generateTailoredQuestions(targetCompany, targetRole);
 
     normalizedAnswers.forEach((item, index) => {
       const text = (item.user_response || '').trim();

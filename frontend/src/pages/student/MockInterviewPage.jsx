@@ -26,10 +26,12 @@ import {
   ChevronRight,
   BookOpen,
   ArrowRight,
-  Check
+  Check,
+  Plus,
+  X
 } from 'lucide-react';
 
-const COMPANIES = [
+const INITIAL_COMPANIES = [
   {
     name: 'Google',
     roleDefault: 'Full Stack Software Engineer',
@@ -72,7 +74,7 @@ const COMPANIES = [
   }
 ];
 
-const ROLES = [
+const INITIAL_ROLES = [
   { id: 'Wipro Elite & Turbo SDE', label: 'Wipro Elite & Turbo SDE (Java & Spring Boot)' },
   { id: 'Full Stack Software Engineer', label: 'Full Stack Software Engineer (MERN / React / Node)' },
   { id: 'Backend Developer', label: 'Backend Developer (Microservices & Databases)' },
@@ -84,6 +86,8 @@ const ROLES = [
 export const MockInterviewPage = () => {
   const navigate = useNavigate();
 
+  const [companies, setCompanies] = useState(INITIAL_COMPANIES);
+  const [roles, setRoles] = useState(INITIAL_ROLES);
   const [selectedCompany, setSelectedCompany] = useState('Google');
   const [selectedRole, setSelectedRole] = useState('Full Stack Software Engineer');
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -91,16 +95,28 @@ export const MockInterviewPage = () => {
   const [historyList, setHistoryList] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Custom Company Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [customCompanyInput, setCustomCompanyInput] = useState('');
+  const [customRoleInput, setCustomRoleInput] = useState('');
+  const [customFocusInput, setCustomFocusInput] = useState('');
+
+  // Word-by-word animation states
+  const [spokenMessage, setSpokenMessage] = useState("Welcome to your AI Mock Interview! I am Coach Nova. Please select your target company and engineering role to begin.");
+  const [activeWordIndex, setActiveWordIndex] = useState(-1);
+  const wordIntervalRef = useRef(null);
+
   useEffect(() => {
     fetchHistory();
 
     // Welcome speech by Coach Nova on load
     const timer = setTimeout(() => {
       speakAloud("Welcome to your AI Mock Interview! I am Coach Nova. Please select your target company and engineering role to begin.");
-    }, 800);
+    }, 700);
 
     return () => {
       clearTimeout(timer);
+      if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
   }, []);
@@ -116,21 +132,58 @@ export const MockInterviewPage = () => {
     }
   };
 
+  /**
+   * Speak aloud with dynamic word-by-word animation tracking
+   */
   const speakAloud = (text) => {
     if (speechMuted || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
+    if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
 
+    setSpokenMessage(text);
+    setActiveWordIndex(0);
+
+    const words = text.split(/\s+/).filter(Boolean);
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 1.05;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+
+    let boundaryWordIndex = 0;
+    utterance.onboundary = (event) => {
+      if (event.name === 'word') {
+        setActiveWordIndex(boundaryWordIndex);
+        boundaryWordIndex++;
+      }
+    };
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      // Fallback timer if browser voice engine doesn't fire onboundary
+      const intervalMs = Math.max(180, Math.min(320, Math.round(60000 / (words.length * 150))));
+      wordIntervalRef.current = setInterval(() => {
+        setActiveWordIndex(prev => {
+          if (prev < words.length - 1) return prev + 1;
+          clearInterval(wordIntervalRef.current);
+          return prev;
+        });
+      }, intervalMs);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
+      setTimeout(() => setActiveWordIndex(-1), 1200);
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
+      setActiveWordIndex(-1);
+    };
 
     window.speechSynthesis.speak(utterance);
   };
 
-  // User Requirement: "when the user choose google thats the time the ai also speek"
   const handleSelectCompany = (comp) => {
     setSelectedCompany(comp.name);
     if (comp.roleDefault) {
@@ -140,10 +193,52 @@ export const MockInterviewPage = () => {
     speakAloud(comp.speechText);
   };
 
+  // User Requirement 1: Click "+ Add Company" -> Coach Nova speaks: "Which company are you interviewing for, and what role are you aiming to crack?"
+  const handleOpenAddCompanyModal = () => {
+    setShowAddModal(true);
+    speakAloud("Which company are you interviewing for, and what role are you aiming to crack?");
+  };
+
+  // User Requirement 1: User submits custom company -> Coach Nova confirms and sets up mock interview
+  const handleSaveCustomCompany = (e) => {
+    e.preventDefault();
+    const cName = customCompanyInput.trim();
+    const rName = customRoleInput.trim() || 'Software Engineer';
+
+    if (!cName) return;
+
+    // Check if company already exists
+    const exists = companies.find(c => c.name.toLowerCase() === cName.toLowerCase());
+    if (!exists) {
+      const newComp = {
+        name: cName,
+        roleDefault: rName,
+        isCustom: true,
+        speechText: `Awesome! Preparing a tailored mock interview for ${cName} focusing on the ${rName} position. Let's step into the interview room and test your engineering skills!`
+      };
+      setCompanies(prev => [...prev, newComp]);
+    }
+
+    // Add role to roles if not present
+    const roleExists = roles.find(r => r.id === rName);
+    if (!roleExists) {
+      setRoles(prev => [...prev, { id: rName, label: `${rName} (Custom Track)` }]);
+    }
+
+    setSelectedCompany(cName);
+    setSelectedRole(rName);
+    setShowAddModal(false);
+
+    // AI Doll confirms aloud verbally
+    speakAloud(`Awesome! Tailoring a custom mock interview for ${cName} focusing on ${rName}. Let's begin!`);
+  };
+
   const handleLaunchRoom = () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     navigate(`/student/mock-interview/room?company=${encodeURIComponent(selectedCompany)}&role=${encodeURIComponent(selectedRole)}`);
   };
+
+  const spokenWords = (spokenMessage || '').split(/\s+/).filter(Boolean);
 
   return (
     <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '3.5rem' }}>
@@ -158,7 +253,7 @@ export const MockInterviewPage = () => {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Sound Mute Toggle */}
+        {/* Prominent Sound Mute Toggle */}
         <button
           onClick={() => {
             const next = !speechMuted;
@@ -169,22 +264,24 @@ export const MockInterviewPage = () => {
             position: 'absolute',
             top: '1.25rem',
             right: '1.25rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.12)',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
+            backgroundColor: speechMuted ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)',
+            border: `1.5px solid ${speechMuted ? '#f87171' : '#34d399'}`,
             borderRadius: '9999px',
-            padding: '0.4rem 0.85rem',
+            padding: '0.45rem 1rem',
             color: '#ffffff',
-            fontSize: '0.78rem',
-            fontWeight: 700,
+            fontSize: '0.82rem',
+            fontWeight: 800,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem'
+            gap: '0.45rem',
+            transition: 'all 0.2s ease',
+            zIndex: 10
           }}
-          title={speechMuted ? 'Unmute AI voice' : 'Mute AI voice'}
+          title={speechMuted ? 'Click to UNMUTE Coach Nova voice' : 'Click to MUTE Coach Nova voice'}
         >
-          {speechMuted ? <VolumeX size={15} color="#f87171" /> : <Volume2 size={15} color="#4ade80" />}
-          {speechMuted ? 'Voice Muted' : 'Coach Nova Voice ON'}
+          {speechMuted ? <VolumeX size={16} color="#fca5a5" /> : <Volume2 size={16} color="#86efac" />}
+          {speechMuted ? 'AI Voice Muted' : 'Coach Nova Voice Active'}
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '2rem' }}>
@@ -200,9 +297,62 @@ export const MockInterviewPage = () => {
               Speak with AI Coach Nova
             </h1>
 
-            <p style={{ color: '#c7d2fe', fontSize: '0.98rem', lineHeight: 1.6, margin: '0 0 1.5rem 0', maxWidth: '640px' }}>
-              Select your target company below. Coach Nova will verbally guide you, read real company questions aloud, listen via your mic, identify grammar mistakes, rate your delivery, and connect your results directly to tailored learning programs.
+            <p style={{ color: '#c7d2fe', fontSize: '0.98rem', lineHeight: 1.6, margin: '0 0 1.25rem 0', maxWidth: '640px' }}>
+              Select a target company or add your dream firm. Coach Nova speaks questions aloud, listens in real time, diagnoses grammar, evaluates spoken clarity, and maps your path to mastery.
             </p>
+
+            {/* Word-by-word Highlight Live Subtitle Box */}
+            {spokenMessage && (
+              <div style={{
+                backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                borderRadius: '16px',
+                padding: '0.85rem 1.2rem',
+                border: '1.5px solid rgba(99, 102, 241, 0.45)',
+                marginBottom: '1.5rem',
+                maxWidth: '620px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Sparkles size={13} color="#facc15" />
+                    {isSpeaking ? '🔊 Coach Nova Speaking:' : '💬 Coach Nova:'}
+                  </span>
+                  <button
+                    onClick={() => speakAloud(spokenMessage)}
+                    style={{ background: 'none', border: 'none', color: '#c7d2fe', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700 }}
+                    title="Repeat speech"
+                  >
+                    <Volume2 size={13} /> Replay
+                  </button>
+                </div>
+
+                {/* Animated Word Highlight Container */}
+                <div style={{ fontSize: '0.95rem', lineHeight: 1.65, color: '#e0e7ff' }}>
+                  {spokenWords.map((word, wIdx) => {
+                    const isCurrentWord = isSpeaking && activeWordIndex === wIdx;
+                    return (
+                      <span
+                        key={wIdx}
+                        style={{
+                          display: 'inline-block',
+                          marginRight: '0.28rem',
+                          padding: isCurrentWord ? '0.1rem 0.4rem' : '0.1rem 0.05rem',
+                          borderRadius: '6px',
+                          backgroundColor: isCurrentWord ? '#facc15' : 'transparent',
+                          color: isCurrentWord ? '#0f172a' : '#e0e7ff',
+                          fontWeight: isCurrentWord ? 900 : 500,
+                          transform: isCurrentWord ? 'scale(1.14)' : 'scale(1)',
+                          boxShadow: isCurrentWord ? '0 0 14px rgba(250, 204, 21, 0.9)' : 'none',
+                          transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        {word}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
@@ -281,28 +431,46 @@ export const MockInterviewPage = () => {
         </div>
       </div>
 
-      {/* Interactive Target Company Selector (Single Clean Unified Section) */}
+      {/* Interactive Target Company Selector */}
       <div className="card" style={{ padding: '2rem' }}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Building2 size={22} color="var(--primary-600)" />
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 }}>
-              Select Your Target Company
-            </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Building2 size={22} color="var(--primary-600)" />
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 }}>
+                Select Your Target Company
+              </h2>
+            </div>
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', color: 'var(--slate-500)' }}>
+              Choose a preset company or click <strong>+ Add Company</strong> to practice for any organization of your choice!
+            </p>
           </div>
-          <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', color: 'var(--slate-500)' }}>
-            Click on any company below. Coach Nova will verbally brief you on that company's engineering interview culture!
-          </p>
+
+          {/* Quick Add Company Button */}
+          <button
+            onClick={handleOpenAddCompanyModal}
+            className="btn btn-primary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              fontWeight: 800,
+              padding: '0.65rem 1.25rem',
+              borderRadius: '12px'
+            }}
+          >
+            <Plus size={17} /> Add Company
+          </button>
         </div>
 
-        {/* Company Cards Grid with Logo and Name Underneath */}
+        {/* Company Cards Grid with Logo and Name Underneath + Add Company Card */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
           gap: '1rem',
           marginBottom: '2rem'
         }}>
-          {COMPANIES.map((c) => {
+          {companies.map((c) => {
             const isSelected = selectedCompany.toLowerCase() === c.name.toLowerCase();
             return (
               <div
@@ -357,6 +525,48 @@ export const MockInterviewPage = () => {
               </div>
             );
           })}
+
+          {/* User Requirement 1: "+ Add Company" Card inside grid */}
+          <div
+            onClick={handleOpenAddCompanyModal}
+            style={{
+              cursor: 'pointer',
+              padding: '1.25rem 0.85rem',
+              borderRadius: '16px',
+              backgroundColor: '#f8fafc',
+              border: '2px dashed var(--primary-500)',
+              boxShadow: 'var(--shadow-sm)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease',
+              textAlign: 'center',
+              minHeight: '115px'
+            }}
+            title="Add your target company"
+          >
+            <div style={{
+              width: 42,
+              height: 42,
+              borderRadius: '50%',
+              backgroundColor: 'var(--primary-100)',
+              color: 'var(--primary-700)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 900
+            }}>
+              <Plus size={22} />
+            </div>
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary-700)' }}>
+              + Add Company
+            </span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--slate-500)' }}>
+              Custom Track
+            </span>
+          </div>
         </div>
 
         {/* Target Role Selector */}
@@ -371,7 +581,7 @@ export const MockInterviewPage = () => {
               onChange={(e) => setSelectedRole(e.target.value)}
               style={{ fontSize: '0.94rem', fontWeight: 600, padding: '0.75rem 1rem' }}
             >
-              {ROLES.map(r => (
+              {roles.map(r => (
                 <option key={r.id} value={r.id}>{r.label}</option>
               ))}
             </select>
@@ -401,6 +611,135 @@ export const MockInterviewPage = () => {
           </div>
         </div>
       </div>
+
+      {/* User Requirement 1: Add Custom Company & Role Modal */}
+      {showAddModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1.25rem'
+        }}>
+          <div className="card" style={{
+            maxWidth: '520px',
+            width: '100%',
+            backgroundColor: '#ffffff',
+            borderRadius: '24px',
+            padding: '2.25rem',
+            boxShadow: '0 24px 48px rgba(0, 0, 0, 0.35)',
+            border: '2px solid var(--primary-600)',
+            animation: 'fadeIn 0.25s ease'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ backgroundColor: 'var(--primary-50)', padding: '0.4rem', borderRadius: '12px', border: '1px solid var(--primary-200)' }}>
+                  <AiInterviewerDollGraphic state="speaking" size={46} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.22rem', fontWeight: 900, color: 'var(--slate-900)' }}>
+                    Add Target Company
+                  </h3>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--primary-600)', fontWeight: 700 }}>
+                    Coach Nova's Tailored Interview Generator
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-400)', padding: '0.25rem' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{
+              backgroundColor: 'var(--primary-50)',
+              borderRadius: '12px',
+              padding: '0.85rem 1rem',
+              borderLeft: '4px solid var(--primary-600)',
+              marginBottom: '1.25rem',
+              fontSize: '0.86rem',
+              color: 'var(--primary-900)',
+              lineHeight: 1.5
+            }}>
+              🎙️ <strong>Coach Nova:</strong> "Which company are you interviewing for, and what role are you aiming to crack?"
+            </div>
+
+            <form onSubmit={handleSaveCustomCompany} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: 'var(--slate-800)', marginBottom: '0.4rem' }}>
+                  Target Company Name *
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g., Oracle, Nvidia, Adobe, Flipkart, Netflix, Uber..."
+                  value={customCompanyInput}
+                  onChange={(e) => setCustomCompanyInput(e.target.value)}
+                  required
+                  autoFocus
+                  style={{ fontWeight: 600 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: 'var(--slate-800)', marginBottom: '0.4rem' }}>
+                  Target Engineering Role / Title *
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g., Backend Developer, Full Stack SDE, Cloud DevOps, AI Engineer..."
+                  value={customRoleInput}
+                  onChange={(e) => setCustomRoleInput(e.target.value)}
+                  required
+                  style={{ fontWeight: 600 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 800, color: 'var(--slate-800)', marginBottom: '0.4rem' }}>
+                  Primary Tech Stack / Focus Areas (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g., Java, Spring Boot, Microservices, React, System Design..."
+                  value={customFocusInput}
+                  onChange={(e) => setCustomFocusInput(e.target.value)}
+                  style={{ fontWeight: 600 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="btn btn-secondary"
+                  style={{ fontWeight: 700 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontWeight: 800 }}
+                >
+                  <Sparkles size={16} /> Save & Select Company
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Past Practice Sessions Section */}
       {showHistory && (

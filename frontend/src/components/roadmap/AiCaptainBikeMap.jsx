@@ -5,8 +5,8 @@ import { CompanyLogo } from './CompanyLogo';
 
 /**
  * AiCaptainBikeMap:
- * Rapido-style live GPS career journey map where the AI Captain on a bike
- * moves step-by-step along the highway route as tasks and milestones are completed!
+ * Tech Sprint Highway Pipeline where Sparky (AI Career Navigator)
+ * moves step-by-step along the tech pipeline as tasks and milestones are completed!
  */
 export const AiCaptainBikeMap = ({
   roadmap,
@@ -23,7 +23,7 @@ export const AiCaptainBikeMap = ({
   // Calculate ETA remaining based on completion
   const weeksLeft = Math.max(1, Math.round(estimatedWeeks * (1 - progressPercentage / 100)));
 
-  // Calculate which phase the captain is currently driving towards
+  // Calculate which phase Sparky is currently navigating towards
   const currentPhaseIndex = useMemo(() => {
     if (progressPercentage >= 100) return 4;
     if (milestones.length === 0) return 0;
@@ -72,7 +72,7 @@ export const AiCaptainBikeMap = ({
         }
       `}</style>
 
-      {/* GPS Header HUD */}
+      {/* Tech Sprint Pipeline Header HUD */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -97,28 +97,28 @@ export const AiCaptainBikeMap = ({
             fontSize: '1.25rem',
             boxShadow: '0 4px 12px rgba(250, 204, 21, 0.4)'
           }}>
-            🛵
+            ⚡
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#facc15', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Live GPS Career Tracker
+                Tech Sprint Pipeline Tracker
               </span>
               <span className="badge" style={{ backgroundColor: '#10b981', color: '#ffffff', fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.45rem' }}>
-                🟢 En Route
+                ⚡ In Sprint
               </span>
             </div>
             <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
-              Captain Sparky's Route: {targetRole} {companyName ? `@ ${companyName}` : ''}
+              Sparky's Tech Pipeline: {targetRole} {companyName ? `@ ${companyName}` : ''}
             </h3>
           </div>
         </div>
 
-        {/* Live Trip Stats HUD */}
+        {/* Live Sprint Stats HUD */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Trip Progress
+              Sprint Progress
             </div>
             <div style={{ fontSize: '1.05rem', fontWeight: 800, color: progressPercentage === 100 ? '#34d399' : '#38bdf8' }}>
               {completedTasks}/{totalTasks} Verified ({progressPercentage}%)
@@ -127,7 +127,7 @@ export const AiCaptainBikeMap = ({
 
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Estimated Arrival (ETA)
+              Target Milestone ETA
             </div>
             <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#facc15' }}>
               {progressPercentage === 100 ? '🎉 Goal Achieved!' : `~${weeksLeft} Wks to Destination`}
@@ -136,7 +136,7 @@ export const AiCaptainBikeMap = ({
         </div>
       </div>
 
-      {/* RAPIDO HIGHWAY MAP TRACK CONTAINER */}
+      {/* TECH SPRINT PIPELINE HIGHWAY CONTAINER */}
       <div style={{
         position: 'relative',
         padding: '2.5rem 0.5rem 3.5rem 0.5rem',
@@ -335,7 +335,7 @@ export const AiCaptainBikeMap = ({
           </div>
         </div>
 
-        {/* MOVING RAPIDO BIKE CAPTAIN MASCOT */}
+        {/* MOVING HIGH-TECH SPARKY TECH NAVIGATOR */}
         <div
           style={{
             position: 'absolute',
@@ -367,17 +367,17 @@ export const AiCaptainBikeMap = ({
             gap: '0.35rem',
             animation: 'floatMarker 2s ease-in-out infinite'
           }}>
-            <span>🛵 Captain Sparky:</span>
+            <span>⚡ Sparky (AI Navigator):</span>
             <span style={{ color: '#4f46e5' }}>
               {progressPercentage === 100
-                ? 'Arrived at Goal! 🎉'
-                : `Driving to Phase ${currentPhaseIndex + 1}`}
+                ? 'Sprint Mastered! 🎉'
+                : `Sprinting to Phase ${currentPhaseIndex + 1}`}
             </span>
           </div>
 
-          {/* Bike Captain Graphic */}
+          {/* Cyber Hover-Pod Graphic */}
           <div style={{ position: 'relative' }}>
-            {/* GPS Radar Pulse Circle under bike */}
+            {/* Cyber Radar Pulse Circle under hover-pod */}
             <div style={{
               position: 'absolute',
               bottom: '10px',
@@ -386,8 +386,8 @@ export const AiCaptainBikeMap = ({
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(250, 204, 21, 0.35)',
-              border: '2px solid #facc15',
+              backgroundColor: 'rgba(56, 189, 248, 0.35)',
+              border: '2px solid #38bdf8',
               animation: 'radarPulse 1.8s ease-out infinite',
               zIndex: -1
             }} />
@@ -421,7 +421,7 @@ export const AiCaptainBikeMap = ({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ color: '#94a3b8' }}>
-            Complete milestone tasks below to advance Captain Sparky forward!
+            Complete milestone tasks below to advance Sparky forward along the tech pipeline!
           </span>
         </div>
       </div>

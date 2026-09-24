@@ -6,7 +6,7 @@ import { Sparkles, X, ChevronRight, MessageSquare, Compass, ShieldCheck, Zap } f
  */
 export const AiDollGraphic = ({ size = 80, isWaving = true, isRidingBike = false, mood = 'happy' }) => {
   if (isRidingBike) {
-    // Doll riding Rapido-style bike
+    // High-Tech Cyber Hover-Pod / Tech Jet Navigator for Sparky along the Sprint Pipeline
     return (
       <svg
         width={size * 1.5}
@@ -14,61 +14,89 @@ export const AiDollGraphic = ({ size = 80, isWaving = true, isRidingBike = false
         viewBox="0 0 160 110"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }}
+        style={{ filter: 'drop-shadow(0 6px 14px rgba(56, 189, 248, 0.35))' }}
       >
-        {/* Speed lines */}
-        <g stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" opacity="0.6">
-          <line x1="10" y1="40" x2="30" y2="40" />
-          <line x1="5" y1="55" x2="25" y2="55" />
-          <line x1="12" y1="70" x2="35" y2="70" />
-        </g>
-
-        {/* Back Wheel */}
-        <circle cx="45" cy="85" r="16" fill="#1e293b" stroke="#f59e0b" strokeWidth="3" />
-        <circle cx="45" cy="85" r="6" fill="#f8fafc" />
-        {/* Front Wheel */}
-        <circle cx="125" cy="85" r="16" fill="#1e293b" stroke="#f59e0b" strokeWidth="3" />
-        <circle cx="125" cy="85" r="6" fill="#f8fafc" />
-
-        {/* Bike Frame (Yellow Rapido style) */}
-        <path d="M45 85 L75 80 L95 55 L65 55 Z" fill="#eab308" />
-        <path d="M75 80 L115 80 L125 85" stroke="#ca8a04" strokeWidth="5" strokeLinecap="round" />
-        <path d="M95 55 L118 48" stroke="#334155" strokeWidth="4" strokeLinecap="round" />
-        {/* Handlebars */}
-        <path d="M115 48 L122 45 M118 48 L114 43" stroke="#0f172a" strokeWidth="4" strokeLinecap="round" />
-        {/* Headlight beam */}
-        <polygon points="124,50 160,35 160,75 124,58" fill="url(#headlightGrad)" opacity="0.4" />
         <defs>
-          <linearGradient id="headlightGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#fef08a" stopOpacity="0.8"/>
-            <stop offset="100%" stopColor="#fef08a" stopOpacity="0"/>
+          <linearGradient id="plasmaGlow" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.1" />
+            <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.1" />
+          </linearGradient>
+          <linearGradient id="cyberPodGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#1e1b4b" />
+            <stop offset="50%" stopColor="#312e81" />
+            <stop offset="100%" stopColor="#0284c7" />
+          </linearGradient>
+          <linearGradient id="thrusterFlame" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#38bdf8" />
+            <stop offset="70%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
           </linearGradient>
         </defs>
 
-        {/* AI Doll Body sitting on bike */}
-        <path d="M68 55 C68 45 74 38 84 38 C94 38 100 45 100 55 C100 62 94 68 84 68 C74 68 68 62 68 55 Z" fill="#4f46e5" />
-        {/* Hands on handlebar */}
-        <path d="M88 48 Q105 45 116 47" stroke="#818cf8" strokeWidth="4" strokeLinecap="round" />
+        {/* Cyber Speed & Energy Warp Lines */}
+        <g stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" opacity="0.7">
+          <line x1="8" y1="42" x2="32" y2="42">
+            <animate attributeName="x2" values="32;18;32" dur="0.8s" repeatCount="indefinite" />
+          </line>
+          <line x1="4" y1="60" x2="26" y2="60">
+            <animate attributeName="x2" values="26;12;26" dur="0.6s" repeatCount="indefinite" />
+          </line>
+          <line x1="10" y1="78" x2="36" y2="78">
+            <animate attributeName="x2" values="36;20;36" dur="1s" repeatCount="indefinite" />
+          </line>
+        </g>
 
-        {/* Doll Head */}
-        <circle cx="84" cy="25" r="18" fill="#ffffff" stroke="#c7d2fe" strokeWidth="2.5" />
-        {/* Captain Helmet (Rapido Yellow/Indigo) */}
-        <path d="M66 25 C66 12 73 7 84 7 C95 7 102 12 102 25 Z" fill="#facc15" stroke="#ca8a04" strokeWidth="2" />
-        {/* Helmet Visor */}
-        <path d="M72 18 Q84 15 96 18 Q84 22 72 18 Z" fill="#0f172a" />
-        {/* Blinking / Smiling Eyes */}
-        <ellipse cx="78" cy="26" rx="2.5" ry="3" fill="#1e1b4b" />
-        <ellipse cx="90" cy="26" rx="2.5" ry="3" fill="#1e1b4b" />
-        {/* Cheeks */}
-        <circle cx="74" cy="29" r="2.5" fill="#fda4af" />
-        <circle cx="94" cy="29" r="2.5" fill="#fda4af" />
-        {/* Cute Smile */}
-        <path d="M81 31 Q84 34 87 31" stroke="#4338ca" strokeWidth="2" strokeLinecap="round" fill="none" />
+        {/* Dual Plasma Thruster Energy Jets underneath */}
+        <ellipse cx="50" cy="92" rx="14" ry="4" fill="url(#plasmaGlow)" />
+        <ellipse cx="118" cy="92" rx="14" ry="4" fill="url(#plasmaGlow)" />
+        <polygon points="44,88 56,88 52,104 48,104" fill="url(#thrusterFlame)">
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="0.4s" repeatCount="indefinite" />
+        </polygon>
+        <polygon points="112,88 124,88 120,104 116,104" fill="url(#thrusterFlame)">
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="0.4s" repeatCount="indefinite" />
+        </polygon>
 
-        {/* Antenna / Beacon */}
-        <line x1="84" y1="7" x2="84" y2="1" stroke="#ca8a04" strokeWidth="2" />
-        <circle cx="84" cy="1" r="2.5" fill="#ef4444">
-          <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite" />
+        {/* Futuristic Cyber Hover-Pod Aerodynamic Chassis */}
+        <path
+          d="M32 82 C32 72 50 68 84 68 C118 68 136 72 136 82 C136 88 116 92 84 92 C52 92 32 88 32 82 Z"
+          fill="url(#cyberPodGrad)"
+          stroke="#38bdf8"
+          strokeWidth="2.5"
+        />
+
+        {/* Tech Circuit Inlays & Holographic Strip */}
+        <path d="M48 82 L120 82" stroke="#38bdf8" strokeWidth="2" strokeDasharray="6 3" opacity="0.9" />
+        <circle cx="84" cy="82" r="3.5" fill="#facc15">
+          <animate attributeName="r" values="3;4.5;3" dur="1s" repeatCount="indefinite" />
+        </circle>
+
+        {/* Sparky Body seated inside Hover-Pod cockpit */}
+        <path d="M68 62 C68 50 74 42 84 42 C94 42 100 50 100 62 C100 70 94 74 84 74 C74 74 68 70 68 62 Z" fill="#4f46e5" />
+
+        {/* Holographic Controls Console / Pilot Hands */}
+        <path d="M72 65 Q84 58 96 65" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <circle cx="72" cy="65" r="3" fill="#38bdf8" />
+        <circle cx="96" cy="65" r="3" fill="#38bdf8" />
+
+        {/* Sparky Head */}
+        <circle cx="84" cy="27" r="18" fill="#ffffff" stroke="#c7d2fe" strokeWidth="2.5" />
+
+        {/* High-Tech Cyber Visor (Neon Cyan / Electric Indigo) */}
+        <path d="M68 22 C68 14 74 9 84 9 C94 9 100 14 100 22 Z" fill="#1e1b4b" stroke="#38bdf8" strokeWidth="2" />
+        <path d="M72 23 Q84 19 96 23 Q84 27 72 23 Z" fill="#38bdf8">
+          <animate attributeName="opacity" values="0.75;1;0.75" dur="1.5s" repeatCount="indefinite" />
+        </path>
+
+        {/* Cute Sparky Cheeks & Smile */}
+        <circle cx="75" cy="32" r="2.5" fill="#fda4af" />
+        <circle cx="93" cy="32" r="2.5" fill="#fda4af" />
+        <path d="M81 33 Q84 36 87 33" stroke="#4338ca" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+        {/* Lightning Beacon Antenna */}
+        <line x1="84" y1="9" x2="84" y2="2" stroke="#38bdf8" strokeWidth="2" />
+        <circle cx="84" cy="2" r="3" fill="#facc15">
+          <animate attributeName="fill" values="#facc15;#38bdf8;#facc15" dur="1.2s" repeatCount="indefinite" />
         </circle>
       </svg>
     );
