@@ -18,6 +18,7 @@ import { DigitalPortfolioPage } from '../pages/student/DigitalPortfolioPage';
 import { StudentRoadmapPage } from '../pages/student/StudentRoadmapPage';
 import { CreateDynamicRoadmapPage } from '../pages/student/CreateDynamicRoadmapPage';
 import { MockInterviewPage } from '../pages/student/MockInterviewPage';
+import { MockInterviewRoomPage } from '../pages/student/MockInterviewRoomPage';
 import { ResumeBuilderPage } from '../pages/student/ResumeBuilderPage';
 import { StudentProfilePage } from '../pages/student/StudentProfilePage';
 import { CertificateVerificationPage } from '../pages/student/CertificateVerificationPage';
@@ -65,6 +66,7 @@ export const AppRoutes = () => {
           <Route path="/student/roadmap" element={<StudentRoadmapPage />} />
           <Route path="/student/roadmap/create" element={<CreateDynamicRoadmapPage />} />
           <Route path="/student/mock-interview" element={<MockInterviewPage />} />
+          <Route path="/student/mock-interview/room" element={<MockInterviewRoomPage />} />
           <Route path="/student/resume-builder" element={<ResumeBuilderPage />} />
           <Route path="/student/skills-gap" element={<StudentSkillsGapPage />} />
           <Route path="/student/skills" element={<StudentSkillsGapPage />} />

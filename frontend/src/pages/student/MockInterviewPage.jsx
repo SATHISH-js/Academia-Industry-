@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { CompanyLogo } from '../../components/roadmap/CompanyLogo';
+import {
+  AiInterviewerDollGraphic,
+  AiInterviewGreetingModal,
+  AiInterviewCornerDoll
+} from '../../components/interview/AiInterviewerDoll';
 import {
   Sparkles,
   Mic,
-  MicOff,
   Volume2,
-  Send,
   Award,
   AlertTriangle,
   CheckCircle2,
@@ -18,40 +23,33 @@ import {
   MessageSquare,
   HelpCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Star,
+  Play,
+  ChevronRight,
+  ThumbsUp,
+  Layers,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 
 export const MockInterviewPage = () => {
+  const navigate = useNavigate();
+
   const [presets, setPresets] = useState([]);
-  const [selectedPresetId, setSelectedPresetId] = useState('');
-  const [targetRole, setTargetRole] = useState('Software Engineer (SWE)');
-  const [targetCompany, setTargetCompany] = useState('Google');
-  const [questions, setQuestions] = useState([]);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [currentAnswer, setCurrentAnswer] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [evaluating, setEvaluating] = useState(false);
-  const [report, setReport] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('Wipro Elite & Turbo SDE');
+  const [selectedCompany, setSelectedCompany] = useState('Wipro');
   const [historyList, setHistoryList] = useState([]);
-  const [activeTab, setActiveTab] = useState('STUDIO'); // 'STUDIO', 'REPORT', 'HISTORY'
+  const [report, setReport] = useState(null);
+  const [activeTab, setActiveTab] = useState('TRACKS'); // 'TRACKS', 'REPORT', 'HISTORY'
   const [loadingPresets, setLoadingPresets] = useState(true);
 
-  const recognitionRef = useRef(null);
+  // AI Doll Greeting Modal state
+  const [showGreetingModal, setShowGreetingModal] = useState(false);
 
   useEffect(() => {
     fetchPresets();
     fetchHistory();
-    setupSpeechRecognition();
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-    };
   }, []);
 
   const fetchPresets = async () => {
@@ -60,13 +58,6 @@ export const MockInterviewPage = () => {
       const res = await api.get('/mock-interview/presets');
       if (res.data.success) {
         setPresets(res.data.data);
-        if (res.data.data.length > 0) {
-          const first = res.data.data[0];
-          setSelectedPresetId(first.id);
-          setTargetRole(first.role);
-          setTargetCompany(first.company);
-          setQuestions(first.questions);
-        }
       }
     } catch (err) {
       console.error('Failed to fetch presets', err);
@@ -86,621 +77,522 @@ export const MockInterviewPage = () => {
     }
   };
 
-  const setupSpeechRecognition = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        setCurrentAnswer((prev) => {
-          const prefix = prev ? prev + ' ' : '';
-          return prefix + transcript;
-        });
-      };
-
-      recognition.onerror = (event) => {
-        console.warn('Speech recognition error', event.error);
-        setIsRecording(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
+  const handleLaunchPreset = (p) => {
+    setSelectedRole(p.role);
+    setSelectedCompany(p.company);
+    setShowGreetingModal(true);
   };
 
-  const handleSelectPreset = (presetId) => {
-    const found = presets.find(p => p.id === presetId);
-    if (found) {
-      setSelectedPresetId(found.id);
-      setTargetRole(found.role);
-      setTargetCompany(found.company);
-      setQuestions(found.questions);
-      setCurrentQIndex(0);
-      setAnswers({});
-      setCurrentAnswer('');
-      setReport(null);
-      setActiveTab('STUDIO');
-    }
+  const handleEnterLiveRoom = () => {
+    setShowGreetingModal(false);
+    navigate(`/student/mock-interview/room?company=${encodeURIComponent(selectedCompany)}&role=${encodeURIComponent(selectedRole)}`);
   };
 
-  const speakQuestion = (text) => {
-    if (!('speechSynthesis' in window)) {
-      alert('Speech synthesis is not supported on this browser.');
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const toggleRecording = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition is not supported in this browser. You can type your answers directly in the response box!');
-      return;
-    }
-
-    if (isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-      try {
-        recognitionRef.current.start();
-        setIsRecording(true);
-      } catch (err) {
-        console.error('Failed to start speech recognition', err);
-      }
-    }
-  };
-
-  const handleSaveCurrentAnswer = () => {
-    const currentQ = questions[currentQIndex]?.question;
-    if (currentQ) {
-      setAnswers(prev => ({ ...prev, [currentQ]: currentAnswer }));
-    }
-  };
-
-  const handleNextQuestion = () => {
-    handleSaveCurrentAnswer();
-    if (currentQIndex < questions.length - 1) {
-      const nextIdx = currentQIndex + 1;
-      setCurrentQIndex(nextIdx);
-      const nextQ = questions[nextIdx]?.question;
-      setCurrentAnswer(answers[nextQ] || '');
-    }
-  };
-
-  const handlePrevQuestion = () => {
-    handleSaveCurrentAnswer();
-    if (currentQIndex > 0) {
-      const prevIdx = currentQIndex - 1;
-      setCurrentQIndex(prevIdx);
-      const prevQ = questions[prevIdx]?.question;
-      setCurrentAnswer(answers[prevQ] || '');
-    }
-  };
-
-  const handleSubmitInterview = async () => {
-    // Save latest
-    const currentQ = questions[currentQIndex]?.question;
-    const finalAnswers = { ...answers };
-    if (currentQ && currentAnswer) {
-      finalAnswers[currentQ] = currentAnswer;
-    }
-
-    // Combine responses into continuous text for AI evaluation
-    const combinedResponse = Object.values(finalAnswers).join(' ');
-    if (!combinedResponse.trim() || combinedResponse.trim().split(/\s+/).length < 10) {
-      alert('Please provide a substantive response (at least 10-15 words) before requesting an AI evaluation.');
-      return;
-    }
-
+  const handleViewHistoricalReport = async (item) => {
     try {
-      setEvaluating(true);
-      const payload = {
-        role: targetRole,
-        company: targetCompany,
-        userResponse: combinedResponse,
-        questionsAsked: questions.map(q => q.question)
-      };
-
-      const res = await api.post('/mock-interview/submit', payload);
+      const res = await api.get(`/mock-interview/history/${item.id}`);
       if (res.data.success) {
-        setReport(res.data.data);
+        const raw = res.data.data;
+        const meta = raw.transcript || {};
+        setReport({
+          role: raw.role_title,
+          company: raw.company_name,
+          overallScore: raw.overall_score,
+          speechRatingStars: meta.speechRatingStars || (raw.overall_score / 20).toFixed(1),
+          confidenceScore: raw.confidence_score,
+          technicalScore: raw.technical_score,
+          communicationScore: raw.communication_score,
+          grammarScore: meta.grammarScore || 85,
+          wordCount: raw.words_analyzed,
+          fillerWordsDetected: raw.filler_words_count,
+          feedbackSummary: raw.feedback_summary,
+          grammarMistakes: meta.grammarMistakes || [],
+          strengths: meta.strengths || [],
+          improvements: meta.improvements || [],
+          questionsFeedback: meta.analyzedQuestions || []
+        });
         setActiveTab('REPORT');
-        fetchHistory(); // Refresh past sessions
+        window.scrollTo({ top: 200, behavior: 'smooth' });
       }
     } catch (err) {
-      console.error('Failed to evaluate mock interview', err);
-      alert('Failed to evaluate interview response. Please ensure your response is detailed.');
-    } finally {
-      setEvaluating(false);
+      console.error('Failed to fetch report detail', err);
     }
   };
 
-  const currentQObj = questions[currentQIndex];
-  const wordCount = currentAnswer.trim() ? currentAnswer.trim().split(/\s+/).length : 0;
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header Banner */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1240px', margin: '0 auto', paddingBottom: '3rem' }}>
+      {/* Hero Banner with Animated AI Doll Preview */}
       <div className="card" style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%)',
         color: '#ffffff',
-        padding: '2.25rem',
-        borderRadius: 'var(--radius-lg)',
+        padding: '2.5rem',
+        borderRadius: '24px',
         border: 'none',
-        boxShadow: 'var(--shadow-lg)'
+        boxShadow: 'var(--shadow-xl)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
-          <div>
-            <span className="badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.3)', color: '#c7d2fe', marginBottom: '0.75rem' }}>
-              <Brain size={13} /> Next-Gen AI Mock Interview Simulator
-            </span>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
-              AI Role & Company Mock Interview
-            </h1>
-            <p style={{ color: 'var(--slate-300)', maxWidth: '650px', fontSize: '0.95rem', lineHeight: 1.6 }}>
-              Experience realistic interview rounds tailored to top companies. Our AI evaluates every word of your response—measuring technical accuracy, speech confidence, delivery clarity, and filler words.
-            </p>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
+          <div style={{ flex: '1 1 540px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+              <span className="badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.35)', color: '#ffffff', border: '1px solid rgba(165, 180, 252, 0.3)', fontWeight: 800 }}>
+                🎙️ Professional AI Mock Interviewer
+              </span>
+              <span style={{ fontSize: '0.82rem', color: '#c7d2fe', fontWeight: 600 }}>
+                Voice-Enabled • Grammar Audit • Speech Ratings
+              </span>
+            </div>
 
-          <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.1)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.25rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setActiveTab('STUDIO')}
-              style={{
-                background: activeTab === 'STUDIO' ? 'var(--primary-600)' : 'transparent',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0.5rem 1.1rem',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                cursor: 'pointer'
-              }}
-            >
-              Interview Studio
-            </button>
-            {report && (
+            <h1 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.025em', marginBottom: '0.6rem', lineHeight: 1.2 }}>
+              Master Top Tech Interviews with AI Coach Nova
+            </h1>
+
+            <p style={{ color: '#c7d2fe', maxWidth: '640px', fontSize: '0.96rem', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+              Experience authentic technical interview simulations tailored to <strong>Wipro</strong>, Google, Amazon, Microsoft, and TCS. 
+              Our AI doll reads questions aloud, listens to your voice, audits grammatical errors, rates verbal pacing, and gives exemplary STAR model answers.
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
-                onClick={() => setActiveTab('REPORT')}
+                onClick={() => setShowGreetingModal(true)}
+                className="btn btn-primary"
                 style={{
-                  background: activeTab === 'REPORT' ? 'var(--primary-600)' : 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '0.5rem 1.1rem',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  padding: '0.85rem 1.65rem',
+                  fontSize: '0.98rem',
+                  fontWeight: 800,
+                  boxShadow: '0 4px 18px rgba(79, 70, 229, 0.5)',
+                  borderRadius: '12px'
                 }}
               >
-                AI Diagnostic Report
+                <Play size={18} fill="#ffffff" /> Ready to Take AI Mock Interview Test
               </button>
-            )}
-            <button
-              onClick={() => setActiveTab('HISTORY')}
-              style={{
-                background: activeTab === 'HISTORY' ? 'var(--primary-600)' : 'transparent',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0.5rem 1.1rem',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              <History size={14} /> Past Sessions ({historyList.length})
-            </button>
+
+              <button
+                onClick={() => navigate('/student/mock-interview/room?company=Wipro&role=Wipro%20Elite%20%26%20Turbo%20SDE')}
+                className="btn"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  fontWeight: 700,
+                  padding: '0.85rem 1.35rem',
+                  fontSize: '0.9rem',
+                  borderRadius: '12px'
+                }}
+              >
+                Launch Wipro SDE Round 🚀
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive AI Doll Banner Companion */}
+          <div
+            onClick={() => setShowGreetingModal(true)}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '24px',
+              padding: '1.25rem 1.75rem',
+              border: '1.5px solid rgba(255, 255, 255, 0.25)',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.35)',
+              transition: 'transform 0.2s ease',
+              textAlign: 'center'
+            }}
+            title="Click to talk with Coach Nova!"
+          >
+            <div style={{
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              color: '#facc15',
+              marginBottom: '6px',
+              backgroundColor: '#1e1b4b',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '9999px',
+              border: '1px solid #eab308'
+            }}>
+              🎙️ Coach Nova (AI)
+            </div>
+            <AiInterviewerDollGraphic state="speaking" size={100} />
+            <span style={{ fontSize: '0.78rem', color: '#c7d2fe', marginTop: '6px', fontWeight: 700 }}>
+              Click to Start Test! ✨
+            </span>
           </div>
         </div>
       </div>
 
-      {activeTab === 'STUDIO' && (
-        <div className="interview-studio-grid">
-          {/* Left Column: Preset Track Selector */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div className="card">
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Building2 size={18} color="var(--primary-600)" /> Company & Role Track
-              </h3>
+      {/* Main Tab Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: '0.3rem', borderRadius: 'var(--radius-md)', gap: '0.3rem' }}>
+          <button
+            onClick={() => setActiveTab('TRACKS')}
+            style={{
+              padding: '0.5rem 1.15rem',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'TRACKS' ? '#ffffff' : 'transparent',
+              color: activeTab === 'TRACKS' ? 'var(--primary-700)' : 'var(--slate-600)',
+              boxShadow: activeTab === 'TRACKS' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            🏢 Available Interview Tracks ({presets.length})
+          </button>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                {presets.map(p => {
-                  const isSelected = p.id === selectedPresetId;
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => handleSelectPreset(p.id)}
-                      style={{
-                        padding: '0.85rem 1rem',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: isSelected ? 'var(--primary-50)' : 'var(--slate-50)',
-                        border: isSelected ? '2px solid var(--primary-600)' : '1px solid var(--border-color)',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isSelected ? 'var(--primary-700)' : 'var(--slate-500)', textTransform: 'uppercase' }}>
-                          {p.company}
-                        </span>
-                        <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>
-                          {p.difficulty}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--slate-900)', marginTop: '0.2rem' }}>
-                        {p.role}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
-                        {p.questions?.length} Target Questions
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          {report && (
+            <button
+              onClick={() => setActiveTab('REPORT')}
+              style={{
+                padding: '0.5rem 1.15rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: activeTab === 'REPORT' ? '#ffffff' : 'transparent',
+                color: activeTab === 'REPORT' ? 'var(--primary-700)' : 'var(--slate-600)',
+                boxShadow: activeTab === 'REPORT' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              📊 Active AI Report
+            </button>
+          )}
 
-            {/* AI Real-time Audio Guidance */}
-            <div className="card" style={{ backgroundColor: 'var(--slate-900)', color: '#ffffff', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <Bot size={18} color="var(--primary-400)" />
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ffffff' }}>
-                  AI Interviewer Tips
-                </h4>
-              </div>
-              <ul style={{ fontSize: '0.8rem', color: 'var(--slate-300)', lineHeight: 1.6, paddingLeft: '1.2rem' }}>
-                <li>Listen to question audio with the <strong>Speak Question</strong> button.</li>
-                <li>Speak naturally into your microphone or type your responses.</li>
-                <li>Structure answers with the <strong>STAR method</strong> (Situation, Task, Action, Result).</li>
-                <li>Avoid excessive filler words like <em>um</em>, <em>like</em>, <em>basically</em>.</li>
-              </ul>
-            </div>
+          <button
+            onClick={() => setActiveTab('HISTORY')}
+            style={{
+              padding: '0.5rem 1.15rem',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'HISTORY' ? '#ffffff' : 'transparent',
+              color: activeTab === 'HISTORY' ? 'var(--primary-700)' : 'var(--slate-600)',
+              boxShadow: activeTab === 'HISTORY' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}
+          >
+            <History size={15} /> Past Sessions ({historyList.length})
+          </button>
+        </div>
+
+        <button
+          onClick={() => setShowGreetingModal(true)}
+          className="btn btn-outline btn-sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}
+        >
+          <Sparkles size={15} color="var(--primary-600)" /> Custom Role Interview
+        </button>
+      </div>
+
+      {/* Tab 1: Available Interview Tracks */}
+      {activeTab === 'TRACKS' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Layers size={22} color="var(--primary-600)" />
+              Select an Engineering & Company Track
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)', margin: 0 }}>
+              Each track is curated with real company technical interview questions, system architecture scenarios, and behavioral probes.
+            </p>
           </div>
 
-          {/* Right Column: Live Interactive Interview Studio */}
-          <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Question Header & Navigation */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span className="badge badge-primary">
-                  Question {currentQIndex + 1} of {questions.length}
-                </span>
-                <span className="badge badge-neutral">
-                  Category: {currentQObj?.category || 'Technical'}
-                </span>
-              </div>
-
-              {/* Text-to-Speech Question Reader */}
-              <button
-                onClick={() => speakQuestion(currentQObj?.question || '')}
-                className="btn btn-outline"
-                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                title="Listen to interviewer speak this question aloud"
-              >
-                <Volume2 size={16} color={isSpeaking ? 'var(--primary-600)' : 'inherit'} />
-                {isSpeaking ? 'Speaking Question...' : 'Speak Question'}
-              </button>
-            </div>
-
-            {/* Prompt Display */}
-            <div style={{
-              padding: '1.25rem 1.5rem',
-              backgroundColor: 'var(--slate-50)',
-              borderRadius: 'var(--radius-md)',
-              borderLeft: '4px solid var(--primary-600)'
-            }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', lineHeight: 1.5 }}>
-                {currentQObj?.question || 'Select a role to start interview.'}
-              </h2>
-            </div>
-
-            {/* Response Studio Area */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label" style={{ fontWeight: 700, color: 'var(--slate-800)', margin: 0 }}>
-                  Your Response (Spoken Voice or Typed)
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--slate-500)' }}>
-                  <span>Words: <strong>{wordCount}</strong></span>
-                  {isRecording && (
-                    <span style={{ color: 'var(--danger-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--danger-500)', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
-                      Microphone Active
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <textarea
-                className="form-control"
-                rows={7}
-                placeholder="Click 'Start Voice Dictation' to speak naturally, or type your comprehensive response here. Include technical details, trade-offs, and examples..."
-                value={currentAnswer}
-                onChange={(e) => setCurrentAnswer(e.target.value)}
-                style={{
-                  fontSize: '0.95rem',
-                  lineHeight: 1.6,
-                  borderColor: isRecording ? 'var(--danger-500)' : 'var(--slate-300)'
-                }}
-              />
-            </div>
-
-            {/* Control Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', paddingTop: '0.5rem' }}>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={toggleRecording}
-                  className={`btn ${isRecording ? 'btn-danger' : 'btn-secondary'}`}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
+            {presets.map((p) => {
+              const isWipro = p.company.toLowerCase() === 'wipro';
+              return (
+                <div
+                  key={p.id}
+                  className="card"
                   style={{
-                    backgroundColor: isRecording ? 'var(--danger-600)' : '#ffffff',
-                    color: isRecording ? '#ffffff' : 'var(--slate-800)',
-                    borderColor: isRecording ? 'var(--danger-600)' : 'var(--slate-300)'
+                    padding: '1.5rem',
+                    border: isWipro ? '2px solid var(--primary-500)' : '1px solid var(--border-color)',
+                    backgroundColor: isWipro ? '#fcfcff' : '#ffffff',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '1.25rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isWipro ? '0 4px 14px rgba(79, 70, 229, 0.12)' : 'var(--shadow-sm)'
                   }}
                 >
-                  {isRecording ? <MicOff size={18} /> : <Mic size={18} color="var(--primary-600)" />}
-                  {isRecording ? 'Stop Recording' : 'Start Voice Dictation'}
-                </button>
+                  <div>
+                    {/* Header Row: Company Logo + Badges */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <CompanyLogo companyName={p.company} size={42} showNameBelow={false} />
+                        <div>
+                          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--slate-500)', fontWeight: 800 }}>
+                            {p.company} Interview Track
+                          </span>
+                          <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0.1rem 0 0 0' }}>
+                            {p.role}
+                          </h3>
+                        </div>
+                      </div>
 
-                <button
-                  type="button"
-                  onClick={() => setCurrentAnswer('')}
-                  className="btn btn-secondary"
-                  title="Clear current text"
-                >
-                  <RotateCcw size={16} /> Clear
-                </button>
-              </div>
+                      <span className="badge badge-primary" style={{ fontSize: '0.68rem', fontWeight: 800 }}>
+                        {p.difficulty}
+                      </span>
+                    </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={handlePrevQuestion}
-                  disabled={currentQIndex === 0}
-                  className="btn btn-secondary"
-                >
-                  Previous
-                </button>
+                    <p style={{ fontSize: '0.86rem', color: 'var(--slate-600)', lineHeight: 1.5, margin: '0 0 0.85rem 0' }}>
+                      {p.description}
+                    </p>
 
-                {currentQIndex < questions.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={handleNextQuestion}
-                    className="btn btn-primary"
-                  >
-                    Next Question
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSubmitInterview}
-                    disabled={evaluating}
-                    className="btn btn-primary"
-                    style={{ backgroundColor: 'var(--success-600)', borderColor: 'var(--success-600)' }}
-                  >
-                    {evaluating ? (
-                      <>
-                        <Sparkles size={18} className="animate-spin" /> Analyzing Every Word...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={18} /> Submit & Get AI Report
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.78rem', color: 'var(--slate-500)' }}>
+                      <span>🎯 <strong>{p.questions?.length || 4} Questions</strong></span>
+                      <span>🎙️ Voice Dictation</span>
+                      <span>✍️ Grammar Check</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.6rem' }}>
+                    <button
+                      onClick={() => handleLaunchPreset(p)}
+                      className="btn btn-primary"
+                      style={{
+                        flex: 1,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.45rem',
+                        fontWeight: 800,
+                        fontSize: '0.86rem'
+                      }}
+                    >
+                      <Play size={15} fill="#ffffff" /> Start Interview Round
+                    </button>
+
+                    <button
+                      onClick={() => navigate(`/student/mock-interview/room?company=${encodeURIComponent(p.company)}&role=${encodeURIComponent(p.role)}`)}
+                      className="btn btn-outline btn-sm"
+                      title="Direct Room Jump"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Tab: Detailed AI Diagnostic Report */}
+      {/* Tab 2: Detailed AI Diagnostic Report */}
       {activeTab === 'REPORT' && (
         report ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* Top Score Summary Banner */}
-          <div className="card" style={{
-            background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-            color: '#ffffff',
-            padding: '2.5rem',
-            borderRadius: 'var(--radius-lg)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
-              <div>
-                <span className="badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', marginBottom: '0.75rem' }}>
-                  AI NLP Diagnostic Evaluation
-                </span>
-                <h2 style={{ fontSize: '2rem', fontWeight: 800 }}>
-                  Interview Performance: {report.role}
-                </h2>
-                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', color: 'var(--primary-200)', fontSize: '0.9rem' }}>
-                  <span>Company Track: <strong>{report.company}</strong></span>
-                  <span>Words Analyzed: <strong>{report.wordCount}</strong></span>
-                  <span>Filler Words Detected: <strong>{report.fillerWordsCount}</strong></span>
-                </div>
-              </div>
-
-              {/* Overall Score Dial */}
-              <div style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                padding: '1.5rem 2rem',
-                borderRadius: 'var(--radius-lg)',
-                textAlign: 'center',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1, color: '#ffffff' }}>
-                  {report.overallScore}%
-                </div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary-200)', marginTop: '0.35rem' }}>
-                  Role Readiness Score
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tri-Metric Score Breakdown */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--slate-600)' }}>Confidence Score</span>
-                <Award size={22} color="var(--primary-600)" />
-              </div>
-              <div style={{ fontSize: '2.25rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                {report.confidenceScore}%
-              </div>
-              <div style={{ width: '100%', height: 8, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.75rem', overflow: 'hidden' }}>
-                <div style={{ width: `${report.confidenceScore}%`, height: '100%', backgroundColor: 'var(--primary-600)' }} />
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.5rem' }}>
-                Based on authoritative phrasing, assertion clarity, and lack of hesitation.
-              </div>
-            </div>
-
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--slate-600)' }}>Technical Mastery</span>
-                <Brain size={22} color="var(--accent-600)" />
-              </div>
-              <div style={{ fontSize: '2.25rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                {report.technicalScore}%
-              </div>
-              <div style={{ width: '100%', height: 8, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.75rem', overflow: 'hidden' }}>
-                <div style={{ width: `${report.technicalScore}%`, height: '100%', backgroundColor: 'var(--accent-600)' }} />
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.5rem' }}>
-                Matches key architectural patterns, CS fundamentals, and industry keywords.
-              </div>
-            </div>
-
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--slate-600)' }}>Communication Clarity</span>
-                <MessageSquare size={22} color="var(--success-600)" />
-              </div>
-              <div style={{ fontSize: '2.25rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                {report.communicationScore}%
-              </div>
-              <div style={{ width: '100%', height: 8, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.75rem', overflow: 'hidden' }}>
-                <div style={{ width: `${report.communicationScore}%`, height: '100%', backgroundColor: 'var(--success-600)' }} />
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.5rem' }}>
-                Evaluates vocabulary variety, sentence pacing, and clean structure.
-              </div>
-            </div>
-          </div>
-
-          {/* Keywords & Filler Words Analysis */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
-            <div className="card">
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Sparkles size={18} color="var(--primary-600)" /> Detected Technical Concepts
-              </h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {report.detectedKeywords?.length > 0 ? (
-                  report.detectedKeywords.map((kw, idx) => (
-                    <span key={idx} className="badge badge-primary" style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
-                      ✔ {kw}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Top Score Summary Banner */}
+            <div className="card" style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%)',
+              color: '#ffffff',
+              padding: '2.5rem',
+              borderRadius: '24px',
+              border: '2px solid rgba(99, 102, 241, 0.3)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <span className="badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', fontWeight: 800 }}>
+                      AI Diagnostic Performance Assessment
                     </span>
-                  ))
-                ) : (
-                  <span style={{ fontSize: '0.85rem', color: 'var(--slate-500)' }}>No specific technical keywords detected. Try mentioning core technologies, data structures, or frameworks.</span>
-                )}
-              </div>
-            </div>
-
-            <div className="card">
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertTriangle size={18} color="var(--warning-600)" /> Speech & Filler Words Analysis
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--slate-600)', marginBottom: '0.75rem' }}>
-                Total filler words identified: <strong>{report.fillerWordsCount}</strong> ({report.fillerWordsCount > 4 ? 'Moderate' : 'Low/Good'})
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {report.detectedFillerWords?.length > 0 ? (
-                  report.detectedFillerWords.map((fw, idx) => (
-                    <span key={idx} className="badge badge-warning" style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
-                      ⚠ "{fw}"
+                    <span className="badge" style={{ backgroundColor: '#4f46e5', color: '#ffffff' }}>
+                      {report.company} Track
                     </span>
-                  ))
-                ) : (
-                  <span style={{ fontSize: '0.85rem', color: 'var(--success-600)', fontWeight: 600 }}>
-                    🎉 Zero or negligible filler words detected! Excellent speech fluency.
-                  </span>
-                )}
+                  </div>
+                  <h2 style={{ fontSize: '1.85rem', fontWeight: 800, margin: 0 }}>
+                    {report.role}
+                  </h2>
+                  <p style={{ color: '#c7d2fe', fontSize: '0.92rem', margin: '0.45rem 0 0 0', maxWidth: '650px', lineHeight: 1.55 }}>
+                    {report.feedbackSummary}
+                  </p>
+                </div>
+
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  padding: '1.75rem 2.25rem',
+                  borderRadius: '20px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', marginBottom: '0.3rem' }}>
+                    <Star size={24} fill="#facc15" color="#facc15" />
+                    <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#ffffff' }}>
+                      {report.speechRatingStars}
+                    </span>
+                    <span style={{ fontSize: '1rem', color: '#cbd5e1', fontWeight: 700 }}>/ 5.0</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#facc15', textTransform: 'uppercase' }}>
+                    {report.overallScore >= 82 ? '🏆 Strong Hire' : report.overallScore >= 68 ? '✅ Candidate Ready' : '📚 Developing'}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '0.2rem' }}>
+                    Readiness Score: {report.overallScore}%
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Actionable Feedback & Growth Plan */}
-          <div className="card" style={{ padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '1rem' }}>
-              Actionable AI Feedback & Improvement Advice
-            </h3>
-            <p style={{ color: 'var(--slate-700)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
-              {report.detailedFeedback}
-            </p>
+            {/* 4 Score Gauges */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.25rem' }}>
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Technical Depth</span>
+                  <Brain size={20} color="var(--primary-600)" />
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
+                  {report.technicalScore}%
+                </div>
+                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
+                  <div style={{ width: `${report.technicalScore}%`, height: '100%', backgroundColor: 'var(--primary-600)' }} />
+                </div>
+              </div>
 
-            <div style={{ display: 'flex', gap: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Grammar & Diction</span>
+                  <CheckCircle2 size={20} color="var(--success-600)" />
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
+                  {report.grammarScore}%
+                </div>
+                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
+                  <div style={{ width: `${report.grammarScore}%`, height: '100%', backgroundColor: 'var(--success-600)' }} />
+                </div>
+              </div>
+
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Verbal Confidence</span>
+                  <Award size={20} color="var(--accent-600)" />
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
+                  {report.confidenceScore}%
+                </div>
+                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
+                  <div style={{ width: `${report.confidenceScore}%`, height: '100%', backgroundColor: 'var(--accent-600)' }} />
+                </div>
+              </div>
+
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Delivery & Fluency</span>
+                  <Mic size={20} color="var(--primary-600)" />
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
+                  {report.communicationScore}%
+                </div>
+                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
+                  <div style={{ width: `${report.communicationScore}%`, height: '100%', backgroundColor: 'var(--primary-600)' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Grammar Mistakes Audit Card */}
+            <div className="card" style={{ padding: '2rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <AlertTriangle size={20} color="var(--warning-600)" /> Grammar Mistakes & Language Diagnostics
+              </h3>
+
+              {(!report.grammarMistakes || report.grammarMistakes.length === 0) ? (
+                <div style={{ padding: '1.5rem', backgroundColor: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0', color: '#047857' }}>
+                  🎉 <strong>Zero grammar errors detected!</strong> You spoke with exceptional clarity and grammatical precision.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {report.grammarMistakes.map((g, idx) => (
+                    <div key={idx} style={{ padding: '1rem 1.25rem', backgroundColor: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#b45309', fontWeight: 800 }}>
+                          {g.issueType}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.88rem', color: '#991b1b', fontWeight: 700 }}>
+                        ❌ Detected: "{g.detectedText}"
+                      </div>
+                      <div style={{ fontSize: '0.88rem', color: '#166534', fontWeight: 700, marginTop: '0.2rem' }}>
+                        ✅ Recommended: "{g.suggestedCorrection}"
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#78350f', marginTop: '0.25rem' }}>
+                        💡 {g.ruleExplanation}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Strengths and Enhancements */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+              <div className="card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ThumbsUp size={18} color="var(--success-600)" /> Key Strengths
+                </h3>
+                <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.9rem', color: 'var(--slate-700)', lineHeight: 1.6 }}>
+                  {report.strengths?.map((str, idx) => <li key={idx}><strong>{str}</strong></li>)}
+                </ul>
+              </div>
+
+              <div className="card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <TrendingUp size={18} color="var(--primary-600)" /> Enhancement Recommendations
+                </h3>
+                <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.9rem', color: 'var(--slate-700)', lineHeight: 1.6 }}>
+                  {report.improvements?.map((imp, idx) => <li key={idx}>{imp}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
               <button
-                onClick={() => {
-                  setActiveTab('STUDIO');
-                  setCurrentQIndex(0);
-                  setAnswers({});
-                  setCurrentAnswer('');
-                }}
+                onClick={() => navigate(`/student/mock-interview/room?company=${encodeURIComponent(report.company)}&role=${encodeURIComponent(report.role)}`)}
                 className="btn btn-primary"
+                style={{ fontWeight: 800, padding: '0.85rem 1.75rem' }}
               >
-                <RotateCcw size={16} /> Retake / Practice Again
+                <RotateCcw size={16} /> Retake This Track Round
               </button>
             </div>
           </div>
-        </div>
         ) : (
           <div className="card" style={{ textAlign: 'center', padding: '3.5rem 2rem' }}>
             <Brain size={48} style={{ margin: '0 auto 1rem', color: 'var(--primary-400)' }} />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '0.5rem' }}>
-              No Active Diagnostic Report
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '0.5rem' }}>
+              No Active Diagnostic Report Selected
             </h3>
-            <p style={{ color: 'var(--slate-600)', maxWidth: '480px', margin: '0 auto 1.5rem', fontSize: '0.95rem' }}>
-              Complete a mock interview round in the Interview Studio or select a past session from your history to view its AI diagnostic evaluation.
+            <p style={{ color: 'var(--slate-600)', maxWidth: '480px', margin: '0 auto 1.5rem', fontSize: '0.92rem' }}>
+              Complete an interview round or select a session from your past history to view its AI speech ratings and grammar breakdown.
             </p>
-            <button onClick={() => setActiveTab('STUDIO')} className="btn btn-primary" style={{ margin: '0 auto' }}>
-              Launch Interview Studio
+            <button onClick={() => setShowGreetingModal(true)} className="btn btn-primary" style={{ margin: '0 auto', fontWeight: 700 }}>
+              Launch New Interview Round 🚀
             </button>
           </div>
         )
       )}
 
-      {/* Tab: Past Sessions History */}
+      {/* Tab 3: Past Sessions History */}
       {activeTab === 'HISTORY' && (
         <div className="card">
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <History size={20} color="var(--primary-600)" /> Mock Interview Practice History
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <History size={20} color="var(--primary-600)" /> AI Mock Interview Practice History
           </h3>
 
           {historyList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--slate-500)' }}>
-              No previous mock interview sessions found. Start a practice round in the Interview Studio!
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--slate-500)' }}>
+              No previous mock interview rounds found. Start your first practice round with Coach Nova!
             </div>
           ) : (
             <div className="table-responsive">
@@ -710,51 +602,42 @@ export const MockInterviewPage = () => {
                     <th>Date & Time</th>
                     <th>Target Role</th>
                     <th>Company</th>
-                    <th>Overall Score</th>
+                    <th>AI Rating</th>
+                    <th>Readiness</th>
                     <th>Technical</th>
-                    <th>Confidence</th>
-                    <th>Communication</th>
+                    <th>Grammar</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {historyList.map((h) => (
                     <tr key={h.id}>
-                      <td>{new Date(h.created_at).toLocaleString()}</td>
-                      <td style={{ fontWeight: 600 }}>{h.role}</td>
+                      <td style={{ fontSize: '0.85rem', color: 'var(--slate-600)' }}>
+                        {new Date(h.created_at).toLocaleDateString()} {new Date(h.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--slate-900)' }}>{h.role}</td>
                       <td>
                         <span className="badge badge-primary">{h.company}</span>
                       </td>
                       <td>
-                        <strong style={{ color: h.overall_score >= 80 ? 'var(--success-600)' : h.overall_score >= 60 ? 'var(--primary-600)' : 'var(--warning-600)', fontSize: '1rem' }}>
+                        <span style={{ fontWeight: 800, color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                          ⭐ {h.speechRatingStars} / 5.0
+                        </span>
+                      </td>
+                      <td>
+                        <strong style={{ color: h.overall_score >= 80 ? 'var(--success-600)' : h.overall_score >= 60 ? 'var(--primary-600)' : 'var(--warning-600)', fontSize: '0.95rem' }}>
                           {h.overall_score}%
                         </strong>
                       </td>
                       <td>{h.technical_score}%</td>
-                      <td>{h.confidence_score}%</td>
-                      <td>{h.communication_score}%</td>
+                      <td>{h.grammarScore || 85}%</td>
                       <td>
                         <button
-                          onClick={() => {
-                            setReport({
-                              role: h.role,
-                              company: h.company,
-                              overallScore: h.overall_score,
-                              confidenceScore: h.confidence_score,
-                              technicalScore: h.technical_score,
-                              communicationScore: h.communication_score,
-                              wordCount: h.word_count,
-                              fillerWordsCount: h.filler_words_count,
-                              detectedKeywords: Array.isArray(h.detected_keywords) ? h.detected_keywords : [],
-                              detectedFillerWords: Array.isArray(h.detected_filler_words) ? h.detected_filler_words : [],
-                              detailedFeedback: h.feedback
-                            });
-                            setActiveTab('REPORT');
-                          }}
-                          className="btn btn-outline"
-                          style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+                          onClick={() => handleViewHistoricalReport(h)}
+                          className="btn btn-outline btn-sm"
+                          style={{ fontSize: '0.75rem', fontWeight: 700 }}
                         >
-                          View Report
+                          View Full Report
                         </button>
                       </td>
                     </tr>
@@ -765,6 +648,22 @@ export const MockInterviewPage = () => {
           )}
         </div>
       )}
+
+      {/* Animated AI Doll Greeting Modal */}
+      <AiInterviewGreetingModal
+        isOpen={showGreetingModal}
+        onClose={() => setShowGreetingModal(false)}
+        onEnterRoom={handleEnterLiveRoom}
+        selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        selectedCompany={selectedCompany}
+        setSelectedCompany={setSelectedCompany}
+      />
+
+      {/* Floating AI Doll Corner Assistant */}
+      <AiInterviewCornerDoll
+        onLaunchTest={() => setShowGreetingModal(true)}
+      />
     </div>
   );
 };
