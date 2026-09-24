@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { CompanyLogo } from '../../components/roadmap/CompanyLogo';
-import { AiDollGraphic, AiDollGreetingModal, AiDollCornerAssistant } from '../../components/roadmap/AiDollMascot';
+import { AiDollGraphic, AiDollGreetingModal } from '../../components/roadmap/AiDollMascot';
 import { AiCaptainBikeMap } from '../../components/roadmap/AiCaptainBikeMap';
 import {
   Compass,
@@ -1168,7 +1168,7 @@ export const StudentRoadmapPage = () => {
               transition: 'transform 0.2s ease',
               textAlign: 'center'
             }}
-            title="Click to talk with Captain Sparky!"
+            title="Click to talk with Coach Nova!"
           >
             <div style={{
               fontSize: '0.75rem',
@@ -1180,7 +1180,7 @@ export const StudentRoadmapPage = () => {
               borderRadius: '9999px',
               border: '1px solid #facc15'
             }}>
-              🛵 Captain Sparky
+              🎙️ Coach Nova
             </div>
             <AiDollGraphic size={76} isWaving={true} />
             <span style={{ fontSize: '0.72rem', color: '#c7d2fe', marginTop: '4px', fontWeight: 600 }}>
@@ -2389,15 +2389,6 @@ export const StudentRoadmapPage = () => {
         onProceed={() => {
           setShowDollGreeting(false);
           navigate('/student/roadmap/create');
-        }}
-      />
-
-      {/* Floating AI Doll Corner Assistant */}
-      <AiDollCornerAssistant
-        roadmapTitle={roadmapInfo?.title}
-        progressPercentage={progressPercentage}
-        onOpenCreateModal={() => {
-          setShowDollGreeting(true);
         }}
       />
     </div>

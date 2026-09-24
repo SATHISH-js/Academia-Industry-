@@ -1,7 +1,7 @@
 -- ==========================================================
 -- Academia–Industry Collaboration Portal - Seed Data
 -- Demo Password for all seeded users: Password123!
--- Bcrypt Hash: $2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC
+-- Bcrypt Hash: $2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.
 -- ==========================================================
 
 USE academia_industry_portal;
@@ -12,13 +12,13 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. Users
 -- ----------------------------------------------------------
 INSERT INTO users (id, name, email, password_hash, role, phone) VALUES
-(1, 'Aarav Sharma', 'student@example.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'STUDENT', '+91 9876543210'),
-(2, 'Dr. Aris Thorne', 'academician@example.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'ACADEMICIAN', '+91 9876543211'),
-(3, 'TechCorp Solutions', 'industry@example.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'INDUSTRY', '+91 9876543212'),
-(4, 'Apex Institute of Technology', 'institution@example.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'INSTITUTION', '+91 9876543213'),
-(5, 'Priya Sundaram', 'priya.s@example.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'STUDENT', '+91 9876543214'),
-(6, 'Rohan Verma', 'rohan.v@example.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'STUDENT', '+91 9876543215'),
-(7, 'CloudScale Networks', 'hr@cloudscale.com', '$2a$10$4.6bvTU8LKdiVJ127Z8DIuL96wCflm6YZmYkv8UnsESIjh5pdIVCC', 'INDUSTRY', '+91 9876543216')
+(1, 'Aarav Sharma', 'student@example.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'STUDENT', '+91 9876543210'),
+(2, 'Dr. Aris Thorne', 'academician@example.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'ACADEMICIAN', '+91 9876543211'),
+(3, 'TechCorp Solutions', 'industry@example.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'INDUSTRY', '+91 9876543212'),
+(4, 'Apex Institute of Technology', 'institution@example.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'INSTITUTION', '+91 9876543213'),
+(5, 'Priya Sundaram', 'priya.s@example.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'STUDENT', '+91 9876543214'),
+(6, 'Rohan Verma', 'rohan.v@example.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'STUDENT', '+91 9876543215'),
+(7, 'CloudScale Networks', 'hr@cloudscale.com', '$2a$10$ZSRv5jH3XcgkhygLYV0CXuXbapLAuac06y3P9fZxhRL0uPcXdxGX.', 'INDUSTRY', '+91 9876543216')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- ----------------------------------------------------------

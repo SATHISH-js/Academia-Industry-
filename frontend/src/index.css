@@ -365,10 +365,11 @@ svg {
 }
 
 .menu-toggle-btn.is-open:hover {
-  background-color: #fee2e2;
-  color: var(--danger-600);
-  border-color: #fca5a5;
-  transform: rotate(90deg) scale(1.05);
+  background-color: var(--primary-50);
+  color: var(--primary-600);
+  border-color: var(--primary-200);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.12);
 }
 
 .menu-toggle-label {

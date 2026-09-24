@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { CompanyLogo } from '../../components/roadmap/CompanyLogo';
 import {
-  AiInterviewerDollGraphic,
-  AiInterviewCornerDoll
+  AiInterviewerDollGraphic
 } from '../../components/interview/AiInterviewerDoll';
 import {
   Sparkles,
@@ -753,9 +752,6 @@ export const MockInterviewPage = () => {
           )}
         </div>
       )}
-
-      {/* Floating Corner Companion */}
-      <AiInterviewCornerDoll onLaunchTest={handleLaunchRoom} />
     </div>
   );
 };

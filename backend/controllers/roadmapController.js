@@ -462,6 +462,28 @@ async function submitTaskAssessment(req, res) {
   }
 }
 
+function normalizeCompanyName(name) {
+  if (!name) return null;
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  const known = {
+    'tcs': 'TCS',
+    'tata consultancy services': 'TCS',
+    'wipro': 'Wipro',
+    'infosys': 'Infosys',
+    'google': 'Google',
+    'amazon': 'Amazon',
+    'microsoft': 'Microsoft',
+    'meta': 'Meta',
+    'apple': 'Apple',
+    'netflix': 'Netflix',
+    'techcorp': 'TechCorp Solutions',
+    'techcorp solutions': 'TechCorp Solutions'
+  };
+  if (known[lower]) return known[lower];
+  return trimmed.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 /**
  * Synthesizes a structured, highly realistic 4-phase curriculum
  * based on user's target role, company, difficulty, duration, and focus topics.
@@ -473,16 +495,59 @@ function synthesizeCurriculum(targetRole, companyName, difficulty = 'INTERMEDIAT
   const combined = `${roleLower} ${topicsLower} ${companyLower}`.trim();
 
   const cleanRole = targetRole ? targetRole.trim() : 'Software Engineer';
-  const cleanCompany = companyName ? companyName.trim() : null;
+  const cleanCompany = normalizeCompanyName(companyName);
 
   let milestones = [];
 
   const isAI = combined.includes('ai') || combined.includes('machine learning') || combined.includes('deep learning') || combined.includes('data') || combined.includes('vision') || combined.includes('nlp') || combined.includes('pytorch') || combined.includes('tensorflow') || combined.includes('slam') || combined.includes('autonomous');
   const isCloud = combined.includes('cloud') || combined.includes('devops') || combined.includes('sre') || combined.includes('kubernetes') || combined.includes('terraform') || combined.includes('aws') || combined.includes('azure') || combined.includes('gcp');
-  const isBigTech = cleanCompany && (companyLower.includes('google') || companyLower.includes('amazon') || companyLower.includes('microsoft') || companyLower.includes('meta') || companyLower.includes('apple') || companyLower.includes('netflix') || combined.includes('sde') || combined.includes('swe') || combined.includes('leetcode'));
   const isWeb = combined.includes('full stack') || combined.includes('web') || combined.includes('frontend') || combined.includes('react') || combined.includes('mern') || combined.includes('next') || combined.includes('express');
+  const isBigTech = cleanCompany && (companyLower.includes('google') || companyLower.includes('amazon') || companyLower.includes('microsoft') || companyLower.includes('meta') || companyLower.includes('apple') || companyLower.includes('netflix') || combined.includes('sde') || combined.includes('swe') || combined.includes('leetcode'));
 
-  if (isAI) {
+  if (isWeb) {
+    milestones = [
+      {
+        step_order: 1,
+        title: cleanCompany ? `Phase 1: ${cleanCompany} Enterprise Frontend & Component Architecture` : 'Phase 1: Modern Reactive Frontend & Component Architecture',
+        description: 'Master component life cycle, state management, reactive patterns, and accessibility.',
+        tasks: [
+          { title: 'Build Dynamic Reactive UI with Hooks & State Management', description: 'Implement complex state with Context API, Redux Toolkit, or Zustand with custom debounce hooks.', skill_name: 'React.js', estimated_hours: 8, difficulty: 'MEDIUM' },
+          { title: 'Client-Side Routing, Route Guards & Code Splitting', description: 'Configure lazy loading, suspense boundaries, and protected authentication routing.', skill_name: 'React.js', estimated_hours: 6, difficulty: 'MEDIUM' },
+          { title: 'Responsive Design & Component Styling Architecture', description: 'Design mobile-first interfaces using Tailwind CSS or modern CSS with theme support.', skill_name: 'React.js', estimated_hours: 6, difficulty: 'MEDIUM' }
+        ]
+      },
+      {
+        step_order: 2,
+        title: cleanCompany ? `Phase 2: ${cleanCompany} Scalable Backend Services & REST APIs` : 'Phase 2: Scalable Backend Services & REST/GraphQL APIs',
+        description: 'Architect secure, high-throughput server backends with database pooling and authentication.',
+        tasks: [
+          { title: 'Architect RESTful API with Express & Validation Pipeline', description: 'Implement middleware pipeline for schema validation, rate limiting, and centralized error handling.', skill_name: 'Node.js & Express', estimated_hours: 8, difficulty: 'MEDIUM' },
+          { title: 'Stateless Authentication with JWT & Role-Based Access Control', description: 'Build secure token issuance, refresh rotation, and RBAC route middleware.', skill_name: 'Node.js & Express', estimated_hours: 8, difficulty: 'HARD' },
+          { title: 'Relational Database Schema Design & 3NF Normalization', description: 'Model relational tables with foreign keys, composite indexes, and query transactions in MySQL.', skill_name: 'SQL & Relational DBs', estimated_hours: 7, difficulty: 'MEDIUM' }
+        ]
+      },
+      {
+        step_order: 3,
+        title: 'Phase 3: High-Level System Design & Performance Caching',
+        description: 'Eliminate bottlenecks with database indexing, distributed caching, and scalable system design.',
+        tasks: [
+          { title: 'High-Level System Design: Caching, Sharding & Load Balancing', description: 'Design scalable architectures (e.g. TinyURL, feed systems) handling 100k requests/sec.', skill_name: 'Cloud Computing (AWS/GCP)', estimated_hours: 10, difficulty: 'HARD' },
+          { title: 'In-Memory Caching & Session Management with Redis', description: 'Implement cache-aside pattern, TTL eviction, and distributed pub/sub event channels.', skill_name: 'Node.js & Express', estimated_hours: 7, difficulty: 'MEDIUM' },
+          { title: 'Complex Joins, Indexing & Query Execution Plan Profiling', description: 'Optimize slow queries with EXPLAIN ANALYZE, composite indexes, and connection pools.', skill_name: 'SQL & Relational DBs', estimated_hours: 8, difficulty: 'HARD' }
+        ]
+      },
+      {
+        step_order: 4,
+        title: cleanCompany ? `Phase 4: ${cleanCompany} Containerization, CI/CD & Behavioral Interview` : 'Phase 4: Containerization, Cloud CI/CD & Capstone Production Deployment',
+        description: 'Deploy production-grade full-stack microservices with automated testing, CI/CD, and live interview prep.',
+        tasks: [
+          { title: 'Containerization & Microservices Decoupling with Docker', description: 'Containerize multi-tier services with health checks and stateless horizontal scaling.', skill_name: 'Docker & Containers', estimated_hours: 7, difficulty: 'MEDIUM' },
+          { title: 'Automated CI/CD Pipeline & Cloud Deployment on AWS/GCP', description: 'Deploy containerized services to AWS ECS or GCP Cloud Run with automated test checks.', skill_name: 'Cloud Computing (AWS/GCP)', estimated_hours: 10, difficulty: 'HARD' },
+          { title: cleanCompany ? `${cleanCompany} Behavioral Leadership & Technical System Defense` : 'Simulated Technical Defense & Capstone System Verification', description: 'Conduct timed architectural walkthroughs and STAR behavioral interview scenarios.', skill_name: 'Professional Communication', estimated_hours: 6, difficulty: 'MEDIUM' }
+        ]
+      }
+    ];
+  } else if (isAI) {
     milestones = [
       {
         step_order: 1,
@@ -525,50 +590,7 @@ function synthesizeCurriculum(targetRole, companyName, difficulty = 'INTERMEDIAT
         ]
       }
     ];
-  } else if (isCloud) {
-    milestones = [
-      {
-        step_order: 1,
-        title: 'Phase 1: Mathematical Foundations & Exploratory Data Analysis',
-        description: 'Master Python for data engineering, linear algebra, vector calculus, and statistical hypothesis testing.',
-        tasks: [
-          { title: 'Vectorized Computing with NumPy & Data Wrangling with Pandas', description: 'Process multi-dimensional tensors, handle missing values, and execute grouping aggregations.', skill_name: 'Python', estimated_hours: 8, difficulty: 'EASY' },
-          { title: 'Exploratory Data Analysis (EDA) & Feature Distribution Visualization', description: 'Build statistical visual pipelines using Matplotlib/Seaborn and analyze skewness and outliers.', skill_name: 'Python', estimated_hours: 6, difficulty: 'MEDIUM' },
-          { title: 'Relational Analytical SQL & Window Functions for Feature Extraction', description: 'Write window functions, CTEs, and time-series rollups to prepare datasets.', skill_name: 'SQL & Relational DBs', estimated_hours: 7, difficulty: 'MEDIUM' }
-        ]
-      },
-      {
-        step_order: 2,
-        title: 'Phase 2: Supervised & Unsupervised Machine Learning Algorithms',
-        description: 'Implement core ML algorithms, hyperparameter tuning, and cross-validation pipelines.',
-        tasks: [
-          { title: 'Linear Models, Decision Trees & Ensemble Methods (Random Forest, XGBoost)', description: 'Train classification and regression models; evaluate ROC-AUC, precision-recall tradeoffs.', skill_name: 'Python', estimated_hours: 10, difficulty: 'MEDIUM' },
-          { title: 'Unsupervised Clustering & Dimensionality Reduction (PCA, t-SNE, K-Means)', description: 'Implement dimensionality reduction for high-dimensional feature spaces and cluster customer data.', skill_name: 'Python', estimated_hours: 7, difficulty: 'MEDIUM' },
-          { title: 'Algorithmic Optimization & Computational Complexity in ML', description: 'Analyze computational overhead of matrix multiplication and gradient descent convergence.', skill_name: 'Data Structures & Algorithms', estimated_hours: 8, difficulty: 'HARD' }
-        ]
-      },
-      {
-        step_order: 3,
-        title: 'Phase 3: Deep Neural Networks, Computer Vision & LLM Architectures',
-        description: 'Build neural models with PyTorch, transfer learning, and modern transformer attention mechanisms.',
-        tasks: [
-          { title: 'Deep Neural Networks & Backpropagation with PyTorch', description: 'Implement custom Autograd modules, activation functions, and regularization techniques.', skill_name: 'Python', estimated_hours: 12, difficulty: 'HARD' },
-          { title: 'Convolutional & Transformer Architectures (Self-Attention & Embeddings)', description: 'Fine-tune pre-trained models using HuggingFace Transformers for NLP classification.', skill_name: 'Python', estimated_hours: 10, difficulty: 'HARD' },
-          { title: 'Vector Databases & Retrieval-Augmented Generation (RAG)', description: 'Build semantic search pipelines using vector embeddings and cosine similarity indexing.', skill_name: 'Problem Solving & Critical Thinking', estimated_hours: 8, difficulty: 'HARD' }
-        ]
-      },
-      {
-        step_order: 4,
-        title: 'Phase 4: MLOps, Model Serving & Scalable Cloud Inference',
-        description: 'Containerize models, deploy low-latency inference APIs, and monitor data drift in production.',
-        tasks: [
-          { title: 'FastAPI High-Throughput Inference Service & Docker Containerization', description: 'Build asynchronous RESTful model serving API with batched inference and Docker packaging.', skill_name: 'Docker & Containers', estimated_hours: 8, difficulty: 'MEDIUM' },
-          { title: 'Deploy Scalable Inference on Cloud GPU/Serverless (AWS/GCP)', description: 'Deploy containerized ML pipeline to AWS SageMaker or GCP Vertex AI with auto-scaling.', skill_name: 'Cloud Computing (AWS/GCP)', estimated_hours: 10, difficulty: 'HARD' },
-          { title: 'Model Monitoring, Concept Drift Detection & Capstone Demonstration', description: 'Implement logging for prediction latency, input distribution drift, and end-to-end evaluation.', skill_name: 'Problem Solving & Critical Thinking', estimated_hours: 8, difficulty: 'HARD' }
-        ]
-      }
-    ];
-  } else if (combined.includes('cloud') || combined.includes('devops') || combined.includes('sre') || combined.includes('kubernetes')) {
+  } else if (isCloud || combined.includes('cloud') || combined.includes('devops') || combined.includes('sre') || combined.includes('kubernetes')) {
     milestones = [
       {
         step_order: 1,
@@ -619,7 +641,7 @@ function synthesizeCurriculum(targetRole, companyName, difficulty = 'INTERMEDIAT
         title: `Phase 1: ${comp} Algorithmic Foundations & Complexity Theory`,
         description: 'Master asymptotic analysis, amortized complexity, dynamic arrays, hash tables, and two-pointer techniques.',
         tasks: [
-          { title: 'Master Big-O Time & Space Complexity Analysis', description: 'Analyze recursion trees, master theorem, and memory layout of standard primitives.', skill_name: 'Data Structures & Algorithms', estimated_hours: 8, difficulty: 'EASY' },
+          { title: 'Master Big-O Time & Space Complexity Analysis', description: 'Analyze recursion trees, master theorem, and memory layout of standard primitives.', skill_name: 'Data Structures & Algorithms', estimated_hours: 8, difficulty: 'HARD' },
           { title: 'Hash Tables, Frequency Counting & Two-Pointer Strategies', description: 'Solve 20 LeetCode Medium problems covering sliding window, two sum variants, and hash collisions.', skill_name: 'Data Structures & Algorithms', estimated_hours: 10, difficulty: 'MEDIUM' },
           { title: 'Core Programming Idioms & Object-Oriented Principles', description: 'Demonstrate SOLID principles and design patterns in clean code.', skill_name: 'Java', estimated_hours: 7, difficulty: 'MEDIUM' }
         ]
