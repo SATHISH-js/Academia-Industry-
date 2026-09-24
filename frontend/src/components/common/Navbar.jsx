@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { ProfileModal } from './ProfileModal';
@@ -19,12 +19,15 @@ import {
   CheckCircle2, 
   Clock, 
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  LayoutDashboard
 } from 'lucide-react';
 
 export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboardActive = location.pathname.includes('/dashboard');
 
   // Dropdown & Modal states
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -207,10 +210,28 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              {/* Quick Link to Dashboard */}
-              <Link to={getDashboardRoute()} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Layers size={16} />
-                <span className="hide-mobile">Dashboard</span>
+              {/* Prominent Top Bar Dashboard Button (User Request 1: "remove dasboard in the side menu ,put only in top bar") */}
+              <Link 
+                to={getDashboardRoute()} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: 'var(--radius-md)',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  textDecoration: 'none',
+                  backgroundColor: isDashboardActive ? 'var(--primary-600)' : 'var(--primary-50)',
+                  color: isDashboardActive ? '#ffffff' : 'var(--primary-700)',
+                  border: isDashboardActive ? '1px solid var(--primary-600)' : '1px solid var(--primary-200)',
+                  boxShadow: isDashboardActive ? 'var(--shadow-sm)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Go to Dashboard"
+              >
+                <LayoutDashboard size={16} />
+                <span>Dashboard</span>
               </Link>
 
               {/* Requirement 3: Notification Bell Button (For All Logins) */}

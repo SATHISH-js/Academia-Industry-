@@ -342,7 +342,8 @@ async function updateProfile(req, res) {
       const {
         headline, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id,
         github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
-        twelfth_board, twelfth_college, twelfth_year, twelfth_percentage, ug_university, ug_college, address
+        twelfth_board, twelfth_college, twelfth_year, twelfth_percentage, ug_university, ug_college,
+        address, city, state, pincode, current_semester, section, register_number
       } = roleFields;
 
       await pool.query(
@@ -368,13 +369,19 @@ async function updateProfile(req, res) {
           ug_university = COALESCE(?, ug_university),
           ug_college = COALESCE(?, ug_college),
           address = COALESCE(?, address),
+          city = COALESCE(?, city),
+          state = COALESCE(?, state),
+          pincode = COALESCE(?, pincode),
+          current_semester = COALESCE(?, current_semester),
+          section = COALESCE(?, section),
+          register_number = COALESCE(?, register_number),
           profile_completed_pct = 95
          WHERE user_id = ?`,
         [
           headline, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id || null,
           github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
           twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
-          ug_university, ug_college, address, userId
+          ug_university, ug_college, address, city, state, pincode, current_semester, section, register_number, userId
         ]
       );
     } else if (role === 'ACADEMICIAN') {

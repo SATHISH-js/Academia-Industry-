@@ -21,6 +21,7 @@ import { ResumeBuilderPage } from '../pages/student/ResumeBuilderPage';
 import { StudentProfilePage } from '../pages/student/StudentProfilePage';
 import { CertificateVerificationPage } from '../pages/student/CertificateVerificationPage';
 import { CommunityFeedPage } from '../pages/student/CommunityFeedPage';
+import { StudentSkillsGapPage } from '../pages/student/StudentSkillsGapPage';
 
 import { AcademicianDashboard } from '../pages/academician/AcademicianDashboard';
 import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOpportunitiesPage';
@@ -62,12 +63,14 @@ export const AppRoutes = () => {
           <Route path="/student/roadmap" element={<StudentRoadmapPage />} />
           <Route path="/student/mock-interview" element={<MockInterviewPage />} />
           <Route path="/student/resume-builder" element={<ResumeBuilderPage />} />
-          <Route path="/student/assessment" element={<SkillAssessmentPage />} />
+          <Route path="/student/skills-gap" element={<StudentSkillsGapPage />} />
+          <Route path="/student/skills" element={<StudentSkillsGapPage />} />
+          <Route path="/student/skill-gap" element={<StudentSkillsGapPage />} />
+          <Route path="/student/certifications" element={<CertificateVerificationPage />} />
           <Route path="/student/certificate-verify" element={<CertificateVerificationPage />} />
           <Route path="/student/feed" element={<CommunityFeedPage />} />
-          <Route path="/student/skills" element={<StudentDashboard />} />
-          <Route path="/student/skill-gap" element={<StudentDashboard />} />
           <Route path="/student/learning" element={<StudentDashboard />} />
+          <Route path="/student/opportunities" element={<StudentInternshipsPage />} />
           <Route path="/student/internships" element={<StudentInternshipsPage />} />
           <Route path="/student/jobs" element={<StudentInternshipsPage />} />
           <Route path="/student/applications" element={<StudentApplicationsPage />} />

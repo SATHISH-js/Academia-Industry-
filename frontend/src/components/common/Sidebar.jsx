@@ -41,54 +41,42 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
     switch (user.role) {
       case 'STUDENT':
         return [
-          { name: 'Dashboard', path: '/student/dashboard', icon: LayoutDashboard },
+          { name: 'Profile', path: '/student/profile', icon: User },
           { name: 'Roadmap', path: '/student/roadmap', icon: Compass },
+          { name: 'Skills & Gap Analysis', path: '/student/skills-gap', icon: BarChart2 },
+          { name: 'Certifications', path: '/student/certificate-verify', icon: Award },
+          { name: 'Internships / Jobs', path: '/student/opportunities', icon: Briefcase },
+          { name: 'Applications', path: '/student/applications', icon: FileText },
           { name: 'AI Mock Interview', path: '/student/mock-interview', icon: Sparkles },
           { name: 'Resume Builder', path: '/student/resume-builder', icon: FileText },
-          { name: 'Profile & Education', path: '/student/profile', icon: User },
-          { name: 'Skill Assessment', path: '/student/assessment', icon: Award },
-          { name: 'AI Certificate Verifier', path: '/student/certificate-verify', icon: ShieldCheck },
-          { name: 'Credential Feed', path: '/student/feed', icon: Sparkles },
-          { name: 'My Skills', path: '/student/skills', icon: Target },
-          { name: 'Skill Gap Analysis', path: '/student/skill-gap', icon: BarChart2 },
           { name: 'Learning Programs', path: '/student/learning', icon: BookOpen },
-          { name: 'Internships', path: '/student/internships', icon: Briefcase },
-          { name: 'Jobs', path: '/student/jobs', icon: Building2 },
-          { name: 'Applications', path: '/student/applications', icon: FileText },
-          { name: 'Digital Portfolio', path: '/student/portfolio', icon: FolderGit2 },
-          { name: 'Settings & Security', path: '/settings', icon: Settings },
+          { name: 'Digital Portfolio', path: '/student/portfolio', icon: FolderGit2 }
         ];
       case 'ACADEMICIAN':
         return [
-          { name: 'Dashboard', path: '/academician/dashboard', icon: LayoutDashboard },
           { name: 'Academic Profile', path: '/academician/profile', icon: User },
           { name: 'Opportunities', path: '/academician/opportunities', icon: Compass },
           { name: 'Collaborations', path: '/academician/collaboration', icon: Users },
-          { name: 'My Applications', path: '/academician/applications', icon: FileText },
-          { name: 'Settings & Security', path: '/settings', icon: Settings },
+          { name: 'My Applications', path: '/academician/applications', icon: FileText }
         ];
       case 'INDUSTRY':
         return [
-          { name: 'Dashboard', path: '/industry/dashboard', icon: LayoutDashboard },
           { name: 'Company Profile', path: '/industry/profile', icon: User },
           { name: 'Candidate Matching', path: '/industry/candidates', icon: Sparkles },
           { name: 'Post & Manage Roles', path: '/industry/opportunities', icon: Briefcase },
           { name: 'Institution Placements', path: '/industry/placements', icon: Building2 },
           { name: 'Direct Outreach', path: '/industry/outreach', icon: FileText },
           { name: 'Applications Received', path: '/industry/applications', icon: Layers },
-          { name: 'Recruitment Analytics', path: '/industry/analytics', icon: TrendingUp },
-          { name: 'Settings & Security', path: '/settings', icon: Settings },
+          { name: 'Recruitment Analytics', path: '/industry/analytics', icon: TrendingUp }
         ];
       case 'INSTITUTION':
         return [
-          { name: 'Dashboard', path: '/institution/dashboard', icon: LayoutDashboard },
           { name: 'Campus Profile', path: '/institution/profile', icon: User },
           { name: 'Student Roster & Activity', path: '/institution/students', icon: Users },
           { name: 'Faculty Directory', path: '/institution/academicians', icon: GraduationCap },
           { name: 'Industry MoUs & Partners', path: '/institution/partners', icon: Handshake },
           { name: 'Training Programs', path: '/institution/training-programs', icon: BookOpen },
-          { name: 'Placement Analytics', path: '/institution/placements', icon: TrendingUp },
-          { name: 'Settings & Security', path: '/settings', icon: Settings },
+          { name: 'Placement Analytics', path: '/institution/placements', icon: TrendingUp }
         ];
       default:
         return [];
