@@ -51,7 +51,6 @@ export const MockInterviewRoomPage = () => {
   // Audio & Speech States
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeakingQuestion, setIsSpeakingQuestion] = useState(false);
-  const [speakingWordIndex, setSpeakingWordIndex] = useState(-1);
   const [speechMuted, setSpeechMuted] = useState(false);
   const [speechRate, setSpeechRate] = useState(1.0);
   const [micError, setMicError] = useState('');
@@ -64,7 +63,6 @@ export const MockInterviewRoomPage = () => {
   const recognitionRef = useRef(null);
   const isRecordingRef = useRef(false);
   const committedAnswerRef = useRef(''); // Holds text finalized or typed
-  const speakingIntervalRef = useRef(null);
 
   // Doll state: 'idle' | 'speaking' | 'listening' | 'evaluating'
   const dollState = evaluating 
@@ -81,7 +79,6 @@ export const MockInterviewRoomPage = () => {
 
     return () => {
       stopRecording();
-      if (speakingIntervalRef.current) clearInterval(speakingIntervalRef.current);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -220,7 +217,6 @@ export const MockInterviewRoomPage = () => {
       // If AI doll is speaking, cancel TTS first
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       setIsSpeakingQuestion(false);
-      setSpeakingWordIndex(-1);
 
       try {
         recognitionRef.current.start();
@@ -250,52 +246,19 @@ export const MockInterviewRoomPage = () => {
   };
 
   /**
-   * Speak Question with Animated Word-by-Word Subtitle Highlighting
+   * Speak Question Aloud Cleanly without word highlighting
    */
   const speakQuestionText = (text) => {
     if (speechMuted || !('speechSynthesis' in window) || !text) return;
     window.speechSynthesis.cancel();
-    if (speakingIntervalRef.current) clearInterval(speakingIntervalRef.current);
-
-    const words = text.split(/\s+/).filter(Boolean);
-    setSpeakingWordIndex(0);
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = speechRate;
     utterance.pitch = 1.05;
 
-    let wordCounter = 0;
-    utterance.onboundary = (e) => {
-      if (e.name === 'word') {
-        setSpeakingWordIndex(wordCounter);
-        wordCounter++;
-      }
-    };
-
-    utterance.onstart = () => {
-      setIsSpeakingQuestion(true);
-      // Fallback timer if browser voice engine doesn't fire onboundary
-      const intervalMs = Math.max(160, Math.min(300, Math.round(60000 / (words.length * 150))));
-      speakingIntervalRef.current = setInterval(() => {
-        setSpeakingWordIndex(prev => {
-          if (prev < words.length - 1) return prev + 1;
-          clearInterval(speakingIntervalRef.current);
-          return prev;
-        });
-      }, intervalMs);
-    };
-
-    utterance.onend = () => {
-      setIsSpeakingQuestion(false);
-      if (speakingIntervalRef.current) clearInterval(speakingIntervalRef.current);
-      setTimeout(() => setSpeakingWordIndex(-1), 1000);
-    };
-
-    utterance.onerror = () => {
-      setIsSpeakingQuestion(false);
-      if (speakingIntervalRef.current) clearInterval(speakingIntervalRef.current);
-      setSpeakingWordIndex(-1);
-    };
+    utterance.onstart = () => setIsSpeakingQuestion(true);
+    utterance.onend = () => setIsSpeakingQuestion(false);
+    utterance.onerror = () => setIsSpeakingQuestion(false);
 
     window.speechSynthesis.speak(utterance);
   };
@@ -305,9 +268,7 @@ export const MockInterviewRoomPage = () => {
     setSpeechMuted(next);
     if (next) {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if (speakingIntervalRef.current) clearInterval(speakingIntervalRef.current);
       setIsSpeakingQuestion(false);
-      setSpeakingWordIndex(-1);
     }
   };
 
@@ -424,9 +385,6 @@ export const MockInterviewRoomPage = () => {
   const combinedText = currentAnswer.trim();
   const wordCount = combinedText ? combinedText.split(/\s+/).filter(Boolean).length : 0;
   const estimatedWpm = elapsedSeconds > 0 ? Math.round((wordCount / (elapsedSeconds / 60))) : 0;
-
-  // Split question into words for word-by-word highlight animation
-  const questionWords = (currentQObj?.question || '').split(/\s+/).filter(Boolean);
 
   return (
     <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.75rem', paddingBottom: '3.5rem' }}>
@@ -689,7 +647,7 @@ export const MockInterviewRoomPage = () => {
               </div>
             </div>
 
-            {/* Question Prompt Display Box with Word-by-Word Animation Highlight */}
+            {/* Question Prompt Display Box */}
             <div style={{
               padding: '1.4rem 1.6rem',
               backgroundColor: 'var(--primary-50)',
@@ -709,32 +667,7 @@ export const MockInterviewRoomPage = () => {
               </div>
 
               <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: 'var(--slate-900)', lineHeight: 1.5, margin: 0 }}>
-                {loadingQuestions ? (
-                  'Loading question from company track...'
-                ) : (
-                  questionWords.map((word, wIdx) => {
-                    const isCurrentSpoken = isSpeakingQuestion && speakingWordIndex === wIdx;
-                    return (
-                      <span
-                        key={wIdx}
-                        style={{
-                          display: 'inline-block',
-                          marginRight: '0.28rem',
-                          padding: isCurrentSpoken ? '0.1rem 0.4rem' : '0.05rem 0.05rem',
-                          borderRadius: '6px',
-                          backgroundColor: isCurrentSpoken ? '#fde047' : 'transparent',
-                          color: isCurrentSpoken ? '#1e1b4b' : 'inherit',
-                          fontWeight: isCurrentSpoken ? 900 : 800,
-                          transform: isCurrentSpoken ? 'scale(1.16)' : 'scale(1)',
-                          boxShadow: isCurrentSpoken ? '0 0 14px rgba(250, 204, 21, 0.9)' : 'none',
-                          transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
-                        }}
-                      >
-                        {word}
-                      </span>
-                    );
-                  })
-                )}
+                {loadingQuestions ? 'Loading question from company track...' : currentQObj?.question}
               </h2>
             </div>
 
