@@ -30,7 +30,7 @@ import { IndustryDashboard } from '../pages/industry/IndustryDashboard';
 import { CandidateMatchingPage } from '../pages/industry/CandidateMatchingPage';
 import { IndustryApplicationsPage } from '../pages/industry/IndustryApplicationsPage';
 import { PostOpportunityPage } from '../pages/industry/PostOpportunityPage';
-import { InstitutionPlacementPage as IndustryPlacementDrivesPage } from '../pages/industry/InstitutionPlacementPage';
+import { InstitutionPlacementPage } from '../pages/industry/InstitutionPlacementPage';
 import { IndustryOutreachPage } from '../pages/industry/IndustryOutreachPage';
 import { IndustryProfilePage } from '../pages/industry/IndustryProfilePage';
 
@@ -97,7 +97,7 @@ export const AppRoutes = () => {
           <Route path="/industry/opportunities" element={<PostOpportunityPage />} />
           <Route path="/industry/internships" element={<PostOpportunityPage />} />
           <Route path="/industry/jobs" element={<PostOpportunityPage />} />
-          <Route path="/industry/placements" element={<IndustryPlacementDrivesPage />} />
+          <Route path="/industry/placements" element={<InstitutionPlacementPage />} />
           <Route path="/industry/outreach" element={<IndustryOutreachPage />} />
           <Route path="/industry/applications" element={<IndustryApplicationsPage />} />
           <Route path="/industry/collaborations" element={<IndustryDashboard />} />

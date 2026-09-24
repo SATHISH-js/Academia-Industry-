@@ -21,8 +21,6 @@ import {
   X,
   Briefcase
 } from 'lucide-react';
-import { InstitutionContactModal } from '../../components/institution/InstitutionContactModal';
-import { AddAcademicianModal } from '../../components/institution/AddAcademicianModal';
 
 export const AcademicianDirectoryPage = () => {
   const [academicians, setAcademicians] = useState([]);
@@ -281,52 +279,8 @@ export const AcademicianDirectoryPage = () => {
                 <Building2 size={15} /> + Add Department
               </button>
             </div>
-
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="btn"
-              style={{
-                backgroundColor: '#2dd4bf',
-                color: '#042f2e',
-                fontWeight: 800,
-                fontSize: '0.88rem',
-                padding: '0.75rem 1.25rem',
-                gap: '0.4rem'
-              }}
-            >
-              <UserPlus size={16} /> + Add Faculty by Reg No.
-            </button>
           </div>
         </div>
-      </div>
-
-      {/* Department Tabs Bar */}
-      <div style={{
-        display: 'flex',
-        gap: '0.5rem',
-        overflowX: 'auto',
-        paddingBottom: '0.35rem',
-        scrollbarWidth: 'none',
-        WebkitOverflowScrolling: 'touch'
-      }}>
-        {departmentsList.map(dept => {
-          const isSelected = dept.value === department;
-          return (
-            <button
-              key={dept.label}
-              onClick={() => setDepartment(dept.value)}
-              className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-              style={{
-                fontSize: '0.82rem',
-                padding: '0.45rem 0.9rem',
-                whiteSpace: 'nowrap',
-                borderRadius: '9999px'
-              }}
-            >
-              {dept.label}
-            </button>
-          );
-        })}
       </div>
 
       {/* Filter Bar */}
@@ -337,7 +291,7 @@ export const AcademicianDirectoryPage = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search faculty by name, employee reg no, or specialization..."
+                placeholder="Search faculty by name, research area, or designation..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -394,26 +348,9 @@ export const AcademicianDirectoryPage = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                      <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
-                        {acad.department}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: 'monospace',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '0.1rem 0.45rem',
-                          borderRadius: '4px',
-                          backgroundColor: '#f0fdfa',
-                          color: '#0f766e',
-                          border: '1px solid #99f6e4'
-                        }}
-                      >
-                        {acad.employee_id || 'STAFF-ID: PENDING'}
-                      </span>
-                    </div>
-
+                    <span className="badge badge-primary" style={{ marginBottom: '0.4rem', fontSize: '0.7rem' }}>
+                      {acad.department}
+                    </span>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)' }}>
                       {acad.name}
                     </h3>
@@ -439,8 +376,7 @@ export const AcademicianDirectoryPage = () => {
                 </div>
 
                 <p style={{ color: 'var(--slate-600)', fontSize: '0.88rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
-                  {acad.qualification ? `${acad.qualification}. ` : ''}
-                  {acad.specialization ? `Specializing in ${acad.specialization}.` : 'Experienced academician focusing on applied research and curriculum alignment.'}
+                  {acad.bio || 'Experienced academician focusing on applied research, student mentoring, and industry curriculum alignment.'}
                 </p>
 
                 {acad.research_areas && (
@@ -473,26 +409,16 @@ export const AcademicianDirectoryPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Mail size={14} color="var(--primary-600)" /> {acad.email}
                 </div>
-
-                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                  <button
-                    onClick={() => setContactAcademicianTarget(acad)}
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', gap: '0.3rem' }}
+                {acad.google_scholar_url && (
+                  <a
+                    href={acad.google_scholar_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--primary-600)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}
                   >
-                    <Mail size={13} /> Contact Faculty
-                  </button>
-                  {acad.google_scholar_url && (
-                    <a
-                      href={acad.google_scholar_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ color: 'var(--primary-600)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600, fontSize: '0.8rem' }}
-                    >
-                      Scholar <ExternalLink size={12} />
-                    </a>
-                  )}
-                </div>
+                    Publications <ExternalLink size={12} />
+                  </a>
+                )}
               </div>
             </div>
           ))}

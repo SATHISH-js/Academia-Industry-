@@ -8,10 +8,10 @@ const { sendSuccess, sendError } = require('../utils/responseHandler');
 async function getInstitutionAnalytics(req, res) {
   try {
     const userId = req.user.id;
-    const [inst] = await pool.query('SELECT id, institution_name, city, state FROM institution_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    const [inst] = await pool.query('SELECT id, institution_name FROM institution_profiles WHERE user_id = ? LIMIT 1', [userId]);
     const institutionId = inst.length > 0 ? inst[0].id : 1;
 
-    // Total & assessed students strictly for this institution
+    // Total & assessed students
     const [stuStats] = await pool.query(
       `SELECT 
         COUNT(*) as total_students,
@@ -19,7 +19,7 @@ async function getInstitutionAnalytics(req, res) {
         AVG(CASE WHEN overall_skill_score > 0 THEN overall_skill_score ELSE NULL END) as avg_skill_score,
         SUM(CASE WHEN is_placed = TRUE THEN 1 ELSE 0 END) as placed_students
        FROM student_profiles
-       WHERE (? IS NULL OR institution_id = ?)`,
+       WHERE ? IS NULL OR institution_id = ?`,
       [institutionId, institutionId]
     );
 
@@ -37,16 +37,7 @@ async function getInstitutionAnalytics(req, res) {
       [institutionId, institutionId]
     );
 
-    // Faculty department breakdown
-    const [facultyDeptStats] = await pool.query(
-      `SELECT department, COUNT(*) as faculty_count
-       FROM academician_profiles
-       WHERE ? IS NULL OR institution_id = ?
-       GROUP BY department`,
-      [institutionId, institutionId]
-    );
-
-    // Department benchmark breakdown for students
+    // Department benchmark breakdown
     const [deptStats] = await pool.query(
       `SELECT 
         department as dept,
@@ -59,24 +50,12 @@ async function getInstitutionAnalytics(req, res) {
       [institutionId, institutionId]
     );
 
-    // Count recent regular activities
-    const [recentAct] = await pool.query(
-      `SELECT COUNT(*) as activity_count
-       FROM user_activity_logs ual
-       JOIN student_profiles sp ON ual.user_id = sp.user_id
-       WHERE ? IS NULL OR sp.institution_id = ?`,
-      [institutionId, institutionId]
-    );
-
     const total = stuStats[0].total_students || 0;
     const placed = stuStats[0].placed_students || 0;
     const placementRate = total > 0 ? Math.round((placed / total) * 100) : 0;
 
     const data = {
-      institutionId,
       institutionName: inst[0]?.institution_name || 'Academic Institution',
-      city: inst[0]?.city || '',
-      state: inst[0]?.state || '',
       totalStudents: total,
       assessedStudents: stuStats[0].assessed_students || 0,
       averageSkillScore: Math.round(stuStats[0].avg_skill_score || 0),
@@ -84,9 +63,7 @@ async function getInstitutionAnalytics(req, res) {
       placementRate,
       activePartners: partners[0].active_partners || 0,
       totalFaculty: acadStats[0].total_faculty || 0,
-      facultyDepartmentStats: facultyDeptStats,
-      departmentStats: deptStats,
-      totalActivities: recentAct[0]?.activity_count || 0
+      departmentStats: deptStats
     };
 
     return sendSuccess(res, data, 'Institution analytics fetched successfully');
@@ -102,28 +79,22 @@ async function getInstitutionAnalytics(req, res) {
 async function getInstitutionStudents(req, res) {
   try {
     const userId = req.user.id;
-    const [inst] = await pool.query('SELECT id, institution_name FROM institution_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    const [inst] = await pool.query('SELECT id FROM institution_profiles WHERE user_id = ? LIMIT 1', [userId]);
     const institutionId = inst.length > 0 ? inst[0].id : 1;
 
-    const { department, graduation_year, min_cgpa, search, register_number } = req.query;
+    const { department, graduation_year, min_cgpa, search } = req.query;
 
     let query = `
-      SELECT sp.*, u.name, u.email, u.phone, ip.institution_name
+      SELECT sp.*, u.name, u.email, u.phone
       FROM student_profiles sp
       JOIN users u ON sp.user_id = u.id
-      LEFT JOIN institution_profiles ip ON sp.institution_id = ip.id
       WHERE (? IS NULL OR sp.institution_id = ?)
     `;
     const params = [institutionId, institutionId];
 
-    if (register_number) {
-      query += ` AND sp.enrollment_number LIKE ?`;
-      params.push(`%${register_number.trim()}%`);
-    }
-
     if (department) {
       query += ` AND sp.department LIKE ?`;
-      params.push(`%${department.trim()}%`);
+      params.push(`%${department}%`);
     }
 
     if (graduation_year) {
@@ -137,9 +108,9 @@ async function getInstitutionStudents(req, res) {
     }
 
     if (search) {
-      query += ` AND (u.name LIKE ? OR u.email LIKE ? OR sp.enrollment_number LIKE ? OR sp.headline LIKE ?)`;
-      const s = `%${search.trim()}%`;
-      params.push(s, s, s, s);
+      query += ` AND (u.name LIKE ? OR u.email LIKE ? OR sp.headline LIKE ?)`;
+      const s = `%${search}%`;
+      params.push(s, s, s);
     }
 
     query += ` ORDER BY sp.overall_skill_score DESC`;
@@ -251,7 +222,7 @@ async function getInstitutionAcademicians(req, res) {
     const [inst] = await pool.query('SELECT id FROM institution_profiles WHERE user_id = ? LIMIT 1', [userId]);
     const institutionId = inst.length > 0 ? inst[0].id : 1;
 
-    const { department, search, employee_id } = req.query;
+    const { department, search } = req.query;
 
     let query = `
       SELECT ap.*, u.name, u.email, u.phone
@@ -261,20 +232,15 @@ async function getInstitutionAcademicians(req, res) {
     `;
     const params = [institutionId, institutionId];
 
-    if (employee_id) {
-      query += ` AND ap.employee_id LIKE ?`;
-      params.push(`%${employee_id.trim()}%`);
-    }
-
     if (department) {
       query += ` AND ap.department LIKE ?`;
-      params.push(`%${department.trim()}%`);
+      params.push(`%${department}%`);
     }
 
     if (search) {
-      query += ` AND (u.name LIKE ? OR u.email LIKE ? OR ap.employee_id LIKE ? OR ap.specialization LIKE ? OR ap.designation LIKE ?)`;
-      const s = `%${search.trim()}%`;
-      params.push(s, s, s, s, s);
+      query += ` AND (u.name LIKE ? OR u.email LIKE ? OR ap.research_areas LIKE ? OR ap.designation LIKE ?)`;
+      const s = `%${search}%`;
+      params.push(s, s, s, s);
     }
 
     query += ` ORDER BY ap.experience_years DESC`;
@@ -1015,14 +981,8 @@ async function getPlacementFieldAnalytics(req, res) {
 module.exports = {
   getInstitutionAnalytics,
   getInstitutionStudents,
-  getStudentByRegisterNumber,
   getStudentActivityHistory,
-  getInstitutionActivities,
   getInstitutionAcademicians,
-  addInstitutionAcademician,
-  contactStudent,
-  contactAcademician,
-  getSentMessages,
   getInstitutionPartners,
   proposeMou,
   searchIndustryCollaborations,

@@ -66,7 +66,6 @@ export const StudentProfilePage = () => {
     // UG
     degree: '',
     department: '',
-    enrollment_number: '',
     ug_university: '',
     ug_college: '',
     institution_id: '',
@@ -117,7 +116,6 @@ export const StudentProfilePage = () => {
           github_url: p.github_url || '',
           degree: p.degree || '',
           department: p.department || '',
-          enrollment_number: p.enrollment_number || '',
           ug_university: p.ug_university || '',
           ug_college: p.ug_college || '',
           institution_id: p.institution_id ? String(p.institution_id) : '',

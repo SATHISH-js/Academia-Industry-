@@ -651,40 +651,12 @@ svg {
   }
   .card {
     padding: 1.15rem;
-    border-radius: var(--radius-md);
   }
   h1 {
-    font-size: 1.45rem !important;
+    font-size: 1.5rem !important;
   }
   h2 {
-    font-size: 1.2rem !important;
-  }
-  .table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: var(--radius-sm);
-  }
-  /* Mobile touch targets */
-  button, .btn {
-    min-height: 36px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-content {
-    padding: 0.6rem;
-  }
-  .card {
-    padding: 0.9rem;
-  }
-  h1 {
     font-size: 1.25rem !important;
-  }
-  .btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.82rem;
   }
 }
 
