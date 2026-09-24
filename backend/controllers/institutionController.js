@@ -439,11 +439,24 @@ async function searchIndustryCollaborations(req, res) {
  */
 async function getPublicInstitutions(req, res) {
   try {
-    const [institutions] = await pool.query(
-      `SELECT id, institution_name, institution_type, city, state
-       FROM institution_profiles
-       ORDER BY institution_name ASC`
-    );
+    const { region, search } = req.query;
+    let sql = `SELECT id, institution_name, institution_type, city, state FROM institution_profiles WHERE 1=1`;
+    const params = [];
+
+    if (region && region !== 'ALL' && region !== 'All Regions') {
+      sql += ` AND state = ?`;
+      params.push(region);
+    }
+
+    if (search && search.trim()) {
+      sql += ` AND (institution_name LIKE ? OR city LIKE ? OR state LIKE ?)`;
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term);
+    }
+
+    sql += ` ORDER BY institution_name ASC`;
+
+    const [institutions] = await pool.query(sql, params);
     return sendSuccess(res, institutions, 'Public institutions list retrieved');
   } catch (error) {
     console.error('[Institution getPublicInstitutions Error]', error);

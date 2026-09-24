@@ -34,6 +34,8 @@ async function updateStudentProfile(req, res) {
   try {
     const userId = req.user.id;
     const {
+      name,
+      avatar_url,
       headline,
       bio,
       department,
@@ -91,8 +93,11 @@ async function updateStudentProfile(req, res) {
       ]
     );
 
-    if (phone) {
-      await pool.query('UPDATE users SET phone = ? WHERE id = ?', [phone, userId]);
+    if (name || phone || avatar_url !== undefined) {
+      await pool.query(
+        'UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone), avatar_url = COALESCE(?, avatar_url) WHERE id = ?',
+        [name || null, phone || null, avatar_url !== undefined ? avatar_url : null, userId]
+      );
     }
 
     // Log profile update in user_activity_logs

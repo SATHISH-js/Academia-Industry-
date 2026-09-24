@@ -23,7 +23,7 @@ async function authenticateUser(req, res, next) {
 
     // Verify user exists and is active in database
     const [rows] = await pool.query(
-      'SELECT id, name, email, role, is_active FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, name, email, role, avatar_url, phone, is_active FROM users WHERE id = ? LIMIT 1',
       [decoded.id]
     );
 

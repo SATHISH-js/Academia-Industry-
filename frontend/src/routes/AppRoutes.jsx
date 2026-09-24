@@ -24,6 +24,7 @@ import { CommunityFeedPage } from '../pages/student/CommunityFeedPage';
 
 import { AcademicianDashboard } from '../pages/academician/AcademicianDashboard';
 import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOpportunitiesPage';
+import { AcademicianProfilePage } from '../pages/academician/AcademicianProfilePage';
 
 import { IndustryDashboard } from '../pages/industry/IndustryDashboard';
 import { CandidateMatchingPage } from '../pages/industry/CandidateMatchingPage';
@@ -31,6 +32,7 @@ import { IndustryApplicationsPage } from '../pages/industry/IndustryApplications
 import { PostOpportunityPage } from '../pages/industry/PostOpportunityPage';
 import { InstitutionPlacementPage } from '../pages/industry/InstitutionPlacementPage';
 import { IndustryOutreachPage } from '../pages/industry/IndustryOutreachPage';
+import { IndustryProfilePage } from '../pages/industry/IndustryProfilePage';
 
 import { InstitutionDashboard } from '../pages/institution/InstitutionDashboard';
 import { StudentDirectoryPage } from '../pages/institution/StudentDirectoryPage';
@@ -39,6 +41,8 @@ import { IndustryPartnersPage } from '../pages/institution/IndustryPartnersPage'
 import { SearchCollaborationsPage } from '../pages/institution/SearchCollaborationsPage';
 import { TrainingProgramsPage } from '../pages/institution/TrainingProgramsPage';
 import { PlacementAnalyticsPage } from '../pages/institution/PlacementAnalyticsPage';
+import { InstitutionProfilePage } from '../pages/institution/InstitutionProfilePage';
+import { SettingsPage } from '../pages/common/SettingsPage';
 
 export const AppRoutes = () => {
   return (
@@ -76,6 +80,7 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['ACADEMICIAN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/academician/dashboard" element={<AcademicianDashboard />} />
+          <Route path="/academician/profile" element={<AcademicianProfilePage />} />
           <Route path="/academician/opportunities" element={<AcademicianOpportunitiesPage />} />
           <Route path="/academician/collaboration" element={<AcademicianOpportunitiesPage />} />
           <Route path="/academician/applications" element={<AcademicianDashboard />} />
@@ -87,6 +92,7 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['INDUSTRY']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/industry/dashboard" element={<IndustryDashboard />} />
+          <Route path="/industry/profile" element={<IndustryProfilePage />} />
           <Route path="/industry/candidates" element={<CandidateMatchingPage />} />
           <Route path="/industry/opportunities" element={<PostOpportunityPage />} />
           <Route path="/industry/internships" element={<PostOpportunityPage />} />
@@ -104,6 +110,7 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute allowedRoles={['INSTITUTION']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/institution/dashboard" element={<InstitutionDashboard />} />
+          <Route path="/institution/profile" element={<InstitutionProfilePage />} />
           <Route path="/institution/students" element={<StudentDirectoryPage />} />
           <Route path="/institution/academicians" element={<AcademicianDirectoryPage />} />
           <Route path="/institution/partners" element={<IndustryPartnersPage />} />
@@ -112,6 +119,13 @@ export const AppRoutes = () => {
           <Route path="/institution/skills" element={<InstitutionDashboard />} />
           <Route path="/institution/placements" element={<PlacementAnalyticsPage />} />
           <Route path="/institution/*" element={<InstitutionDashboard />} />
+        </Route>
+      </Route>
+
+      {/* Shared Protected Settings Route for All Roles */}
+      <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'ACADEMICIAN', 'INDUSTRY', 'INSTITUTION']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
 

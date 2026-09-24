@@ -149,6 +149,7 @@ button, input, select, textarea {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  padding-top: var(--header-height);
   transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -713,6 +714,64 @@ svg {
   @page {
     size: A4 portrait;
     margin: 10mm;
+  }
+}
+
+/* ==========================================================================
+   Fixed Top Navigation Bar (Always Fixed to Viewport)
+   ========================================================================== */
+.app-topbar-fixed {
+  position: fixed !important;
+  top: 0;
+  right: 0;
+  height: var(--header-height);
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.public-layout-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  padding-top: var(--header-height);
+  box-sizing: border-box;
+}
+
+.public-layout-container .app-topbar-fixed {
+  left: 0 !important;
+  width: 100% !important;
+}
+
+@media (min-width: 1025px) {
+  .dashboard-layout.sidebar-is-open .app-topbar-fixed {
+    left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+  }
+  .dashboard-layout.sidebar-is-closed .app-topbar-fixed {
+    left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-layout .app-topbar-fixed {
+    left: 0 !important;
+    width: 100% !important;
+  }
+  .sidebar-container {
+    z-index: 120 !important;
+  }
+  .sidebar-backdrop {
+    z-index: 115 !important;
   }
 }
 

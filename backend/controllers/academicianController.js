@@ -31,6 +31,9 @@ async function updateAcademicianProfile(req, res) {
   try {
     const userId = req.user.id;
     const {
+      name,
+      phone,
+      avatar_url,
       designation,
       department,
       qualification,
@@ -54,6 +57,13 @@ async function updateAcademicianProfile(req, res) {
        WHERE user_id = ?`,
       [designation, department, qualification, experience_years, specialization, research_interests, publications_count, linkedin_url, userId]
     );
+
+    if (name || phone || avatar_url !== undefined) {
+      await pool.query(
+        'UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone), avatar_url = COALESCE(?, avatar_url) WHERE id = ?',
+        [name || null, phone || null, avatar_url !== undefined ? avatar_url : null, userId]
+      );
+    }
 
     return sendSuccess(res, null, 'Academician profile updated successfully');
   } catch (error) {

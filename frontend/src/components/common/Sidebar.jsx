@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Handshake,
   ShieldCheck,
+  Settings,
   X
 } from 'lucide-react';
 
@@ -33,7 +34,7 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const getNavLinks = () => {
@@ -55,6 +56,7 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
           { name: 'Jobs', path: '/student/jobs', icon: Building2 },
           { name: 'Applications', path: '/student/applications', icon: FileText },
           { name: 'Digital Portfolio', path: '/student/portfolio', icon: FolderGit2 },
+          { name: 'Settings & Security', path: '/settings', icon: Settings },
         ];
       case 'ACADEMICIAN':
         return [
@@ -63,25 +65,30 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
           { name: 'Opportunities', path: '/academician/opportunities', icon: Compass },
           { name: 'Collaborations', path: '/academician/collaboration', icon: Users },
           { name: 'My Applications', path: '/academician/applications', icon: FileText },
+          { name: 'Settings & Security', path: '/settings', icon: Settings },
         ];
       case 'INDUSTRY':
         return [
           { name: 'Dashboard', path: '/industry/dashboard', icon: LayoutDashboard },
+          { name: 'Company Profile', path: '/industry/profile', icon: User },
           { name: 'Candidate Matching', path: '/industry/candidates', icon: Sparkles },
           { name: 'Post & Manage Roles', path: '/industry/opportunities', icon: Briefcase },
           { name: 'Institution Placements', path: '/industry/placements', icon: Building2 },
           { name: 'Direct Outreach', path: '/industry/outreach', icon: FileText },
           { name: 'Applications Received', path: '/industry/applications', icon: Layers },
           { name: 'Recruitment Analytics', path: '/industry/analytics', icon: TrendingUp },
+          { name: 'Settings & Security', path: '/settings', icon: Settings },
         ];
       case 'INSTITUTION':
         return [
           { name: 'Dashboard', path: '/institution/dashboard', icon: LayoutDashboard },
+          { name: 'Campus Profile', path: '/institution/profile', icon: User },
           { name: 'Student Roster & Activity', path: '/institution/students', icon: Users },
           { name: 'Faculty Directory', path: '/institution/academicians', icon: GraduationCap },
           { name: 'Industry MoUs & Partners', path: '/institution/partners', icon: Handshake },
           { name: 'Training Programs', path: '/institution/training-programs', icon: BookOpen },
           { name: 'Placement Analytics', path: '/institution/placements', icon: TrendingUp },
+          { name: 'Settings & Security', path: '/settings', icon: Settings },
         ];
       default:
         return [];
@@ -203,12 +210,35 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', overflow: 'hidden' }}>
+            <div
+              onClick={() => {
+                const profileRoute = user.role === 'STUDENT' ? '/student/profile'
+                  : user.role === 'ACADEMICIAN' ? '/academician/profile'
+                  : user.role === 'INDUSTRY' ? '/industry/profile'
+                  : user.role === 'INSTITUTION' ? '/institution/profile'
+                  : '/settings';
+                navigate(profileRoute);
+                if (window.innerWidth < 1024 && onClose) onClose();
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                flex: 1,
+                padding: '0.2rem',
+                borderRadius: 'var(--radius-sm)',
+                userSelect: 'none'
+              }}
+              title="View & Edit Profile"
+            >
               <div
                 style={{
                   width: 34,
                   height: 34,
                   borderRadius: '50%',
+                  overflow: 'hidden',
                   background: 'var(--primary-500)',
                   color: '#ffffff',
                   display: 'flex',
@@ -219,7 +249,11 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
                   flexShrink: 0
                 }}
               >
-                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                ) : (
+                  user.name ? user.name.charAt(0).toUpperCase() : 'U'
+                )}
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
