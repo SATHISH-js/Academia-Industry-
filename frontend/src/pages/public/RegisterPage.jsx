@@ -111,6 +111,11 @@ export const RegisterPage = () => {
     institution_id: '',
     custom_college: '',
     isCustomCollege: false,
+    // Residential address fields (Requirement 3: separate section)
+    street_address: '',
+    residential_city: '',
+    residential_state: '',
+    pincode: '',
     // Student specific fields
     target_role: 'Full Stack Developer',
     custom_role: '',
@@ -139,6 +144,7 @@ export const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [generatedPassNotice, setGeneratedPassNotice] = useState(false);
+  const [showCollegeList, setShowCollegeList] = useState(false);
 
   const [institutions, setInstitutions] = useState([]);
   const [error, setError] = useState('');
@@ -276,6 +282,10 @@ export const RegisterPage = () => {
         payload.graduation_year = parseInt(formData.graduation_year, 10);
         payload.enrollment_number = formData.enrollment_number.trim() || null;
         payload.skills = formData.selectedSkills;
+        payload.address = formData.street_address.trim() || null;
+        payload.city = formData.residential_city.trim() || null;
+        payload.state = formData.residential_state.trim() || null;
+        payload.pincode = formData.pincode.trim() || null;
       } else if (formData.role === 'ACADEMICIAN') {
         payload.institution_id = !formData.isCustomCollege && formData.institution_id ? parseInt(formData.institution_id, 10) : null;
         payload.department = formData.department;
@@ -284,6 +294,10 @@ export const RegisterPage = () => {
         payload.qualification = formData.qualification.trim();
         payload.experience_years = parseInt(formData.experience_years, 10) || 5;
         payload.specialization = formData.specialization.trim();
+        payload.address = formData.street_address.trim() || null;
+        payload.city = formData.residential_city.trim() || null;
+        payload.state = formData.residential_state.trim() || null;
+        payload.pincode = formData.pincode.trim() || null;
       } else if (formData.role === 'INDUSTRY') {
         payload.company_name = formData.company_name.trim() || formData.name.trim();
         payload.industry_domain = formData.industry_domain;
@@ -326,7 +340,96 @@ export const RegisterPage = () => {
     }
   };
 
-  // Helper component to render Region + College Search Bar with Colleges listed underneath
+  // Helper component to render Separate Address Selection Section (Requirement 3)
+  const renderAddressSection = () => (
+    <div style={{
+      backgroundColor: '#ffffff',
+      border: '1px solid var(--border-color)',
+      borderRadius: 'var(--radius-md)',
+      padding: '1.25rem',
+      marginBottom: '1rem',
+      boxShadow: 'var(--shadow-sm)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.4rem' }}>
+        <MapPin size={17} color="var(--primary-600)" />
+        <div>
+          <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--slate-900)' }}>
+            Residential & Permanent Address Selection
+          </span>
+          <span style={{ fontSize: '0.74rem', color: 'var(--slate-500)', display: 'block' }}>
+            Enter your location address details for portal communication
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+        <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+            Street Address / Locality
+          </label>
+          <input
+            type="text"
+            name="street_address"
+            className="form-control"
+            placeholder="e.g. 14, Gandhi Road, Anna Nagar"
+            value={formData.street_address}
+            onChange={handleChange}
+            style={{ fontSize: '0.85rem' }}
+          />
+        </div>
+
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+            City / District
+          </label>
+          <input
+            type="text"
+            name="residential_city"
+            className="form-control"
+            placeholder="e.g. Chennai, Bengaluru, Pune"
+            value={formData.residential_city}
+            onChange={handleChange}
+            style={{ fontSize: '0.85rem' }}
+          />
+        </div>
+
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+            State / Region
+          </label>
+          <select
+            name="residential_state"
+            className="form-control"
+            value={formData.residential_state}
+            onChange={handleChange}
+            style={{ fontSize: '0.85rem' }}
+          >
+            <option value="">Select State / Region...</option>
+            {REGIONS.filter(r => r !== 'All Regions').map(reg => (
+              <option key={reg} value={reg}>{reg}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+            PIN Code
+          </label>
+          <input
+            type="text"
+            name="pincode"
+            className="form-control"
+            placeholder="e.g. 600025"
+            value={formData.pincode}
+            onChange={handleChange}
+            style={{ fontSize: '0.85rem' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Helper component to render Separate College Selection Section with tap-to-show search (Requirement 3)
   const renderCollegeSelector = () => (
     <div style={{
       backgroundColor: '#ffffff',
@@ -358,7 +461,10 @@ export const RegisterPage = () => {
             name="selectedRegion"
             className="form-control"
             value={formData.selectedRegion}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e);
+              setShowCollegeList(true);
+            }}
             style={{ fontSize: '0.85rem' }}
           >
             {REGIONS.map(reg => (
@@ -376,117 +482,168 @@ export const RegisterPage = () => {
               type="text"
               name="collegeSearch"
               className="form-control"
-              placeholder="e.g. IIT, NIT, Anna, PSG, VIT, VJTI..."
+              placeholder="Tap to search and view available colleges..."
               value={formData.collegeSearch}
-              onChange={handleChange}
+              onFocus={() => setShowCollegeList(true)}
+              onClick={() => setShowCollegeList(true)}
+              onChange={(e) => {
+                handleChange(e);
+                setShowCollegeList(true);
+              }}
               style={{ fontSize: '0.85rem' }}
             />
+            {showCollegeList && (
+              <button
+                type="button"
+                onClick={() => setShowCollegeList(false)}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'var(--slate-200)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.7rem',
+                  padding: '0.2rem 0.45rem',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  color: 'var(--slate-700)'
+                }}
+              >
+                Hide
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* College List Underneath the Search Bar (The Core User Request) */}
-      <div style={{ marginTop: '0.5rem' }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
-          Available Colleges in Registry ({filteredColleges.length}):
-        </div>
-
+      {/* College List Shown On Tap / Focus of Search Bar (Requirement 3) */}
+      {(showCollegeList || formData.collegeSearch.trim().length > 0) && (
         <div style={{
-          maxHeight: '190px',
-          overflowY: 'auto',
-          border: '1px solid var(--border-color)',
+          marginTop: '0.5rem',
+          padding: '0.6rem',
           borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--slate-50)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.35rem',
-          padding: '0.4rem'
+          backgroundColor: '#f8fafc',
+          border: '1.5px solid var(--primary-300)',
+          animation: 'fadeIn 0.2s ease-in-out'
         }}>
-          {filteredColleges.length === 0 ? (
-            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--slate-500)', fontSize: '0.82rem' }}>
-              No colleges found matching "{formData.collegeSearch}" in {formData.selectedRegion}.
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary-700)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Available Colleges in {formData.selectedRegion} ({filteredColleges.length}):
             </div>
-          ) : (
-            filteredColleges.map(inst => {
-              const isSelected = !formData.isCustomCollege && String(formData.institution_id) === String(inst.id);
-              return (
-                <div
-                  key={inst.id}
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      institution_id: String(inst.id),
-                      isCustomCollege: false
-                    }));
-                  }}
-                  style={{
-                    padding: '0.55rem 0.75rem',
-                    borderRadius: '6px',
-                    backgroundColor: isSelected ? 'var(--primary-50)' : '#ffffff',
-                    border: isSelected ? '2px solid var(--primary-600)' : '1px solid var(--border-light)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSelected ? 'var(--primary-900)' : 'var(--slate-800)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {inst.institution_name}
-                    </div>
-                    <div style={{ fontSize: '0.73rem', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
-                      <span>📍 {inst.city ? `${inst.city}, ${inst.state}` : (inst.state || 'India')}</span>
-                      <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>{inst.institution_type}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    {isSelected ? (
-                      <span className="badge badge-primary" style={{ fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        <CheckCircle2 size={12} /> Selected
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--primary-600)', fontWeight: 600 }}>
-                        Select
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Option for Other / Custom College */}
-        <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <input
-            type="checkbox"
-            id="customCollegeCheck"
-            checked={formData.isCustomCollege}
-            onChange={(e) => setFormData(prev => ({ ...prev, isCustomCollege: e.target.checked, institution_id: e.target.checked ? '' : prev.institution_id }))}
-          />
-          <label htmlFor="customCollegeCheck" style={{ fontSize: '0.8rem', color: 'var(--slate-700)', cursor: 'pointer', fontWeight: 500 }}>
-            My college is not listed above (Enter custom college name)
-          </label>
-        </div>
-
-        {formData.isCustomCollege && (
-          <div style={{ marginTop: '0.5rem' }}>
-            <input
-              type="text"
-              name="custom_college"
-              className="form-control"
-              placeholder="Enter your college / university full name..."
-              value={formData.custom_college}
-              onChange={handleChange}
-              style={{ fontSize: '0.85rem' }}
-              required
-            />
+            <button
+              type="button"
+              onClick={() => setShowCollegeList(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--slate-500)', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Close list
+            </button>
           </div>
-        )}
+
+          <div style={{
+            maxHeight: '190px',
+            overflowY: 'auto',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.35rem',
+            padding: '0.4rem'
+          }}>
+            {filteredColleges.length === 0 ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--slate-500)', fontSize: '0.82rem' }}>
+                No colleges found matching "{formData.collegeSearch}" in {formData.selectedRegion}.
+              </div>
+            ) : (
+              filteredColleges.map(inst => {
+                const isSelected = !formData.isCustomCollege && String(formData.institution_id) === String(inst.id);
+                return (
+                  <div
+                    key={inst.id}
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        institution_id: String(inst.id),
+                        collegeSearch: inst.institution_name,
+                        isCustomCollege: false
+                      }));
+                      setShowCollegeList(false);
+                    }}
+                    style={{
+                      padding: '0.55rem 0.75rem',
+                      borderRadius: '6px',
+                      backgroundColor: isSelected ? 'var(--primary-50)' : '#ffffff',
+                      border: isSelected ? '2px solid var(--primary-600)' : '1px solid var(--border-light)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSelected ? 'var(--primary-900)' : 'var(--slate-800)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {inst.institution_name}
+                      </div>
+                      <div style={{ fontSize: '0.73rem', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
+                        <span>📍 {inst.city ? `${inst.city}, ${inst.state}` : (inst.state || 'India')}</span>
+                        <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>{inst.institution_type}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      {isSelected ? (
+                        <span className="badge badge-primary" style={{ fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <CheckCircle2 size={12} /> Selected
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--primary-600)', fontWeight: 600 }}>
+                          Select
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Option for Other / Custom College */}
+      <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <input
+          type="checkbox"
+          id="customCollegeCheck"
+          checked={formData.isCustomCollege}
+          onChange={(e) => {
+            const checked = e.target.checked;
+            setFormData(prev => ({ ...prev, isCustomCollege: checked, institution_id: checked ? '' : prev.institution_id }));
+            if (checked) setShowCollegeList(false);
+          }}
+        />
+        <label htmlFor="customCollegeCheck" style={{ fontSize: '0.8rem', color: 'var(--slate-700)', cursor: 'pointer', fontWeight: 500 }}>
+          My college is not listed above (Enter custom college name)
+        </label>
       </div>
+
+      {formData.isCustomCollege && (
+        <div style={{ marginTop: '0.5rem' }}>
+          <input
+            type="text"
+            name="custom_college"
+            className="form-control"
+            placeholder="Enter your college / university full name..."
+            value={formData.custom_college}
+            onChange={handleChange}
+            style={{ fontSize: '0.85rem' }}
+            required
+          />
+        </div>
+      )}
     </div>
   );
 
@@ -704,8 +861,11 @@ export const RegisterPage = () => {
                 )}
               </div>
 
-              {/* College Selection (Requirement 5) */}
+              {/* College Selection (Requirement 3) */}
               {renderCollegeSelector()}
+
+              {/* Separate Address Selection (Requirement 3) */}
+              {renderAddressSection()}
 
               {/* Department & Degree */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
@@ -835,6 +995,9 @@ export const RegisterPage = () => {
 
               {/* College Selection for Academician */}
               {renderCollegeSelector()}
+
+              {/* Separate Address Selection for Academician */}
+              {renderAddressSection()}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>

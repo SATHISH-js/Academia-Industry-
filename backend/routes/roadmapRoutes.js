@@ -4,7 +4,9 @@ const router = express.Router();
 const {
   getRoadmaps,
   getRoadmapById,
-  toggleTask
+  toggleTask,
+  getTaskAssessment,
+  submitTaskAssessment
 } = require('../controllers/roadmapController');
 
 const { authenticateUser } = require('../middleware/authMiddleware');
@@ -15,5 +17,9 @@ router.use(authenticateUser);
 router.get('/', getRoadmaps);
 router.get('/:id', getRoadmapById);
 router.post('/:id/tasks/:taskId/toggle', requireRole('STUDENT'), toggleTask);
+
+// 20-Question Topic Assessment & Automatic Task Verification Routes (Requirement 1)
+router.get('/:id/tasks/:taskId/assessment', requireRole('STUDENT'), getTaskAssessment);
+router.post('/:id/tasks/:taskId/assessment/submit', requireRole('STUDENT'), submitTaskAssessment);
 
 module.exports = router;

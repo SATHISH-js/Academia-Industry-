@@ -65,10 +65,11 @@ async function register(req, res) {
       const studentDegree = degree || 'B.Tech / B.E';
       const studentGradYear = graduation_year ? parseInt(graduation_year, 10) : 2026;
       const studentEnrollment = enrollment_number || null;
+      const { address, city, state, pincode } = req.body;
 
       const [stuRes] = await connection.query(
-        `INSERT INTO student_profiles (user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO student_profiles (user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number, address, city, state, pincode)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
           studentHeadline,
@@ -77,7 +78,11 @@ async function register(req, res) {
           studentDept,
           studentDegree,
           studentGradYear,
-          studentEnrollment
+          studentEnrollment,
+          address || null,
+          city || null,
+          state || null,
+          pincode || null
         ]
       );
       const studentId = stuRes.insertId;
@@ -95,9 +100,10 @@ async function register(req, res) {
         }
       }
     } else if (role === 'ACADEMICIAN') {
+      const { address, city, state, pincode } = req.body;
       await connection.query(
-        `INSERT INTO academician_profiles (user_id, institution_id, designation, department, employee_id, qualification, experience_years, specialization)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO academician_profiles (user_id, institution_id, designation, department, employee_id, qualification, experience_years, specialization, address, city, state, pincode)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
           institution_id || null,
@@ -106,7 +112,11 @@ async function register(req, res) {
           employee_id || null,
           qualification || 'Ph.D. in Engineering',
           experience_years ? parseInt(experience_years, 10) : 5,
-          specialization || 'Applied Research & Curriculum Alignment'
+          specialization || 'Applied Research & Curriculum Alignment',
+          address || null,
+          city || null,
+          state || null,
+          pincode || null
         ]
       );
     } else if (role === 'INDUSTRY') {
