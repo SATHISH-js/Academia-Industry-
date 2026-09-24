@@ -136,7 +136,7 @@ export const LandingPage = () => {
               Get Started Now <ArrowRight size={18} />
             </Link>
             <Link to="/login" className="btn btn-secondary" style={{ padding: '0.85rem 1.75rem', fontSize: '1rem' }}>
-              Explore Platform Demo
+              Sign In to Portal
             </Link>
           </div>
         </div>
