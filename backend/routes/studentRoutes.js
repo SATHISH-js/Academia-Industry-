@@ -31,4 +31,8 @@ router.post('/certifications', addStudentCertification);
 router.put('/certifications/:id', updateStudentCertification);
 router.delete('/certifications/:id', deleteStudentCertification);
 
+// Student Industry Outreach & Communication routes
+router.get('/messages', require('../controllers/studentController').getStudentOutreachMessages);
+router.post('/messages/:id/reply', require('../controllers/studentController').replyToIndustryMessage);
+
 module.exports = router;

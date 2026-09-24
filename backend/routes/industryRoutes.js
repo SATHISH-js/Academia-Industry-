@@ -20,9 +20,11 @@ router.use(authenticateUser, requireRole('INDUSTRY'));
 // 1. Candidate search & role matching
 router.get('/candidates/search', searchCandidates);
 
-// 2. Direct student outreach messaging
+// 2. Direct student outreach messaging (Unified Sent & Received single pane)
 router.post('/messages/send', sendMessageToStudent);
 router.get('/messages', getSentMessages);
+router.post('/messages/:id/reply', require('../controllers/industryController').replyToStudentMessage);
+router.put('/messages/:id/read', require('../controllers/industryController').markMessageRead);
 
 // 3. Institution placement drives & partnerships
 router.get('/institutions', getInstitutions);

@@ -149,8 +149,12 @@ async function getApplications(req, res) {
       const industryId = ind[0].id;
 
       const [rows] = await pool.query(
-        `SELECT a.*, u.name as candidate_name, u.email as candidate_email,
-                sp.department, sp.cgpa, sp.overall_skill_score,
+        `SELECT a.*, 
+                u.name as candidate_name, u.email as candidate_email, u.phone as candidate_phone, u.avatar_url as candidate_avatar,
+                sp.id as student_id, sp.department, sp.degree, sp.graduation_year, sp.cgpa, sp.overall_skill_score,
+                sp.headline, sp.bio, sp.github_url, sp.linkedin_url, sp.resume_url,
+                sp.tenth_percentage, sp.twelfth_percentage, sp.ug_college, sp.city, sp.state,
+                inst.institution_name,
                 CASE
                   WHEN a.opportunity_type = 'INTERNSHIP' THEN (SELECT title FROM internships WHERE id = a.opportunity_id)
                   WHEN a.opportunity_type = 'JOB' THEN (SELECT title FROM jobs WHERE id = a.opportunity_id)
@@ -160,10 +164,11 @@ async function getApplications(req, res) {
          FROM applications a
          JOIN users u ON a.applicant_id = u.id
          LEFT JOIN student_profiles sp ON u.id = sp.user_id
+         LEFT JOIN institution_profiles inst ON sp.institution_id = inst.id
          WHERE (a.opportunity_type = 'INTERNSHIP' AND a.opportunity_id IN (SELECT id FROM internships WHERE industry_id = ?))
             OR (a.opportunity_type = 'JOB' AND a.opportunity_id IN (SELECT id FROM jobs WHERE industry_id = ?))
             OR (a.opportunity_type = 'RESEARCH' AND a.opportunity_id IN (SELECT id FROM research_projects WHERE industry_id = ?))
-         ORDER BY a.match_score DESC, a.created_at DESC`,
+         ORDER BY a.created_at DESC`,
         [industryId, industryId, industryId]
       );
       return sendSuccess(res, rows, 'Industry candidate applications retrieved');

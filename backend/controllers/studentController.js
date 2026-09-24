@@ -447,6 +447,103 @@ async function deleteStudentCertification(req, res) {
   }
 }
 
+/**
+ * Get messages between student and industry recruiters
+ */
+async function getStudentOutreachMessages(req, res) {
+  try {
+    const userId = req.user.id;
+    const [stu] = await pool.query('SELECT id FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    if (stu.length === 0) return sendError(res, 'Student profile not found', 404);
+    const studentId = stu[0].id;
+
+    const [rows] = await pool.query(
+      `SELECT ism.*, 
+              CASE WHEN ism.sender_role = 'STUDENT' THEN 'SENT' ELSE 'RECEIVED' END AS direction,
+              ip.company_name, ip.website AS company_website, ip.city AS company_city,
+              u.name AS recruiter_name, u.email AS recruiter_email,
+              CASE
+                WHEN ism.opportunity_type = 'INTERNSHIP' THEN (SELECT title FROM internships WHERE id = ism.opportunity_id)
+                WHEN ism.opportunity_type = 'JOB' THEN (SELECT title FROM jobs WHERE id = ism.opportunity_id)
+                ELSE 'General Inquiry'
+              END AS opportunity_title
+       FROM industry_student_messages ism
+       JOIN industry_profiles ip ON ism.industry_id = ip.id
+       JOIN users u ON ip.user_id = u.id
+       WHERE ism.student_id = ?
+       ORDER BY ism.created_at DESC`,
+      [studentId]
+    );
+
+    return sendSuccess(res, rows, 'Student messages retrieved successfully');
+  } catch (error) {
+    console.error('[Student getStudentOutreachMessages Error]', error);
+    return sendError(res, 'Failed to fetch messages: ' + error.message, 500);
+  }
+}
+
+/**
+ * Student replies to an industry outreach message
+ */
+async function replyToIndustryMessage(req, res) {
+  try {
+    const userId = req.user.id;
+    const [stu] = await pool.query('SELECT id, user_id FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    if (stu.length === 0) return sendError(res, 'Student profile not found', 404);
+    const student = stu[0];
+
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message || !message.trim()) {
+      return sendError(res, 'Message cannot be empty', 400);
+    }
+
+    const [origRows] = await pool.query('SELECT * FROM industry_student_messages WHERE id = ? AND student_id = ? LIMIT 1', [id, student.id]);
+    if (origRows.length === 0) return sendError(res, 'Original message not found', 404);
+    const orig = origRows[0];
+
+    const replySubject = orig.subject.startsWith('Re:') ? orig.subject : `Re: ${orig.subject}`;
+
+    const [result] = await pool.query(
+      `INSERT INTO industry_student_messages
+       (industry_id, student_id, opportunity_type, opportunity_id, subject, message, message_type, status, sender_role, reply_to_id)
+       VALUES (?, ?, ?, ?, ?, ?, 'REPLY', 'RECEIVED', 'STUDENT', ?)`,
+      [
+        orig.industry_id,
+        student.id,
+        orig.opportunity_type,
+        orig.opportunity_id,
+        replySubject,
+        message.trim(),
+        id
+      ]
+    );
+
+    // Get industry user_id for notification
+    const [ind] = await pool.query('SELECT user_id, company_name FROM industry_profiles WHERE id = ?', [orig.industry_id]);
+    const [u] = await pool.query('SELECT name FROM users WHERE id = ?', [userId]);
+    const studentName = u.length > 0 ? u[0].name : 'Candidate';
+
+    if (ind.length > 0) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, link)
+         VALUES (?, ?, ?, 'APPLICATION', '/industry/outreach')`,
+        [
+          ind[0].user_id,
+          `Reply from Candidate ${studentName}: ${replySubject}`,
+          message.length > 250 ? message.substring(0, 247) + '...' : message
+        ]
+      );
+    }
+
+    return sendSuccess(res, { message_id: result.insertId }, 'Reply sent to recruiter successfully', 201);
+  } catch (error) {
+    console.error('[Student replyToIndustryMessage Error]', error);
+    return sendError(res, 'Failed to send reply: ' + error.message, 500);
+  }
+}
+
 module.exports = {
   getStudentProfile,
   updateStudentProfile,
@@ -456,5 +553,7 @@ module.exports = {
   getStudentCertifications,
   addStudentCertification,
   updateStudentCertification,
-  deleteStudentCertification
+  deleteStudentCertification,
+  getStudentOutreachMessages,
+  replyToIndustryMessage
 };

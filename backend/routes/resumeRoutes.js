@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 
-const { getResumeData, logResumeExport } = require('../controllers/resumeController');
-const { authenticateUser } = require('../middleware/authMiddleware');
+const { getResumeData, getResumeDataByStudentId, logResumeExport } = require('../controllers/resumeController');
+const { authenticateUser, optionalAuth } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
-router.use(authenticateUser, requireRole('STUDENT'));
+// Public / HR candidate resume lookup by student ID
+router.get('/student/:studentId', optionalAuth, getResumeDataByStudentId);
 
-router.get('/data', getResumeData);
-router.post('/export-log', logResumeExport);
+// Logged-in student's personal resume builder data
+router.get('/data', authenticateUser, requireRole('STUDENT'), getResumeData);
+router.post('/export-log', optionalAuth, logResumeExport);
 
 module.exports = router;

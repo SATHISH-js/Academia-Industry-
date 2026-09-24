@@ -432,17 +432,19 @@ svg {
   }
 }
 
-/* Sidebar Backdrop: Mobile/Tablet ONLY (Never blocks desktop clicks) */
+/* Sidebar Backdrop: Mobile ONLY (Never blocks desktop or laptop screens) */
 .sidebar-backdrop {
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .sidebar-backdrop {
-    display: block;
+    display: block !important;
+    pointer-events: auto !important;
     position: fixed;
     inset: 0;
-    background-color: rgba(15, 23, 42, 0.6);
+    background-color: rgba(15, 23, 42, 0.55);
     z-index: 45;
     animation: backdropFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -499,8 +501,8 @@ svg {
   transform: rotate(90deg) scale(1.08);
 }
 
-/* Desktop Sidebar Transitions (Screen >= 1025px) */
-@media (min-width: 1025px) {
+/* Desktop Sidebar Transitions (Screen >= 1024px) */
+@media (min-width: 1024px) {
   .sidebar-backdrop {
     display: none !important;
     pointer-events: none !important;
@@ -546,8 +548,8 @@ svg {
   }
 }
 
-/* Mobile & Tablet Drawer Transitions (Screen <= 1024px) */
-@media (max-width: 1024px) {
+/* Mobile & Tablet Drawer Transitions (Screen <= 1023px) */
+@media (max-width: 1023px) {
   .dashboard-layout {
     position: relative;
   }

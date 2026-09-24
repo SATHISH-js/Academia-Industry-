@@ -215,35 +215,168 @@ async function sendMessageToStudent(req, res) {
 }
 
 /**
- * Get all outreach messages sent by this industry
+ * Get unified outreach messages (Sent & Received) in single communications feed
  * [INDUSTRY ONLY]
  */
-async function getSentMessages(req, res) {
+async function getOutreachMessages(req, res) {
   try {
     const userId = req.user.id;
+    const { direction, message_type, status, keyword } = req.query;
+
     const [ind] = await pool.query(
-      'SELECT id FROM industry_profiles WHERE user_id = ? LIMIT 1',
+      'SELECT id, company_name FROM industry_profiles WHERE user_id = ? LIMIT 1',
       [userId]
     );
     if (ind.length === 0) return sendError(res, 'Industry profile not found', 404);
     const industryId = ind[0].id;
 
-    const [rows] = await pool.query(
-      `SELECT ism.*, u.name AS student_name, u.email AS student_email,
-              sp.headline AS student_headline, sp.department AS student_dept,
-              sp.degree AS student_degree, sp.cgpa AS student_cgpa
-       FROM industry_student_messages ism
-       JOIN student_profiles sp ON ism.student_id = sp.id
-       JOIN users u ON sp.user_id = u.id
-       WHERE ism.industry_id = ?
-       ORDER BY ism.created_at DESC`,
-      [industryId]
+    let sql = `
+      SELECT ism.*, 
+             CASE WHEN ism.sender_role = 'STUDENT' THEN 'RECEIVED' ELSE 'SENT' END AS direction,
+             u.name AS student_name, u.email AS student_email, u.phone AS student_phone, u.avatar_url AS student_avatar,
+             sp.headline AS student_headline, sp.department AS student_dept,
+             sp.degree AS student_degree, sp.cgpa AS student_cgpa, sp.graduation_year AS student_grad_year,
+             inst.institution_name,
+             CASE
+               WHEN ism.opportunity_type = 'INTERNSHIP' THEN (SELECT title FROM internships WHERE id = ism.opportunity_id)
+               WHEN ism.opportunity_type = 'JOB' THEN (SELECT title FROM jobs WHERE id = ism.opportunity_id)
+               ELSE 'General Direct Outreach'
+             END AS opportunity_title
+      FROM industry_student_messages ism
+      JOIN student_profiles sp ON ism.student_id = sp.id
+      JOIN users u ON sp.user_id = u.id
+      LEFT JOIN institution_profiles inst ON sp.institution_id = inst.id
+      WHERE ism.industry_id = ?
+    `;
+    const params = [industryId];
+
+    if (direction === 'SENT') {
+      sql += " AND (ism.sender_role = 'INDUSTRY' OR ism.sender_role IS NULL)";
+    } else if (direction === 'RECEIVED') {
+      sql += " AND ism.sender_role = 'STUDENT'";
+    }
+
+    if (message_type && message_type !== 'ALL') {
+      sql += " AND ism.message_type = ?";
+      params.push(message_type);
+    }
+
+    if (status && status !== 'ALL') {
+      sql += " AND ism.status = ?";
+      params.push(status);
+    }
+
+    if (keyword && keyword.trim()) {
+      sql += " AND (u.name LIKE ? OR ism.subject LIKE ? OR ism.message LIKE ? OR sp.department LIKE ?)";
+      const kw = `%${keyword.trim()}%`;
+      params.push(kw, kw, kw, kw);
+    }
+
+    sql += " ORDER BY ism.created_at DESC";
+
+    const [rows] = await pool.query(sql, params);
+
+    // Compute stats
+    const totalCount = rows.length;
+    const sentCount = rows.filter(r => r.direction === 'SENT').length;
+    const receivedCount = rows.filter(r => r.direction === 'RECEIVED').length;
+    const unreadCount = rows.filter(r => r.direction === 'RECEIVED' && !r.is_read).length;
+
+    return sendSuccess(res, {
+      messages: rows,
+      stats: {
+        total: totalCount,
+        sent: sentCount,
+        received: receivedCount,
+        unread: unreadCount
+      }
+    }, 'Outreach messages retrieved successfully');
+  } catch (error) {
+    console.error('[Industry getOutreachMessages Error]', error);
+    return sendError(res, 'Failed to fetch outreach messages: ' + error.message, 500);
+  }
+}
+
+/**
+ * Reply to an outreach message directly within the single pane
+ * [INDUSTRY ONLY]
+ */
+async function replyToStudentMessage(req, res) {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message || !message.trim()) {
+      return sendError(res, 'Reply message cannot be empty', 400);
+    }
+
+    const [ind] = await pool.query(
+      'SELECT id, company_name FROM industry_profiles WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    if (ind.length === 0) return sendError(res, 'Industry profile not found', 404);
+    const industry = ind[0];
+
+    const [original] = await pool.query(
+      'SELECT * FROM industry_student_messages WHERE id = ? AND industry_id = ? LIMIT 1',
+      [id, industry.id]
+    );
+    if (original.length === 0) return sendError(res, 'Original message not found', 404);
+    const orig = original[0];
+
+    // Mark original as REPLIED
+    await pool.query('UPDATE industry_student_messages SET status = "REPLIED", is_read = TRUE WHERE id = ?', [id]);
+
+    const replySubject = orig.subject.startsWith('Re:') ? orig.subject : `Re: ${orig.subject}`;
+
+    const [result] = await pool.query(
+      `INSERT INTO industry_student_messages 
+       (industry_id, student_id, opportunity_type, opportunity_id, subject, message, message_type, status, sender_role, reply_to_id)
+       VALUES (?, ?, ?, ?, ?, ?, 'REPLY', 'SENT', 'INDUSTRY', ?)`,
+      [
+        industry.id,
+        orig.student_id,
+        orig.opportunity_type,
+        orig.opportunity_id,
+        replySubject,
+        message.trim(),
+        id
+      ]
     );
 
-    return sendSuccess(res, rows, 'Sent messages retrieved successfully');
+    // Push in-app notification to student
+    const [stu] = await pool.query('SELECT user_id FROM student_profiles WHERE id = ?', [orig.student_id]);
+    if (stu.length > 0) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, link)
+         VALUES (?, ?, ?, 'OPPORTUNITY', '/student/portfolio')`,
+        [
+          stu[0].user_id,
+          `Reply from ${industry.company_name}: ${replySubject}`,
+          message.length > 250 ? message.substring(0, 247) + '...' : message
+        ]
+      );
+    }
+
+    return sendSuccess(res, { message_id: result.insertId }, 'Reply dispatched to candidate successfully', 201);
   } catch (error) {
-    console.error('[Industry getSentMessages Error]', error);
-    return sendError(res, 'Failed to fetch sent messages', 500);
+    console.error('[Industry replyToStudentMessage Error]', error);
+    return sendError(res, 'Failed to send reply: ' + error.message, 500);
+  }
+}
+
+/**
+ * Mark message as read
+ * [INDUSTRY ONLY]
+ */
+async function markMessageRead(req, res) {
+  try {
+    const { id } = req.params;
+    await pool.query('UPDATE industry_student_messages SET is_read = TRUE WHERE id = ?', [id]);
+    return sendSuccess(res, null, 'Message marked as read');
+  } catch (error) {
+    return sendError(res, 'Failed to mark message read', 500);
   }
 }
 
@@ -430,7 +563,10 @@ async function getMyOpportunities(req, res) {
 module.exports = {
   searchCandidates,
   sendMessageToStudent,
-  getSentMessages,
+  getSentMessages: getOutreachMessages,
+  getOutreachMessages,
+  replyToStudentMessage,
+  markMessageRead,
   getInstitutions,
   requestPlacementDrive,
   getMyPlacementRequests,

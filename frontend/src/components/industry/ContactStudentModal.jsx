@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import api from '../../services/api';
 import { Mail, Send, X, CheckCircle2, AlertCircle, Sparkles, Building2, User } from 'lucide-react';
 
-export const ContactStudentModal = ({ student, opportunities = [], onClose, onMessageSent }) => {
+export const ContactStudentModal = ({ student, opportunities = [], candidates = [], onClose, onMessageSent }) => {
+  const [selectedStudent, setSelectedStudent] = useState(student || (candidates.length > 0 ? candidates[0] : null));
   const [opportunityType, setOpportunityType] = useState('GENERAL');
   const [opportunityId, setOpportunityId] = useState('');
   const [messageType, setMessageType] = useState('INTERVIEW_INVITE');
-  const [subject, setSubject] = useState(`Interview Invitation from TechCorp`);
+  const [subject, setSubject] = useState(`Interview Invitation`);
   const [message, setMessage] = useState(
-    `Hi ${student?.name || 'there'}, your verified technical skill profile caught our attention. We would love to discuss exciting engineering opportunities with our team.`
+    `Hi ${selectedStudent?.name || 'there'}, your verified technical skill profile caught our attention. We would love to discuss exciting engineering opportunities with our team.`
   );
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null); // { type: 'success' | 'error', text: '' }
 
-  if (!student) return null;
+  const currentStudent = selectedStudent || student;
+  if (!currentStudent) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,8 +28,9 @@ export const ContactStudentModal = ({ student, opportunities = [], onClose, onMe
       setSending(true);
       setStatus(null);
 
+      const targetStudentId = currentStudent.student_id || currentStudent.id;
       const payload = {
-        student_id: student.student_id,
+        student_id: targetStudentId,
         opportunity_type: opportunityType,
         opportunity_id: opportunityId ? parseInt(opportunityId, 10) : null,
         message_type: messageType,

@@ -32,8 +32,10 @@ import {
   Briefcase,
   BookOpen,
   ArrowRight,
-  UserCheck
+  UserCheck,
+  Download
 } from 'lucide-react';
+import { ResumePreviewModal } from '../../components/common/ResumePreviewModal';
 
 const PROJECT_IMAGE_PRESETS = [
   { name: 'SaaS Dashboard', url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80' },
@@ -56,6 +58,7 @@ export const DigitalPortfolioPage = ({ isPublic: propIsPublic = false }) => {
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL', 'PROJECTS', 'CERTIFICATIONS', 'INTERNSHIPS', 'SKILLS'
   const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showResumeModal, setShowResumeModal] = useState(false);
 
   // Project Modal State (Add or Edit)
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -258,6 +261,25 @@ export const DigitalPortfolioPage = ({ isPublic: propIsPublic = false }) => {
               {copiedLink ? 'Copied to Clipboard!' : 'Copy Share Link'}
             </button>
 
+            <button
+              onClick={() => setShowResumeModal(true)}
+              className="btn"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
+                fontSize: '0.82rem',
+                padding: '0.45rem 0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                cursor: 'pointer'
+              }}
+              title="Download ATS-optimized verified resume"
+            >
+              <Download size={15} /> Download Resume
+            </button>
+
             <a
               href={`/portfolio/${studentProfileId}`}
               target="_blank"
@@ -360,6 +382,27 @@ export const DigitalPortfolioPage = ({ isPublic: propIsPublic = false }) => {
           {/* Collaborate & Social Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setShowResumeModal(true)}
+                className="btn"
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary-500, #6366f1), var(--accent-500, #0ea5e9))',
+                  color: '#ffffff',
+                  fontSize: '0.84rem',
+                  fontWeight: 800,
+                  padding: '0.45rem 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  border: 'none',
+                  boxShadow: '0 4px 14px rgba(99, 102, 241, 0.45)',
+                  cursor: 'pointer'
+                }}
+                title="Download verified student resume"
+              >
+                <Download size={16} /> Download Resume
+              </button>
+
               {profile?.linkedin_url && (
                 <a
                   href={profile.linkedin_url.startsWith('http') ? profile.linkedin_url : `https://${profile.linkedin_url}`}
@@ -1060,6 +1103,15 @@ export const DigitalPortfolioPage = ({ isPublic: propIsPublic = false }) => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Resume Preview & Download Modal */}
+      {showResumeModal && (
+        <ResumePreviewModal
+          studentId={studentProfileId}
+          studentData={portfolio}
+          onClose={() => setShowResumeModal(false)}
+        />
       )}
 
     </div>
