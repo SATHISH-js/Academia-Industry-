@@ -1,70 +1,109 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { CompanyLogo } from '../../components/roadmap/CompanyLogo';
 import {
   AiInterviewerDollGraphic,
-  AiInterviewGreetingModal,
   AiInterviewCornerDoll
 } from '../../components/interview/AiInterviewerDoll';
 import {
   Sparkles,
-  Mic,
   Volume2,
+  VolumeX,
   Award,
   AlertTriangle,
   CheckCircle2,
   RotateCcw,
   BarChart2,
   Building2,
-  Bot,
   Brain,
   History,
   MessageSquare,
-  HelpCircle,
   Clock,
   TrendingUp,
   Star,
   Play,
   ChevronRight,
-  ThumbsUp,
-  Layers,
-  ShieldCheck,
+  BookOpen,
+  ArrowRight,
   Check
 } from 'lucide-react';
+
+const COMPANIES = [
+  {
+    name: 'Google',
+    roleDefault: 'Full Stack Software Engineer',
+    speechText: "Great choice! Preparing for Google. Google focuses heavily on scalable distributed systems, clean data structures, and algorithmic complexity. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'Wipro',
+    roleDefault: 'Wipro Elite & Turbo SDE',
+    speechText: "Excellent choice! Preparing for Wipro Elite and Turbo SDE. Wipro values strong Java fundamentals, Spring Boot architecture, REST APIs, and production troubleshooting. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'Amazon',
+    roleDefault: 'Backend Developer',
+    speechText: "Great choice! Preparing for Amazon. Amazon values Leadership Principles, distributed cloud systems, high concurrency, and customer obsession. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'Microsoft',
+    roleDefault: 'Cloud & DevOps Engineer',
+    speechText: "Great choice! Preparing for Microsoft. Microsoft values Azure cloud architecture, full stack scalability, CI/CD pipelines, and clean code. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'TCS',
+    roleDefault: 'Wipro Elite & Turbo SDE',
+    speechText: "Great choice! Preparing for TCS Digital. TCS values robust Java and Python fundamentals, data structures, algorithms, and agile delivery. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'Infosys',
+    roleDefault: 'Full Stack Software Engineer',
+    speechText: "Great choice! Preparing for Infosys Power Programmer. Infosys values full stack architecture, problem solving, and enterprise system design. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'Meta',
+    roleDefault: 'Frontend Engineer',
+    speechText: "Great choice! Preparing for Meta. Meta values frontend architecture, React internals, Core Web Vitals, and responsive UI performance. Select your target role and let's step into the interview room!"
+  },
+  {
+    name: 'Tesla',
+    roleDefault: 'Backend Developer',
+    speechText: "Great choice! Preparing for Tesla. Tesla values high-performance computing, low-latency concurrent systems, autonomous architectures, and embedded efficiency. Select your target role and let's step into the interview room!"
+  }
+];
+
+const ROLES = [
+  { id: 'Wipro Elite & Turbo SDE', label: 'Wipro Elite & Turbo SDE (Java & Spring Boot)' },
+  { id: 'Full Stack Software Engineer', label: 'Full Stack Software Engineer (MERN / React / Node)' },
+  { id: 'Backend Developer', label: 'Backend Developer (Microservices & Databases)' },
+  { id: 'Frontend Engineer', label: 'Frontend Engineer (React / Next.js / Performance)' },
+  { id: 'Cloud & DevOps Engineer', label: 'Cloud & DevOps Engineer (Kubernetes & CI/CD)' },
+  { id: 'Data Scientist / ML Engineer', label: 'Data Scientist / ML Engineer (AI & Modeling)' }
+];
 
 export const MockInterviewPage = () => {
   const navigate = useNavigate();
 
-  const [presets, setPresets] = useState([]);
-  const [selectedRole, setSelectedRole] = useState('Wipro Elite & Turbo SDE');
-  const [selectedCompany, setSelectedCompany] = useState('Wipro');
+  const [selectedCompany, setSelectedCompany] = useState('Google');
+  const [selectedRole, setSelectedRole] = useState('Full Stack Software Engineer');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechMuted, setSpeechMuted] = useState(false);
   const [historyList, setHistoryList] = useState([]);
-  const [report, setReport] = useState(null);
-  const [activeTab, setActiveTab] = useState('TRACKS'); // 'TRACKS', 'REPORT', 'HISTORY'
-  const [loadingPresets, setLoadingPresets] = useState(true);
-
-  // AI Doll Greeting Modal state
-  const [showGreetingModal, setShowGreetingModal] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    fetchPresets();
     fetchHistory();
-  }, []);
 
-  const fetchPresets = async () => {
-    try {
-      setLoadingPresets(true);
-      const res = await api.get('/mock-interview/presets');
-      if (res.data.success) {
-        setPresets(res.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch presets', err);
-    } finally {
-      setLoadingPresets(false);
-    }
-  };
+    // Welcome speech by Coach Nova on load
+    const timer = setTimeout(() => {
+      speakAloud("Welcome to your AI Mock Interview! I am Coach Nova. Please select your target company and engineering role to begin.");
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  }, []);
 
   const fetchHistory = async () => {
     try {
@@ -73,526 +112,314 @@ export const MockInterviewPage = () => {
         setHistoryList(res.data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch interview history', err);
+      console.error('Failed to fetch history', err);
     }
   };
 
-  const handleLaunchPreset = (p) => {
-    setSelectedRole(p.role);
-    setSelectedCompany(p.company);
-    setShowGreetingModal(true);
+  const speakAloud = (text) => {
+    if (speechMuted || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.05;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
   };
 
-  const handleEnterLiveRoom = () => {
-    setShowGreetingModal(false);
+  // User Requirement: "when the user choose google thats the time the ai also speek"
+  const handleSelectCompany = (comp) => {
+    setSelectedCompany(comp.name);
+    if (comp.roleDefault) {
+      setSelectedRole(comp.roleDefault);
+    }
+    // AI Doll speaks aloud immediately
+    speakAloud(comp.speechText);
+  };
+
+  const handleLaunchRoom = () => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     navigate(`/student/mock-interview/room?company=${encodeURIComponent(selectedCompany)}&role=${encodeURIComponent(selectedRole)}`);
   };
 
-  const handleViewHistoricalReport = async (item) => {
-    try {
-      const res = await api.get(`/mock-interview/history/${item.id}`);
-      if (res.data.success) {
-        const raw = res.data.data;
-        const meta = raw.transcript || {};
-        setReport({
-          role: raw.role_title,
-          company: raw.company_name,
-          overallScore: raw.overall_score,
-          speechRatingStars: meta.speechRatingStars || (raw.overall_score / 20).toFixed(1),
-          confidenceScore: raw.confidence_score,
-          technicalScore: raw.technical_score,
-          communicationScore: raw.communication_score,
-          grammarScore: meta.grammarScore || 85,
-          wordCount: raw.words_analyzed,
-          fillerWordsDetected: raw.filler_words_count,
-          feedbackSummary: raw.feedback_summary,
-          grammarMistakes: meta.grammarMistakes || [],
-          strengths: meta.strengths || [],
-          improvements: meta.improvements || [],
-          questionsFeedback: meta.analyzedQuestions || []
-        });
-        setActiveTab('REPORT');
-        window.scrollTo({ top: 200, behavior: 'smooth' });
-      }
-    } catch (err) {
-      console.error('Failed to fetch report detail', err);
-    }
-  };
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1240px', margin: '0 auto', paddingBottom: '3rem' }}>
-      {/* Hero Banner with Animated AI Doll Preview */}
+    <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '3.5rem' }}>
+      {/* Unified AI Interviewer Centerpiece Banner */}
       <div className="card" style={{
         background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%)',
         color: '#ffffff',
-        padding: '2.5rem',
+        padding: '2.5rem 2rem',
         borderRadius: '24px',
-        border: 'none',
         boxShadow: 'var(--shadow-xl)',
+        border: '2px solid rgba(99, 102, 241, 0.3)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
+        {/* Sound Mute Toggle */}
+        <button
+          onClick={() => {
+            const next = !speechMuted;
+            setSpeechMuted(next);
+            if (next && window.speechSynthesis) window.speechSynthesis.cancel();
+          }}
+          style={{
+            position: 'absolute',
+            top: '1.25rem',
+            right: '1.25rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            borderRadius: '9999px',
+            padding: '0.4rem 0.85rem',
+            color: '#ffffff',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}
+          title={speechMuted ? 'Unmute AI voice' : 'Mute AI voice'}
+        >
+          {speechMuted ? <VolumeX size={15} color="#f87171" /> : <Volume2 size={15} color="#4ade80" />}
+          {speechMuted ? 'Voice Muted' : 'Coach Nova Voice ON'}
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '2rem' }}>
           <div style={{ flex: '1 1 540px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-              <span className="badge" style={{ backgroundColor: 'rgba(99, 102, 241, 0.35)', color: '#ffffff', border: '1px solid rgba(165, 180, 252, 0.3)', fontWeight: 800 }}>
-                🎙️ Professional AI Mock Interviewer
-              </span>
-              <span style={{ fontSize: '0.82rem', color: '#c7d2fe', fontWeight: 600 }}>
-                Voice-Enabled • Grammar Audit • Speech Ratings
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.12)', padding: '0.35rem 0.85rem', borderRadius: '9999px', marginBottom: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+              <Sparkles size={14} color="#facc15" />
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#facc15' }}>
+                Next-Gen AI Mock Interview Simulator
               </span>
             </div>
 
-            <h1 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.025em', marginBottom: '0.6rem', lineHeight: 1.2 }}>
-              Master Top Tech Interviews with AI Coach Nova
+            <h1 style={{ fontSize: '2.3rem', fontWeight: 900, margin: '0 0 0.5rem 0', letterSpacing: '-0.025em', lineHeight: 1.2 }}>
+              Speak with AI Coach Nova
             </h1>
 
-            <p style={{ color: '#c7d2fe', maxWidth: '640px', fontSize: '0.96rem', lineHeight: 1.6, marginBottom: '1.75rem' }}>
-              Experience authentic technical interview simulations tailored to <strong>Wipro</strong>, Google, Amazon, Microsoft, and TCS. 
-              Our AI doll reads questions aloud, listens to your voice, audits grammatical errors, rates verbal pacing, and gives exemplary STAR model answers.
+            <p style={{ color: '#c7d2fe', fontSize: '0.98rem', lineHeight: 1.6, margin: '0 0 1.5rem 0', maxWidth: '640px' }}>
+              Select your target company below. Coach Nova will verbally guide you, read real company questions aloud, listen via your mic, identify grammar mistakes, rate your delivery, and connect your results directly to tailored learning programs.
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
-                onClick={() => setShowGreetingModal(true)}
+                onClick={handleLaunchRoom}
                 className="btn btn-primary"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.6rem',
-                  padding: '0.85rem 1.65rem',
-                  fontSize: '0.98rem',
+                  padding: '0.9rem 1.8rem',
+                  fontSize: '1rem',
                   fontWeight: 800,
-                  boxShadow: '0 4px 18px rgba(79, 70, 229, 0.5)',
-                  borderRadius: '12px'
+                  borderRadius: '14px',
+                  boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)'
                 }}
               >
-                <Play size={18} fill="#ffffff" /> Ready to Take AI Mock Interview Test
+                <Play size={18} fill="#ffffff" /> Enter Live Interview Room ({selectedCompany})
               </button>
 
               <button
-                onClick={() => navigate('/student/mock-interview/room?company=Wipro&role=Wipro%20Elite%20%26%20Turbo%20SDE')}
+                onClick={() => setShowHistory(!showHistory)}
                 className="btn"
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.12)',
                   color: '#ffffff',
                   border: '1px solid rgba(255, 255, 255, 0.25)',
                   fontWeight: 700,
-                  padding: '0.85rem 1.35rem',
+                  padding: '0.9rem 1.4rem',
                   fontSize: '0.9rem',
-                  borderRadius: '12px'
+                  borderRadius: '14px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem'
                 }}
               >
-                Launch Wipro SDE Round 🚀
+                <History size={16} /> Past Practice Sessions ({historyList.length})
               </button>
             </div>
           </div>
 
-          {/* Interactive AI Doll Banner Companion */}
-          <div
-            onClick={() => setShowGreetingModal(true)}
-            style={{
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '24px',
-              padding: '1.25rem 1.75rem',
-              border: '1.5px solid rgba(255, 255, 255, 0.25)',
-              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.35)',
-              transition: 'transform 0.2s ease',
-              textAlign: 'center'
-            }}
-            title="Click to talk with Coach Nova!"
-          >
+          {/* Animated AI Doll Mascot Booth */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            padding: '1.5rem 2rem',
+            borderRadius: '24px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.35)',
+            textAlign: 'center',
+            minWidth: '240px'
+          }}>
             <div style={{
-              fontSize: '0.75rem',
+              fontSize: '0.74rem',
               fontWeight: 800,
-              color: '#facc15',
-              marginBottom: '6px',
-              backgroundColor: '#1e1b4b',
+              color: '#38bdf8',
+              backgroundColor: '#0f172a',
               padding: '0.25rem 0.75rem',
               borderRadius: '9999px',
-              border: '1px solid #eab308'
+              border: '1px solid #38bdf8',
+              marginBottom: '0.5rem'
             }}>
-              🎙️ Coach Nova (AI)
+              {isSpeaking ? '🔊 Coach Nova is Speaking...' : '🎙️ Ready for Your Voice'}
             </div>
-            <AiInterviewerDollGraphic state="speaking" size={100} />
-            <span style={{ fontSize: '0.78rem', color: '#c7d2fe', marginTop: '6px', fontWeight: 700 }}>
-              Click to Start Test! ✨
+
+            <AiInterviewerDollGraphic state={isSpeaking ? 'speaking' : 'idle'} size={120} />
+
+            <div style={{ marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>Coach Nova</div>
+              <div style={{ fontSize: '0.78rem', color: '#a5b4fc', fontWeight: 600 }}>
+                Selected Target: <span style={{ color: '#facc15' }}>{selectedCompany}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Target Company Selector (Single Clean Unified Section) */}
+      <div className="card" style={{ padding: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Building2 size={22} color="var(--primary-600)" />
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 }}>
+              Select Your Target Company
+            </h2>
+          </div>
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', color: 'var(--slate-500)' }}>
+            Click on any company below. Coach Nova will verbally brief you on that company's engineering interview culture!
+          </p>
+        </div>
+
+        {/* Company Cards Grid with Logo and Name Underneath */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+          gap: '1rem',
+          marginBottom: '2rem'
+        }}>
+          {COMPANIES.map((c) => {
+            const isSelected = selectedCompany.toLowerCase() === c.name.toLowerCase();
+            return (
+              <div
+                key={c.name}
+                onClick={() => handleSelectCompany(c)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '1.25rem 0.85rem',
+                  borderRadius: '16px',
+                  backgroundColor: isSelected ? 'var(--primary-50)' : '#ffffff',
+                  border: isSelected ? '2.5px solid var(--primary-600)' : '1.5px solid var(--border-color)',
+                  boxShadow: isSelected ? '0 6px 18px rgba(79, 70, 229, 0.22)' : 'var(--shadow-sm)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.65rem',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative'
+                }}
+              >
+                {isSelected && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--primary-600)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff'
+                  }}>
+                    <Check size={11} strokeWidth={3} />
+                  </div>
+                )}
+
+                {/* Company Logo Image with Company Name Underneath */}
+                <CompanyLogo
+                  companyName={c.name}
+                  size={52}
+                  showNameBelow={true}
+                  nameStyle={{
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    color: isSelected ? 'var(--primary-800)' : 'var(--slate-800)',
+                    marginTop: '0.35rem'
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Target Role Selector */}
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 800, color: 'var(--slate-800)', marginBottom: '0.5rem' }}>
+              Target Engineering Role / Track
+            </label>
+            <select
+              className="form-control"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              style={{ fontSize: '0.94rem', fontWeight: 600, padding: '0.75rem 1rem' }}
+            >
+              {ROLES.map(r => (
+                <option key={r.id} value={r.id}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', justifyContent: 'flex-end' }}>
+            <button
+              onClick={handleLaunchRoom}
+              className="btn btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.6rem',
+                padding: '0.85rem 1.6rem',
+                fontSize: '0.98rem',
+                fontWeight: 800,
+                borderRadius: '12px',
+                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)'
+              }}
+            >
+              <Play size={17} fill="#ffffff" /> Launch Interview Room for {selectedCompany} <ArrowRight size={17} />
+            </button>
+            <span style={{ fontSize: '0.76rem', color: 'var(--slate-500)', textAlign: 'center' }}>
+              Includes Real-time Mic Dictation, TTS, Grammar Diagnosis & Learning Program Connections
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Tab Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: '0.3rem', borderRadius: 'var(--radius-md)', gap: '0.3rem' }}>
-          <button
-            onClick={() => setActiveTab('TRACKS')}
-            style={{
-              padding: '0.5rem 1.15rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: activeTab === 'TRACKS' ? '#ffffff' : 'transparent',
-              color: activeTab === 'TRACKS' ? 'var(--primary-700)' : 'var(--slate-600)',
-              boxShadow: activeTab === 'TRACKS' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            🏢 Available Interview Tracks ({presets.length})
-          </button>
-
-          {report && (
-            <button
-              onClick={() => setActiveTab('REPORT')}
-              style={{
-                padding: '0.5rem 1.15rem',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: activeTab === 'REPORT' ? '#ffffff' : 'transparent',
-                color: activeTab === 'REPORT' ? 'var(--primary-700)' : 'var(--slate-600)',
-                boxShadow: activeTab === 'REPORT' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              📊 Active AI Report
-            </button>
-          )}
-
-          <button
-            onClick={() => setActiveTab('HISTORY')}
-            style={{
-              padding: '0.5rem 1.15rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: activeTab === 'HISTORY' ? '#ffffff' : 'transparent',
-              color: activeTab === 'HISTORY' ? 'var(--primary-700)' : 'var(--slate-600)',
-              boxShadow: activeTab === 'HISTORY' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem'
-            }}
-          >
-            <History size={15} /> Past Sessions ({historyList.length})
-          </button>
-        </div>
-
-        <button
-          onClick={() => setShowGreetingModal(true)}
-          className="btn btn-outline btn-sm"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}
-        >
-          <Sparkles size={15} color="var(--primary-600)" /> Custom Role Interview
-        </button>
-      </div>
-
-      {/* Tab 1: Available Interview Tracks */}
-      {activeTab === 'TRACKS' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0 0 0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Layers size={22} color="var(--primary-600)" />
-              Select an Engineering & Company Track
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)', margin: 0 }}>
-              Each track is curated with real company technical interview questions, system architecture scenarios, and behavioral probes.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
-            {presets.map((p) => {
-              const isWipro = p.company.toLowerCase() === 'wipro';
-              return (
-                <div
-                  key={p.id}
-                  className="card"
-                  style={{
-                    padding: '1.5rem',
-                    border: isWipro ? '2px solid var(--primary-500)' : '1px solid var(--border-color)',
-                    backgroundColor: isWipro ? '#fcfcff' : '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '1.25rem',
-                    transition: 'all 0.2s ease',
-                    boxShadow: isWipro ? '0 4px 14px rgba(79, 70, 229, 0.12)' : 'var(--shadow-sm)'
-                  }}
-                >
-                  <div>
-                    {/* Header Row: Company Logo + Badges */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <CompanyLogo companyName={p.company} size={42} showNameBelow={false} />
-                        <div>
-                          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--slate-500)', fontWeight: 800 }}>
-                            {p.company} Interview Track
-                          </span>
-                          <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0.1rem 0 0 0' }}>
-                            {p.role}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <span className="badge badge-primary" style={{ fontSize: '0.68rem', fontWeight: 800 }}>
-                        {p.difficulty}
-                      </span>
-                    </div>
-
-                    <p style={{ fontSize: '0.86rem', color: 'var(--slate-600)', lineHeight: 1.5, margin: '0 0 0.85rem 0' }}>
-                      {p.description}
-                    </p>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.78rem', color: 'var(--slate-500)' }}>
-                      <span>🎯 <strong>{p.questions?.length || 4} Questions</strong></span>
-                      <span>🎙️ Voice Dictation</span>
-                      <span>✍️ Grammar Check</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.6rem' }}>
-                    <button
-                      onClick={() => handleLaunchPreset(p)}
-                      className="btn btn-primary"
-                      style={{
-                        flex: 1,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.45rem',
-                        fontWeight: 800,
-                        fontSize: '0.86rem'
-                      }}
-                    >
-                      <Play size={15} fill="#ffffff" /> Start Interview Round
-                    </button>
-
-                    <button
-                      onClick={() => navigate(`/student/mock-interview/room?company=${encodeURIComponent(p.company)}&role=${encodeURIComponent(p.role)}`)}
-                      className="btn btn-outline btn-sm"
-                      title="Direct Room Jump"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: Detailed AI Diagnostic Report */}
-      {activeTab === 'REPORT' && (
-        report ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {/* Top Score Summary Banner */}
-            <div className="card" style={{
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%)',
-              color: '#ffffff',
-              padding: '2.5rem',
-              borderRadius: '24px',
-              border: '2px solid rgba(99, 102, 241, 0.3)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                    <span className="badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', fontWeight: 800 }}>
-                      AI Diagnostic Performance Assessment
-                    </span>
-                    <span className="badge" style={{ backgroundColor: '#4f46e5', color: '#ffffff' }}>
-                      {report.company} Track
-                    </span>
-                  </div>
-                  <h2 style={{ fontSize: '1.85rem', fontWeight: 800, margin: 0 }}>
-                    {report.role}
-                  </h2>
-                  <p style={{ color: '#c7d2fe', fontSize: '0.92rem', margin: '0.45rem 0 0 0', maxWidth: '650px', lineHeight: 1.55 }}>
-                    {report.feedbackSummary}
-                  </p>
-                </div>
-
-                <div style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  padding: '1.75rem 2.25rem',
-                  borderRadius: '20px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(255, 255, 255, 0.2)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', marginBottom: '0.3rem' }}>
-                    <Star size={24} fill="#facc15" color="#facc15" />
-                    <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#ffffff' }}>
-                      {report.speechRatingStars}
-                    </span>
-                    <span style={{ fontSize: '1rem', color: '#cbd5e1', fontWeight: 700 }}>/ 5.0</span>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#facc15', textTransform: 'uppercase' }}>
-                    {report.overallScore >= 82 ? '🏆 Strong Hire' : report.overallScore >= 68 ? '✅ Candidate Ready' : '📚 Developing'}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '0.2rem' }}>
-                    Readiness Score: {report.overallScore}%
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 4 Score Gauges */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.25rem' }}>
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Technical Depth</span>
-                  <Brain size={20} color="var(--primary-600)" />
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                  {report.technicalScore}%
-                </div>
-                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${report.technicalScore}%`, height: '100%', backgroundColor: 'var(--primary-600)' }} />
-                </div>
-              </div>
-
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Grammar & Diction</span>
-                  <CheckCircle2 size={20} color="var(--success-600)" />
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                  {report.grammarScore}%
-                </div>
-                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${report.grammarScore}%`, height: '100%', backgroundColor: 'var(--success-600)' }} />
-                </div>
-              </div>
-
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Verbal Confidence</span>
-                  <Award size={20} color="var(--accent-600)" />
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                  {report.confidenceScore}%
-                </div>
-                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${report.confidenceScore}%`, height: '100%', backgroundColor: 'var(--accent-600)' }} />
-                </div>
-              </div>
-
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-700)' }}>Delivery & Fluency</span>
-                  <Mic size={20} color="var(--primary-600)" />
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-900)' }}>
-                  {report.communicationScore}%
-                </div>
-                <div style={{ width: '100%', height: 7, backgroundColor: 'var(--slate-200)', borderRadius: 4, marginTop: '0.5rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${report.communicationScore}%`, height: '100%', backgroundColor: 'var(--primary-600)' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Grammar Mistakes Audit Card */}
-            <div className="card" style={{ padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertTriangle size={20} color="var(--warning-600)" /> Grammar Mistakes & Language Diagnostics
-              </h3>
-
-              {(!report.grammarMistakes || report.grammarMistakes.length === 0) ? (
-                <div style={{ padding: '1.5rem', backgroundColor: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0', color: '#047857' }}>
-                  🎉 <strong>Zero grammar errors detected!</strong> You spoke with exceptional clarity and grammatical precision.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {report.grammarMistakes.map((g, idx) => (
-                    <div key={idx} style={{ padding: '1rem 1.25rem', backgroundColor: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                        <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#b45309', fontWeight: 800 }}>
-                          {g.issueType}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.88rem', color: '#991b1b', fontWeight: 700 }}>
-                        ❌ Detected: "{g.detectedText}"
-                      </div>
-                      <div style={{ fontSize: '0.88rem', color: '#166534', fontWeight: 700, marginTop: '0.2rem' }}>
-                        ✅ Recommended: "{g.suggestedCorrection}"
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#78350f', marginTop: '0.25rem' }}>
-                        💡 {g.ruleExplanation}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Strengths and Enhancements */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-              <div className="card" style={{ padding: '1.75rem' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ThumbsUp size={18} color="var(--success-600)" /> Key Strengths
-                </h3>
-                <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.9rem', color: 'var(--slate-700)', lineHeight: 1.6 }}>
-                  {report.strengths?.map((str, idx) => <li key={idx}><strong>{str}</strong></li>)}
-                </ul>
-              </div>
-
-              <div className="card" style={{ padding: '1.75rem' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <TrendingUp size={18} color="var(--primary-600)" /> Enhancement Recommendations
-                </h3>
-                <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.9rem', color: 'var(--slate-700)', lineHeight: 1.6 }}>
-                  {report.improvements?.map((imp, idx) => <li key={idx}>{imp}</li>)}
-                </ul>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-              <button
-                onClick={() => navigate(`/student/mock-interview/room?company=${encodeURIComponent(report.company)}&role=${encodeURIComponent(report.role)}`)}
-                className="btn btn-primary"
-                style={{ fontWeight: 800, padding: '0.85rem 1.75rem' }}
-              >
-                <RotateCcw size={16} /> Retake This Track Round
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="card" style={{ textAlign: 'center', padding: '3.5rem 2rem' }}>
-            <Brain size={48} style={{ margin: '0 auto 1rem', color: 'var(--primary-400)' }} />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '0.5rem' }}>
-              No Active Diagnostic Report Selected
+      {/* Past Practice Sessions Section */}
+      {showHistory && (
+        <div className="card" style={{ padding: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <History size={20} color="var(--primary-600)" /> Past AI Mock Interview Rounds
             </h3>
-            <p style={{ color: 'var(--slate-600)', maxWidth: '480px', margin: '0 auto 1.5rem', fontSize: '0.92rem' }}>
-              Complete an interview round or select a session from your past history to view its AI speech ratings and grammar breakdown.
-            </p>
-            <button onClick={() => setShowGreetingModal(true)} className="btn btn-primary" style={{ margin: '0 auto', fontWeight: 700 }}>
-              Launch New Interview Round 🚀
+            <button
+              onClick={() => setShowHistory(false)}
+              className="btn btn-outline btn-sm"
+            >
+              Hide Past Sessions
             </button>
           </div>
-        )
-      )}
-
-      {/* Tab 3: Past Sessions History */}
-      {activeTab === 'HISTORY' && (
-        <div className="card">
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <History size={20} color="var(--primary-600)" /> AI Mock Interview Practice History
-          </h3>
 
           {historyList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--slate-500)' }}>
-              No previous mock interview rounds found. Start your first practice round with Coach Nova!
+            <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--slate-500)' }}>
+              No previous mock interview rounds found. Start your first session above!
             </div>
           ) : (
             <div className="table-responsive">
@@ -602,10 +429,9 @@ export const MockInterviewPage = () => {
                     <th>Date & Time</th>
                     <th>Target Role</th>
                     <th>Company</th>
-                    <th>AI Rating</th>
+                    <th>Speech Rating</th>
                     <th>Readiness</th>
                     <th>Technical</th>
-                    <th>Grammar</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -625,19 +451,18 @@ export const MockInterviewPage = () => {
                         </span>
                       </td>
                       <td>
-                        <strong style={{ color: h.overall_score >= 80 ? 'var(--success-600)' : h.overall_score >= 60 ? 'var(--primary-600)' : 'var(--warning-600)', fontSize: '0.95rem' }}>
+                        <strong style={{ color: h.overall_score >= 80 ? 'var(--success-600)' : 'var(--primary-600)' }}>
                           {h.overall_score}%
                         </strong>
                       </td>
                       <td>{h.technical_score}%</td>
-                      <td>{h.grammarScore || 85}%</td>
                       <td>
                         <button
-                          onClick={() => handleViewHistoricalReport(h)}
+                          onClick={() => navigate(`/student/mock-interview/room?company=${encodeURIComponent(h.company)}&role=${encodeURIComponent(h.role)}`)}
                           className="btn btn-outline btn-sm"
-                          style={{ fontSize: '0.75rem', fontWeight: 700 }}
+                          style={{ fontSize: '0.78rem', fontWeight: 700 }}
                         >
-                          View Full Report
+                          Practice Again
                         </button>
                       </td>
                     </tr>
@@ -649,21 +474,8 @@ export const MockInterviewPage = () => {
         </div>
       )}
 
-      {/* Animated AI Doll Greeting Modal */}
-      <AiInterviewGreetingModal
-        isOpen={showGreetingModal}
-        onClose={() => setShowGreetingModal(false)}
-        onEnterRoom={handleEnterLiveRoom}
-        selectedRole={selectedRole}
-        setSelectedRole={setSelectedRole}
-        selectedCompany={selectedCompany}
-        setSelectedCompany={setSelectedCompany}
-      />
-
-      {/* Floating AI Doll Corner Assistant */}
-      <AiInterviewCornerDoll
-        onLaunchTest={() => setShowGreetingModal(true)}
-      />
+      {/* Floating Corner Companion */}
+      <AiInterviewCornerDoll onLaunchTest={handleLaunchRoom} />
     </div>
   );
 };
