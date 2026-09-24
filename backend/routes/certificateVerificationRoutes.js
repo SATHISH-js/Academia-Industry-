@@ -6,7 +6,8 @@ const {
   submitQuiz,
   createPost,
   getFeed,
-  getMyVerifications
+  getMyVerifications,
+  validateCertificateCode
 } = require('../controllers/certificateVerificationController');
 const { authenticateUser } = require('../middleware/authMiddleware');
 
@@ -20,7 +21,7 @@ const upload = multer({
  * Certificate Verification API Routes
  */
 
-// 1. Upload certificate image & start timed 20-question AI assessment
+// 1. Upload certificate image OR pass skill name & start timed 20-question AI assessment
 router.post('/start-assessment', authenticateUser, upload.single('file'), startAssessment);
 
 // 2. Submit quiz answers for server-side evaluation & badge awarding
@@ -34,5 +35,8 @@ router.get('/feed', authenticateUser, getFeed);
 
 // 5. Get student's verified certificates and past assessments
 router.get('/my-verifications', authenticateUser, getMyVerifications);
+
+// 6. Public/authenticated Certificate code validator
+router.get('/validate/:code', validateCertificateCode);
 
 module.exports = router;

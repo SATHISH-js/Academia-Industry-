@@ -66,6 +66,7 @@ app.get('/api/health', async (req, res) => {
 // Mount Feature API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/student', studentRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/internships', internshipRoutes);

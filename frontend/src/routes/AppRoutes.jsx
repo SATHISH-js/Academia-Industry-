@@ -20,6 +20,7 @@ import { MockInterviewPage } from '../pages/student/MockInterviewPage';
 import { ResumeBuilderPage } from '../pages/student/ResumeBuilderPage';
 import { StudentProfilePage } from '../pages/student/StudentProfilePage';
 import { CertificateVerificationPage } from '../pages/student/CertificateVerificationPage';
+import { StudentCertificationsPage } from '../pages/student/StudentCertificationsPage';
 import { CommunityFeedPage } from '../pages/student/CommunityFeedPage';
 import { StudentSkillsGapPage } from '../pages/student/StudentSkillsGapPage';
 
@@ -66,8 +67,9 @@ export const AppRoutes = () => {
           <Route path="/student/skills-gap" element={<StudentSkillsGapPage />} />
           <Route path="/student/skills" element={<StudentSkillsGapPage />} />
           <Route path="/student/skill-gap" element={<StudentSkillsGapPage />} />
-          <Route path="/student/certifications" element={<CertificateVerificationPage />} />
           <Route path="/student/certificate-verify" element={<CertificateVerificationPage />} />
+          <Route path="/student/certifications" element={<StudentCertificationsPage />} />
+          <Route path="/student/achievements" element={<StudentCertificationsPage />} />
           <Route path="/student/feed" element={<CommunityFeedPage />} />
           <Route path="/student/learning" element={<StudentDashboard />} />
           <Route path="/student/opportunities" element={<StudentInternshipsPage />} />

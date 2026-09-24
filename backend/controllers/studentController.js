@@ -225,10 +225,229 @@ async function getDashboardSummary(req, res) {
   }
 }
 
+/**
+ * Get student certifications (with category filtering and statistics)
+ */
+async function getStudentCertifications(req, res) {
+  try {
+    const userId = req.user.id;
+    const [stu] = await pool.query('SELECT id FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    if (stu.length === 0) return sendError(res, 'Student profile not found', 404);
+    const studentId = stu[0].id;
+
+    const { category, search } = req.query;
+
+    let query = 'SELECT * FROM student_certifications WHERE student_id = ?';
+    const params = [studentId];
+
+    if (category && category.toUpperCase() !== 'ALL') {
+      query += ' AND category = ?';
+      params.push(category.toUpperCase());
+    }
+
+    if (search && search.trim()) {
+      query += ' AND (name LIKE ? OR issuing_organization LIKE ? OR description LIKE ?)';
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term);
+    }
+
+    query += ' ORDER BY COALESCE(issue_date, created_at) DESC';
+
+    const [rows] = await pool.query(query, params);
+
+    // Compute stats
+    const [allStudentCerts] = await pool.query(
+      'SELECT category, achievement_type FROM student_certifications WHERE student_id = ?',
+      [studentId]
+    );
+
+    const stats = {
+      total: allStudentCerts.length,
+      pptCount: allStudentCerts.filter(c => c.category === 'PPT').length,
+      hackathonCount: allStudentCerts.filter(c => c.category === 'HACKATHON').length,
+      competitionCount: allStudentCerts.filter(c => c.category === 'COMPETITION').length,
+      workshopCount: allStudentCerts.filter(c => c.category === 'WORKSHOP').length,
+      sportsCulturalCount: allStudentCerts.filter(c => c.category === 'SPORTS_CULTURAL').length,
+      technicalCount: allStudentCerts.filter(c => c.category === 'TECHNICAL').length,
+      winnerCount: allStudentCerts.filter(c => ['WINNER', 'FIRST_PLACE', 'RUNNER_UP', 'THIRD_PLACE'].includes(c.achievement_type)).length
+    };
+
+    return sendSuccess(res, { certifications: rows, stats }, 'Certifications retrieved successfully');
+  } catch (error) {
+    console.error('[Student getCertifications Error]', error);
+    return sendError(res, 'Failed to fetch student certifications', 500);
+  }
+}
+
+/**
+ * Add a certification or extra-curricular achievement
+ */
+async function addStudentCertification(req, res) {
+  try {
+    const userId = req.user.id;
+    const [stu] = await pool.query('SELECT id FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    if (stu.length === 0) return sendError(res, 'Student profile not found', 404);
+    const studentId = stu[0].id;
+
+    const {
+      name,
+      issuing_organization,
+      issue_date,
+      credential_id,
+      certificate_url,
+      category = 'EXTRA_CURRICULAR',
+      level = 'COLLEGE',
+      achievement_type = 'PARTICIPATION',
+      description = '',
+      team_members = '',
+      event_location = ''
+    } = req.body;
+
+    if (!name || !issuing_organization) {
+      return sendError(res, 'Certificate/Event name and issuing organization are required', 400);
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO student_certifications 
+       (student_id, name, issuing_organization, issue_date, credential_id, certificate_url, 
+        category, level, achievement_type, description, team_members, event_location, is_verified)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        studentId,
+        name,
+        issuing_organization,
+        issue_date || null,
+        credential_id || '',
+        certificate_url || '',
+        category,
+        level,
+        achievement_type,
+        description,
+        team_members,
+        event_location
+      ]
+    );
+
+    // Activity log
+    await pool.query(
+      `INSERT INTO user_activity_logs (user_id, action_type, title, description)
+       VALUES (?, 'CERTIFICATE_ADDED', 'Added Certificate', ?)`,
+      [userId, `Added ${category} certificate: ${name} from ${issuing_organization}`]
+    );
+
+    return sendSuccess(res, { id: result.insertId }, 'Certification added successfully', 201);
+  } catch (error) {
+    console.error('[Student addCertification Error]', error);
+    return sendError(res, 'Failed to add certification: ' + error.message, 500);
+  }
+}
+
+/**
+ * Update an existing certification
+ */
+async function updateStudentCertification(req, res) {
+  try {
+    const userId = req.user.id;
+    const [stu] = await pool.query('SELECT id FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    if (stu.length === 0) return sendError(res, 'Student profile not found', 404);
+    const studentId = stu[0].id;
+
+    const certId = req.params.id;
+    const {
+      name,
+      issuing_organization,
+      issue_date,
+      credential_id,
+      certificate_url,
+      category,
+      level,
+      achievement_type,
+      description,
+      team_members,
+      event_location
+    } = req.body;
+
+    const [existing] = await pool.query(
+      'SELECT id FROM student_certifications WHERE id = ? AND student_id = ? LIMIT 1',
+      [certId, studentId]
+    );
+    if (existing.length === 0) {
+      return sendError(res, 'Certification not found or unauthorized', 404);
+    }
+
+    await pool.query(
+      `UPDATE student_certifications SET
+        name = COALESCE(?, name),
+        issuing_organization = COALESCE(?, issuing_organization),
+        issue_date = COALESCE(?, issue_date),
+        credential_id = COALESCE(?, credential_id),
+        certificate_url = COALESCE(?, certificate_url),
+        category = COALESCE(?, category),
+        level = COALESCE(?, level),
+        achievement_type = COALESCE(?, achievement_type),
+        description = COALESCE(?, description),
+        team_members = COALESCE(?, team_members),
+        event_location = COALESCE(?, event_location)
+       WHERE id = ? AND student_id = ?`,
+      [
+        name,
+        issuing_organization,
+        issue_date,
+        credential_id,
+        certificate_url,
+        category,
+        level,
+        achievement_type,
+        description,
+        team_members,
+        event_location,
+        certId,
+        studentId
+      ]
+    );
+
+    return sendSuccess(res, { id: certId }, 'Certification updated successfully');
+  } catch (error) {
+    console.error('[Student updateCertification Error]', error);
+    return sendError(res, 'Failed to update certification: ' + error.message, 500);
+  }
+}
+
+/**
+ * Delete a certification
+ */
+async function deleteStudentCertification(req, res) {
+  try {
+    const userId = req.user.id;
+    const [stu] = await pool.query('SELECT id FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+    if (stu.length === 0) return sendError(res, 'Student profile not found', 404);
+    const studentId = stu[0].id;
+
+    const certId = req.params.id;
+    const [result] = await pool.query(
+      'DELETE FROM student_certifications WHERE id = ? AND student_id = ?',
+      [certId, studentId]
+    );
+
+    if (result.affectedRows === 0) {
+      return sendError(res, 'Certification not found or unauthorized', 404);
+    }
+
+    return sendSuccess(res, null, 'Certification deleted successfully');
+  } catch (error) {
+    console.error('[Student deleteCertification Error]', error);
+    return sendError(res, 'Failed to delete certification: ' + error.message, 500);
+  }
+}
+
 module.exports = {
   getStudentProfile,
   updateStudentProfile,
   getStudentSkills,
   getStudentSkillGaps,
-  getDashboardSummary
+  getDashboardSummary,
+  getStudentCertifications,
+  addStudentCertification,
+  updateStudentCertification,
+  deleteStudentCertification
 };

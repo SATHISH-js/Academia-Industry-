@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { GoogleGenAI } = require('@google/genai');
 const { pool } = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/responseHandler');
+const { generate20QuestionsForTopic } = require('../services/topicAssessmentService');
 
 // Config constants matching Hack 1
 const TEST_DURATION_SECONDS = 10 * 60; // 10-minute assessment window
@@ -264,15 +265,19 @@ Return ONLY pure JSON. No markdown fences, no conversational prose.
 
 /**
  * 1. POST /api/certificate-verify/start-assessment
- * Upload certificate image, analyze via Gemini, open timed 10-minute session,
- * return questions ONLY (answers kept securely on server).
+ * Supports two flows:
+ *   a) Direct Technical Skill Test: Pass skill in req.body.skill or req.body.courseTitle (e.g. "Python", "Java", "React", "Cloud")
+ *   b) Certificate Image Upload: Upload certificate file via req.file, analyzed via Gemini Vision
+ * Opens timed 10-minute session, returns questions ONLY (answers kept securely on server).
  */
 async function startAssessment(req, res) {
   await ensureTables();
 
   try {
-    if (!req.file) {
-      return sendError(res, 'Please upload a certificate image file (PNG, JPG, or WEBP)', 400);
+    const requestedSkill = (req.body?.skill || req.body?.courseTitle || req.body?.skillName || '').trim();
+
+    if (!req.file && !requestedSkill) {
+      return sendError(res, 'Please upload a certificate image file or select a technical skill to verify (e.g. Python, Java, React).', 400);
     }
 
     const userId = req.user?.id;
@@ -283,29 +288,83 @@ async function startAssessment(req, res) {
     } catch (_) {}
 
     const quizId = crypto.randomUUID();
-    const originalName = req.file.originalname || 'certificate.png';
-    const safeExt = path.extname(originalName) || '.png';
-    const cleanBase = path.basename(originalName, safeExt).replace(/[^A-Za-z0-9_-]/g, '_');
-    const storedFilename = `${quizId}_${cleanBase}${safeExt}`;
+    let originalName = 'certificate.png';
+    let storedFilename = '';
+    let certificateUrl = '';
+    let quizData = null;
 
     const certDir = path.join(__dirname, '..', 'uploads', 'certificates');
     if (!fs.existsSync(certDir)) {
       fs.mkdirSync(certDir, { recursive: true });
     }
 
-    const targetFilePath = path.join(certDir, storedFilename);
-    fs.writeFileSync(targetFilePath, req.file.buffer);
+    if (req.file) {
+      originalName = req.file.originalname || 'certificate.png';
+      const safeExt = path.extname(originalName) || '.png';
+      const cleanBase = path.basename(originalName, safeExt).replace(/[^A-Za-z0-9_-]/g, '_');
+      storedFilename = `${quizId}_${cleanBase}${safeExt}`;
+      const targetFilePath = path.join(certDir, storedFilename);
+      fs.writeFileSync(targetFilePath, req.file.buffer);
+      certificateUrl = `/uploads/certificates/${storedFilename}`;
 
-    const certificateUrl = `/uploads/certificates/${storedFilename}`;
+      // Generate questions using Gemini Multimodal Vision
+      quizData = await generateQuizWithGemini(req.file.buffer, req.file.mimetype, originalName);
+    } else {
+      // Direct Technical Skill Verification flow (e.g. Python, React, Java, SQL, Cloud)
+      storedFilename = `skill_test_${quizId.slice(0, 8)}.svg`;
+      const cleanSkill = requestedSkill;
+      certificateUrl = `/uploads/certificates/${storedFilename}`;
 
-    // Generate questions using Gemini Multimodal Vision
-    const quizData = await generateQuizWithGemini(req.file.buffer, req.file.mimetype, originalName);
+      // Generate SVG badge certificate
+      const svgBadge = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="560" viewBox="0 0 800 560">
+        <defs>
+          <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0f172a"/>
+            <stop offset="100%" stop-color="#1e1b4b"/>
+          </linearGradient>
+          <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f59e0b"/>
+            <stop offset="100%" stop-color="#fbbf24"/>
+          </linearGradient>
+        </defs>
+        <rect width="800" height="560" rx="20" fill="url(#bg)"/>
+        <rect x="25" y="25" width="750" height="510" rx="14" fill="none" stroke="url(#gold)" stroke-width="3" stroke-dasharray="8 4"/>
+        <circle cx="400" cy="110" r="45" fill="#4338ca" opacity="0.4"/>
+        <text x="400" y="118" fill="#a5b4fc" font-family="system-ui, sans-serif" font-size="30" font-weight="900" text-anchor="middle">VERIFIED</text>
+        <text x="400" y="210" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="28" font-weight="800" text-anchor="middle">TECHNICAL SKILL CERTIFICATE</text>
+        <text x="400" y="250" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16" text-anchor="middle">COMPETENCY ASSESSMENT CERTIFICATION</text>
+        <text x="400" y="320" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="34" font-weight="800" text-anchor="middle">${cleanSkill.toUpperCase()}</text>
+        <text x="400" y="370" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="15" text-anchor="middle">Evaluated across 20 In-Depth Technical Architecture & Practical MCQs</text>
+        <line x1="200" y1="420" x2="600" y2="420" stroke="#334155" stroke-width="1.5"/>
+        <text x="250" y="460" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">Verified Skills Engine</text>
+        <text x="250" y="480" fill="#64748b" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">Authorized Assessment</text>
+        <text x="550" y="460" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">ID: CERT-TECH-${quizId.slice(0, 8).toUpperCase()}</text>
+        <text x="550" y="480" fill="#64748b" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">10-Minute Timed Evaluation</text>
+      </svg>`;
+      fs.writeFileSync(path.join(certDir, storedFilename), svgBadge);
+
+      const generatedResult = await generate20QuestionsForTopic(
+        cleanSkill,
+        `Comprehensive technical competency and problem-solving examination in ${cleanSkill}`,
+        cleanSkill,
+        'Engineering'
+      );
+
+      const questionList = Array.isArray(generatedResult) ? generatedResult : (generatedResult.questions || []);
+
+      quizData = {
+        courseTitle: `${cleanSkill} Technical Skill Certification`,
+        issuingOrganization: 'Verified Technical Skills Engine',
+        skillsCovered: [cleanSkill, 'Core Concepts', 'Architecture', 'Problem Solving'],
+        questions: questionList
+      };
+    }
 
     const sessionData = {
       quizId,
       studentId,
       courseTitle: quizData.courseTitle || 'Certified Skill Course',
-      issuingOrganization: quizData.issuingOrganization || 'Accredited Academy',
+      issuingOrganization: quizData.issuingOrganization || 'Verified Skills Engine',
       skillsCovered: quizData.skillsCovered || ['Engineering'],
       certificateFilename: storedFilename,
       certificateUrl,
@@ -498,22 +557,25 @@ async function submitQuiz(req, res) {
       if (studentId) {
         await pool.query(
           `INSERT INTO student_certifications 
-           (student_id, name, issuing_organization, issue_date, credential_id, certificate_url, badge_awarded, score_percentage, is_verified, verification_quiz_id, verified_at)
-           VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?, TRUE, ?, NOW())
+           (student_id, name, issuing_organization, issue_date, credential_id, certificate_url, badge_awarded, score_percentage, is_verified, verification_quiz_id, verified_at, category, achievement_type)
+           VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?, TRUE, ?, NOW(), 'TECHNICAL', ?)
            ON DUPLICATE KEY UPDATE 
              badge_awarded = VALUES(badge_awarded),
              score_percentage = VALUES(score_percentage),
              is_verified = TRUE,
+             category = 'TECHNICAL',
+             achievement_type = VALUES(achievement_type),
              verified_at = NOW()`,
           [
             studentId,
-            session.courseTitle || 'AI-Verified Certification',
-            session.issuingOrganization || 'Verified Skills Academy',
+            session.courseTitle || 'Technical Skill Certification',
+            session.issuingOrganization || 'Verified Skills Engine',
             `CERT-AI-${quiz_id.slice(0, 8).toUpperCase()}`,
             session.certificateUrl,
             badgeAwarded,
             scorePercentage,
-            quiz_id
+            quiz_id,
+            badgeAwarded ? 'VERIFIED_BADGE' : 'PASSED'
           ]
         );
 
@@ -743,10 +805,101 @@ async function getMyVerifications(req, res) {
   }
 }
 
+/**
+ * 6. GET /api/certificate-verify/validate/:code
+ * Public / Authenticated Certificate Validator
+ * Validates any certificate verification code or ID and returns verified proof.
+ */
+async function validateCertificateCode(req, res) {
+  await ensureTables();
+
+  try {
+    const rawCode = (req.params.code || '').trim();
+    if (!rawCode) {
+      return sendError(res, 'Please provide a certificate verification code or ID', 400);
+    }
+
+    // 1. Search in student_certifications
+    const [certRows] = await pool.query(
+      `SELECT sc.*, u.name AS student_name, u.email AS student_email, ip.institution_name, sp.department, sp.degree
+       FROM student_certifications sc
+       JOIN student_profiles sp ON sc.student_id = sp.id
+       JOIN users u ON sp.user_id = u.id
+       LEFT JOIN institution_profiles ip ON sp.institution_id = ip.id
+       WHERE sc.credential_id = ? OR sc.verification_quiz_id = ? OR sc.id = ?
+       LIMIT 1`,
+      [rawCode, rawCode, isNaN(rawCode) ? -1 : parseInt(rawCode, 10)]
+    );
+
+    if (certRows.length > 0) {
+      const c = certRows[0];
+      return sendSuccess(res, {
+        valid: true,
+        certificateTitle: c.name,
+        issuingOrganization: c.issuing_organization,
+        studentName: c.student_name,
+        institutionName: c.institution_name || 'Autonomous Engineering College',
+        department: c.department || 'Computer Science & Engineering',
+        degree: c.degree || 'B.E / B.Tech',
+        category: c.category || 'TECHNICAL',
+        achievementType: c.achievement_type,
+        level: c.level,
+        scorePercentage: c.score_percentage !== null ? Number(c.score_percentage) : null,
+        badgeAwarded: Boolean(c.badge_awarded),
+        isVerified: Boolean(c.is_verified),
+        issueDate: c.issue_date,
+        verifiedAt: c.verified_at || c.created_at,
+        credentialId: c.credential_id || `CERT-VERIF-${c.id}`,
+        certificateUrl: c.certificate_url,
+        description: c.description
+      }, 'Certificate verified successfully');
+    }
+
+    // 2. Search in ai_certificate_quiz_sessions
+    const [sessionRows] = await pool.query(
+      `SELECT s.*, u.name AS student_name, ip.institution_name, sp.department, sp.degree
+       FROM ai_certificate_quiz_sessions s
+       JOIN student_profiles sp ON s.student_id = sp.id
+       JOIN users u ON sp.user_id = u.id
+       LEFT JOIN institution_profiles ip ON sp.institution_id = ip.id
+       WHERE s.quiz_id = ? OR s.quiz_id LIKE ?
+       LIMIT 1`,
+      [rawCode, `%${rawCode}%`]
+    );
+
+    if (sessionRows.length > 0) {
+      const s = sessionRows[0];
+      return sendSuccess(res, {
+        valid: true,
+        certificateTitle: s.course_title,
+        issuingOrganization: 'Verified Technical Skills Engine',
+        studentName: s.student_name,
+        institutionName: s.institution_name || 'Autonomous Engineering College',
+        department: s.department || 'Engineering',
+        degree: s.degree || 'B.E / B.Tech',
+        category: 'TECHNICAL',
+        scorePercentage: s.score_percentage !== null ? Number(s.score_percentage) : null,
+        badgeAwarded: Boolean(s.badge_awarded),
+        isVerified: Boolean(s.submitted && s.score_percentage >= 60),
+        issueDate: s.submitted_at || s.created_at,
+        verifiedAt: s.submitted_at,
+        credentialId: `CERT-AI-${s.quiz_id.slice(0, 8).toUpperCase()}`,
+        certificateUrl: s.certificate_url
+      }, 'Certificate verified successfully');
+    }
+
+    return sendError(res, 'No verified certificate record found matching this code.', 404);
+  } catch (error) {
+    console.error('[validateCertificateCode Error]', error);
+    return sendError(res, 'Verification lookup failed: ' + error.message, 500);
+  }
+}
+
 module.exports = {
   startAssessment,
   submitQuiz,
   createPost,
   getFeed,
-  getMyVerifications
+  getMyVerifications,
+  validateCertificateCode
 };
