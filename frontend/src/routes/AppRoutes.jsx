@@ -56,7 +56,14 @@ export const AppRoutes = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/portfolio/:studentId" element={<DigitalPortfolioPage isPublic={true} />} />
       </Route>
+
+      {/* Role Redirects directly to dashboards */}
+      <Route path="/student" element={<Navigate to="/student/dashboard" replace />} />
+      <Route path="/academician" element={<Navigate to="/academician/dashboard" replace />} />
+      <Route path="/industry" element={<Navigate to="/industry/dashboard" replace />} />
+      <Route path="/institution" element={<Navigate to="/institution/dashboard" replace />} />
 
       {/* Student Protected Routes */}
       <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>

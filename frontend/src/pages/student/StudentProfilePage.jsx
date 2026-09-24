@@ -34,7 +34,9 @@ import {
   Building2,
   Hash,
   Activity,
-  FileCheck
+  FileCheck,
+  Share2,
+  Copy
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -59,6 +61,7 @@ export const StudentProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
 
   // Password Change State for Settings Tab
   const [passwordData, setPasswordData] = useState({
@@ -225,6 +228,14 @@ export const StudentProfilePage = () => {
     setMessage({ type: 'success', text: 'Profile picture removed. Click "Save Profile Changes" to apply.' });
   };
 
+  const handleCopyProfileLink = () => {
+    const profileId = profile?.id || user?.profile?.id || user?.id || '';
+    const link = `${window.location.origin}/portfolio/${profileId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedProfileLink(true);
+    setTimeout(() => setCopiedProfileLink(false), 2500);
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
@@ -388,7 +399,75 @@ export const StudentProfilePage = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Share Profile Link Button */}
+            <button
+              type="button"
+              onClick={handleCopyProfileLink}
+              className="btn"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontSize: '0.85rem',
+                cursor: 'pointer'
+              }}
+            >
+              {copiedProfileLink ? <Check size={16} color="#34d399" /> : <Share2 size={15} />}
+              {copiedProfileLink ? 'Link Copied!' : 'Share Profile Link'}
+            </button>
+
+            {/* LinkedIn Collaborate */}
+            {formData.linkedin_url && (
+              <a
+                href={formData.linkedin_url.startsWith('http') ? formData.linkedin_url : `https://${formData.linkedin_url}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn"
+                style={{
+                  backgroundColor: '#0a66c2',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.85rem',
+                  border: 'none',
+                  textDecoration: 'none'
+                }}
+              >
+                <Linkedin size={15} /> LinkedIn
+              </a>
+            )}
+
+            {/* GitHub Collaborate */}
+            {formData.github_url && (
+              <a
+                href={formData.github_url.startsWith('http') ? formData.github_url : `https://${formData.github_url}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn"
+                style={{
+                  backgroundColor: '#24292e',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.85rem',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  textDecoration: 'none'
+                }}
+              >
+                <Github size={15} /> GitHub
+              </a>
+            )}
+
+            {/* Edit Details & Picture */}
             <button
               onClick={() => setActiveTab('EDIT')}
               className="btn btn-primary"

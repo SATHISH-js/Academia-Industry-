@@ -20,7 +20,12 @@ import {
   Clock, 
   Sparkles,
   ShieldCheck,
-  LayoutDashboard
+  LayoutDashboard,
+  Share2,
+  Copy,
+  Check,
+  Linkedin,
+  Github
 } from 'lucide-react';
 
 export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
@@ -33,6 +38,7 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
 
   // Notification states
   const [notifications, setNotifications] = useState([]);
@@ -95,6 +101,15 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
     setDropdownOpen(false);
     logout();
     navigate('/');
+  };
+
+  const handleCopyProfileLink = (e) => {
+    if (e) e.stopPropagation();
+    const profileId = user?.profile?.id || user?.id || '';
+    const link = `${window.location.origin}/portfolio/${profileId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedProfileLink(true);
+    setTimeout(() => setCopiedProfileLink(false), 2500);
   };
 
   const getDashboardRoute = () => {
@@ -634,6 +649,145 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
                         <div style={{ fontSize: '0.7rem', color: 'var(--slate-500)' }}>View & edit personal details</div>
                       </div>
                     </button>
+
+                    {/* Share Profile Link & Collaborate Section */}
+                    <div style={{
+                      padding: '0.65rem 1rem',
+                      backgroundColor: 'var(--slate-50)',
+                      borderTop: '1px solid var(--border-color)',
+                      borderBottom: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
+                        Share & Collaborate
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={handleCopyProfileLink}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.45rem 0.65rem',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          backgroundColor: '#ffffff',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer',
+                          color: copiedProfileLink ? '#059669' : 'var(--slate-700)',
+                          marginBottom: '0.5rem',
+                          boxShadow: 'var(--shadow-xs)'
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Share2 size={13} color="var(--primary-600)" />
+                          {copiedProfileLink ? 'Copied Profile Link!' : 'Share Profile Link'}
+                        </span>
+                        {copiedProfileLink ? <Check size={14} color="#059669" /> : <Copy size={13} color="var(--slate-400)" />}
+                      </button>
+
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        {user?.profile?.linkedin_url ? (
+                          <a
+                            href={user.profile.linkedin_url.startsWith('http') ? user.profile.linkedin_url : `https://${user.profile.linkedin_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.4rem',
+                              backgroundColor: '#0a66c2',
+                              color: '#ffffff',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <Linkedin size={12} /> LinkedIn
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              setIsProfileModalOpen(true);
+                            }}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.4rem',
+                              backgroundColor: '#ffffff',
+                              color: '#64748b',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Linkedin size={12} /> + LinkedIn
+                          </button>
+                        )}
+
+                        {user?.profile?.github_url ? (
+                          <a
+                            href={user.profile.github_url.startsWith('http') ? user.profile.github_url : `https://${user.profile.github_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.4rem',
+                              backgroundColor: '#24292e',
+                              color: '#ffffff',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <Github size={12} /> GitHub
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              setIsProfileModalOpen(true);
+                            }}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.4rem',
+                              backgroundColor: '#ffffff',
+                              color: '#64748b',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Github size={12} /> + GitHub
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Requirement 5 Link: Settings & Password Option */}
                     <Link

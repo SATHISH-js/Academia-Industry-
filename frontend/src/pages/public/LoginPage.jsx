@@ -10,8 +10,21 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // If already authenticated, redirect immediately to dashboard
+  React.useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      const roleRoutes = {
+        STUDENT: '/student/dashboard',
+        ACADEMICIAN: '/academician/dashboard',
+        INDUSTRY: '/industry/dashboard',
+        INSTITUTION: '/institution/dashboard'
+      };
+      navigate(roleRoutes[user.role] || '/student/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();

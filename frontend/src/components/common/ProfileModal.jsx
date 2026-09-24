@@ -15,7 +15,12 @@ import {
   Save, 
   Sparkles,
   Compass,
-  GraduationCap
+  GraduationCap,
+  Linkedin,
+  Github,
+  Share2,
+  Copy,
+  Check
 } from 'lucide-react';
 
 const AVATAR_PRESETS = [
@@ -36,6 +41,8 @@ export const ProfileModal = ({ isOpen, onClose }) => {
     email: '',
     phone: '',
     avatar_url: '',
+    linkedin_url: '',
+    github_url: '',
     // Student
     headline: '',
     department: '',
@@ -56,6 +63,7 @@ export const ProfileModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
 
   // Sync state when modal opens
   useEffect(() => {
@@ -73,6 +81,8 @@ export const ProfileModal = ({ isOpen, onClose }) => {
         enrollment_number: p.enrollment_number || '',
         institution_id: p.institution_id ? String(p.institution_id) : '',
         bio: p.bio || '',
+        linkedin_url: p.linkedin_url || '',
+        github_url: p.github_url || '',
         designation: p.designation || '',
         company_name: p.company_name || '',
         institution_name: p.institution_name || '',
@@ -140,6 +150,15 @@ export const ProfileModal = ({ isOpen, onClose }) => {
     setStatusMessage({ type: 'info', text: 'Avatar preset selected! Click "Save Changes" to apply.' });
   };
 
+  const handleCopyProfileLink = (e) => {
+    if (e) e.preventDefault();
+    const profileId = user?.profile?.id || user?.id || '';
+    const link = `${window.location.origin}/portfolio/${profileId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedProfileLink(true);
+    setTimeout(() => setCopiedProfileLink(false), 2500);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -157,6 +176,8 @@ export const ProfileModal = ({ isOpen, onClose }) => {
         enrollment_number: formData.enrollment_number.trim(),
         institution_id: formData.institution_id ? parseInt(formData.institution_id, 10) : null,
         bio: formData.bio.trim(),
+        linkedin_url: formData.linkedin_url ? formData.linkedin_url.trim() : undefined,
+        github_url: formData.github_url ? formData.github_url.trim() : undefined,
         designation: formData.designation.trim(),
         company_name: formData.company_name.trim(),
         city: formData.city.trim(),
@@ -582,6 +603,39 @@ export const ProfileModal = ({ isOpen, onClose }) => {
               </>
             )}
 
+            {/* Social & Collaboration Links */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Linkedin size={14} color="#0a66c2" />
+                  <span>LinkedIn Profile URL</span>
+                </label>
+                <input
+                  type="url"
+                  name="linkedin_url"
+                  className="form-control"
+                  placeholder="https://linkedin.com/in/username"
+                  value={formData.linkedin_url}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Github size={14} color="#24292e" />
+                  <span>GitHub Profile URL</span>
+                </label>
+                <input
+                  type="url"
+                  name="github_url"
+                  className="form-control"
+                  placeholder="https://github.com/username"
+                  value={formData.github_url}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
             {/* Bio */}
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">About / Bio</label>
@@ -603,29 +657,42 @@ export const ProfileModal = ({ isOpen, onClose }) => {
           borderTop: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           gap: '0.75rem',
-          background: 'var(--slate-50)'
+          background: 'var(--slate-50)',
+          flexWrap: 'wrap'
         }}>
           <button
             type="button"
-            onClick={onClose}
-            className="btn btn-secondary"
-            disabled={saving}
+            onClick={handleCopyProfileLink}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem' }}
           >
-            Cancel
+            {copiedProfileLink ? <Check size={14} color="#059669" /> : <Share2 size={14} color="var(--primary-600)" />}
+            {copiedProfileLink ? 'Profile Link Copied!' : 'Share Public Profile'}
           </button>
 
-          <button
-            type="submit"
-            form="profile-edit-form"
-            className="btn btn-primary"
-            disabled={saving}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
-          >
-            <Save size={16} />
-            {saving ? 'Saving Changes...' : 'Save Changes'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary"
+              disabled={saving}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              form="profile-edit-form"
+              className="btn btn-primary"
+              disabled={saving}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+            >
+              <Save size={16} />
+              {saving ? 'Saving Changes...' : 'Save Changes'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
