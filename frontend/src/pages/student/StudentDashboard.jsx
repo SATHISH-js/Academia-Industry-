@@ -19,7 +19,11 @@ import {
   ChevronRight,
   Target,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  GraduationCap,
+  MessageSquare,
+  Send,
+  X
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
@@ -52,6 +56,13 @@ export const StudentDashboard = () => {
     activeInternships: 1,
     certifications: 3
   });
+
+  // Faculty guidance messages
+  const [facultyMessages, setFacultyMessages] = useState([]);
+  const [activeReplyMsg, setActiveReplyMsg] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const [replyFeedback, setReplyFeedback] = useState(null);
 
   // Role-specific skill data for chart
   const getSkillDataForRole = (role) => {
@@ -101,10 +112,47 @@ export const StudentDashboard = () => {
     }
   }, [user]);
 
-  // Load all roadmaps and matched active roadmap
   useEffect(() => {
     fetchRoadmaps();
+    fetchFacultyMessages();
   }, [activeRole]);
+
+  const fetchFacultyMessages = async () => {
+    try {
+      const res = await api.get('/student/faculty-guidance');
+      if (res.data.success) {
+        setFacultyMessages(res.data.data || []);
+      }
+    } catch (e) {
+      // Continue without faculty messages
+    }
+  };
+
+  const handleSendFacultyReply = async (e) => {
+    e?.preventDefault();
+    if (!replyText.trim() || !activeReplyMsg || sendingReply) return;
+    try {
+      setSendingReply(true);
+      const res = await api.post('/student/faculty-guidance/reply', {
+        academician_id: activeReplyMsg.academician_id,
+        subject: `Re: ${activeReplyMsg.subject || 'Faculty Mentorship'}`,
+        message: replyText.trim()
+      });
+      if (res.data.success) {
+        setReplyFeedback('Your response has been sent to faculty!');
+        setReplyText('');
+        fetchFacultyMessages();
+        setTimeout(() => {
+          setReplyFeedback(null);
+          setActiveReplyMsg(null);
+        }, 3000);
+      }
+    } catch (err) {
+      setReplyFeedback('Failed to send reply. Please try again.');
+    } finally {
+      setSendingReply(false);
+    }
+  };
 
   const fetchRoadmaps = async () => {
     try {
@@ -277,6 +325,161 @@ export const StudentDashboard = () => {
           })}
         </div>
       </div>
+
+      {/* Faculty Academic Guidance & Department Mentorship Widget (Requirement 1) */}
+      {facultyMessages.length > 0 && (
+        <div
+          className="card"
+          style={{
+            padding: '1.5rem 1.75rem',
+            border: '1.5px solid var(--primary-300)',
+            backgroundColor: 'var(--primary-50, #f8fafc)',
+            boxShadow: '0 4px 12px -2px rgba(99, 102, 241, 0.12)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--primary-600)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <GraduationCap size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--slate-900)' }}>
+                  Faculty Mentorship & Department Guidance ({facultyMessages.length})
+                </h3>
+                <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)' }}>
+                  Direct academic advisories and milestone feedback from your department professors
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {facultyMessages.slice(0, 3).map((m) => {
+              const isWarning = m.message_type === 'ACADEMIC_WARNING';
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    padding: '1rem 1.25rem',
+                    backgroundColor: '#ffffff',
+                    borderRadius: 'var(--radius-md, 10px)',
+                    border: isWarning ? '1.5px solid #fecaca' : '1px solid var(--slate-200)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--slate-900)' }}>
+                        {m.academician_name} ({m.designation || 'Faculty'}, {m.department})
+                      </span>
+                      <span className={`badge ${isWarning ? 'badge-danger' : 'badge-primary'}`} style={{ fontSize: '0.68rem' }}>
+                        {m.message_type || 'GUIDANCE'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>
+                        {new Date(m.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setActiveReplyMsg(m);
+                          setReplyText('');
+                          setReplyFeedback(null);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                      >
+                        <MessageSquare size={12} /> Reply to Faculty
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--slate-800)' }}>
+                    {m.subject || 'Academic Guidance'}
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--slate-600)', margin: 0, lineHeight: 1.5 }}>
+                    "{m.message}"
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Quick Reply Drawer / Modal */}
+          {activeReplyMsg && (
+            <form
+              onSubmit={handleSendFacultyReply}
+              style={{
+                marginTop: '1rem',
+                padding: '1rem 1.25rem',
+                backgroundColor: '#ffffff',
+                borderRadius: 'var(--radius-md)',
+                border: '1.5px solid var(--primary-400)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--slate-800)' }}>
+                  Replying to {activeReplyMsg.academician_name} regarding "{activeReplyMsg.subject}"
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveReplyMsg(null)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--slate-400)' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <textarea
+                className="form-control"
+                placeholder="Type your response or update on your milestone progress..."
+                rows={2}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                style={{ fontSize: '0.85rem' }}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {replyFeedback ? (
+                  <span style={{ fontSize: '0.82rem', color: 'var(--success-700)', fontWeight: 600 }}>
+                    {replyFeedback}
+                  </span>
+                ) : <span />}
+
+                <button
+                  type="submit"
+                  disabled={!replyText.trim() || sendingReply}
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  {sendingReply ? 'Sending...' : (
+                    <>
+                      <Send size={13} /> Send Reply
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* Requirement 2: Active Personalized Roadmap Widget */}
       <div className="card" style={{ padding: '1.75rem', border: '1px solid var(--primary-200)', background: '#ffffff' }}>

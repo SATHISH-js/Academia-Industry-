@@ -56,6 +56,8 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
       case 'ACADEMICIAN':
         return [
           { name: 'Academic Profile', path: '/academician/profile', icon: User },
+          { name: 'Student Monitoring', path: '/academician/students', icon: GraduationCap },
+          { name: 'Guest Lecture Exchange', path: '/academician/guest-lectures', icon: BookOpen },
           { name: 'Opportunities', path: '/academician/opportunities', icon: Compass },
           { name: 'Collaborations', path: '/academician/collaboration', icon: Users },
           { name: 'My Applications', path: '/academician/applications', icon: FileText }

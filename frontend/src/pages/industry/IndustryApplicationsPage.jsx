@@ -12,11 +12,13 @@ import {
   FileText,
   Sparkles,
   ArrowUpDown,
-  Mail
+  Mail,
+  MessageSquare
 } from 'lucide-react';
 import { CandidateProfileModal } from '../../components/industry/CandidateProfileModal';
 import { ResumePreviewModal } from '../../components/common/ResumePreviewModal';
 import { ContactStudentModal } from '../../components/industry/ContactStudentModal';
+import { ApplicationMessagePane } from '../../components/common/ApplicationMessagePane';
 
 export const IndustryApplicationsPage = () => {
   const [applications, setApplications] = useState([]);
@@ -31,6 +33,7 @@ export const IndustryApplicationsPage = () => {
   const [selectedCandidateForProfile, setSelectedCandidateForProfile] = useState(null);
   const [selectedCandidateForResume, setSelectedCandidateForResume] = useState(null);
   const [selectedStudentForContact, setSelectedStudentForContact] = useState(null);
+  const [selectedAppForMessages, setSelectedAppForMessages] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
   useEffect(() => {
@@ -340,6 +343,24 @@ export const IndustryApplicationsPage = () => {
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
                           <button
+                            onClick={() => setSelectedAppForMessages(app)}
+                            className="btn btn-secondary"
+                            style={{
+                              fontSize: '0.78rem',
+                              padding: '0.35rem 0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              backgroundColor: 'var(--primary-50)',
+                              color: 'var(--primary-700)',
+                              borderColor: 'var(--primary-200)'
+                            }}
+                            title="View Sent & Received Application Messages"
+                          >
+                            <MessageSquare size={13} /> Messages
+                          </button>
+
+                          <button
                             onClick={() => setSelectedCandidateForProfile(app)}
                             className="btn btn-secondary"
                             style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
@@ -367,12 +388,22 @@ export const IndustryApplicationsPage = () => {
         )}
       </div>
 
+      {/* Application Message Pane (Requirement 3) */}
+      {selectedAppForMessages && (
+        <ApplicationMessagePane
+          application={selectedAppForMessages}
+          currentUserRole="INDUSTRY"
+          onClose={() => setSelectedAppForMessages(null)}
+        />
+      )}
+
       {/* Candidate Profile Modal */}
       {selectedCandidateForProfile && (
         <CandidateProfileModal
           candidate={selectedCandidateForProfile}
           onClose={() => setSelectedCandidateForProfile(null)}
           onStatusChange={handleStatusChange}
+          onOpenMessages={(cand) => setSelectedAppForMessages(cand)}
           onContactCandidate={(cand) => {
             setSelectedStudentForContact({
               student_id: cand.student_id || cand.applicant_id,

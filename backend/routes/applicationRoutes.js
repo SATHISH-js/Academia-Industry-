@@ -4,7 +4,9 @@ const router = express.Router();
 const {
   submitApplication,
   getApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getApplicationMessages,
+  sendApplicationMessage
 } = require('../controllers/applicationController');
 
 const { authenticateUser } = require('../middleware/authMiddleware');
@@ -15,5 +17,7 @@ router.use(authenticateUser);
 router.post('/', submitApplication);
 router.get('/', getApplications);
 router.put('/:id/status', requireRole('INDUSTRY'), updateApplicationStatus);
+router.get('/:id/messages', getApplicationMessages);
+router.post('/:id/messages', sendApplicationMessage);
 
 module.exports = router;

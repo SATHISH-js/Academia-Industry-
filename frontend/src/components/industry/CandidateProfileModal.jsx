@@ -16,7 +16,8 @@ import {
   FileText,
   Download,
   Send,
-  ArrowUpRight
+  ArrowUpRight,
+  MessageSquare
 } from 'lucide-react';
 import { ResumePreviewModal } from '../common/ResumePreviewModal';
 
@@ -24,7 +25,8 @@ export const CandidateProfileModal = ({
   candidate,
   onClose,
   onStatusChange,
-  onContactCandidate
+  onContactCandidate,
+  onOpenMessages
 }) => {
   const [showResumeModal, setShowResumeModal] = useState(false);
 
@@ -371,7 +373,28 @@ export const CandidateProfileModal = ({
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {onOpenMessages && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenMessages(candidate);
+                  }}
+                  className="btn btn-secondary"
+                  style={{
+                    fontSize: '0.85rem',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: 'var(--primary-50)',
+                    color: 'var(--primary-700)',
+                    borderColor: 'var(--primary-200)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                >
+                  <MessageSquare size={15} /> Application Messages
+                </button>
+              )}
               {onContactCandidate && (
                 <button
                   onClick={() => {

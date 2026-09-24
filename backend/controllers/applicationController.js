@@ -214,6 +214,15 @@ async function updateApplicationStatus(req, res) {
       [app.applicant_id, `Application Update: ${status}`, notifMsg]
     );
 
+    // Also record feedback as a message in the application communication pane
+    if (feedback && feedback.trim()) {
+      await pool.query(
+        `INSERT INTO application_messages (application_id, sender_user_id, sender_role, sender_name, message, message_type)
+         VALUES (?, ?, ?, ?, ?, 'STATUS_UPDATE')`,
+        [applicationId, req.user.id, req.user.role, req.user.name || 'Recruitment Team', `Status updated to ${status}. Note: ${feedback}`]
+      );
+    }
+
     return sendSuccess(res, { id: applicationId, status }, 'Application status updated successfully');
   } catch (error) {
     console.error('[Application updateStatus Error]', error);
@@ -221,8 +230,131 @@ async function updateApplicationStatus(req, res) {
   }
 }
 
+/**
+ * Get messages and notes for a specific application (both sent and received)
+ */
+async function getApplicationMessages(req, res) {
+  const applicationId = req.params.id;
+  const currentUserId = req.user.id;
+
+  try {
+    const [messages] = await pool.query(
+      `SELECT am.*, u.avatar_url as sender_avatar
+       FROM application_messages am
+       LEFT JOIN users u ON am.sender_user_id = u.id
+       WHERE am.application_id = ?
+       ORDER BY am.created_at ASC`,
+      [applicationId]
+    );
+
+    const enrichedMessages = messages.map(msg => ({
+      ...msg,
+      is_sent_by_me: msg.sender_user_id === currentUserId
+    }));
+
+    return sendSuccess(res, enrichedMessages, 'Application messages retrieved');
+  } catch (error) {
+    console.error('[Application getMessages Error]', error);
+    return sendError(res, 'Failed to fetch application messages', 500);
+  }
+}
+
+/**
+ * Send a message or reply in the application communication pane
+ */
+async function sendApplicationMessage(req, res) {
+  const applicationId = req.params.id;
+  const senderId = req.user.id;
+  const senderRole = req.user.role;
+  const senderName = req.user.name || 'User';
+  const { message, message_type = 'MESSAGE' } = req.body;
+
+  if (!message || !message.trim()) {
+    return sendError(res, 'Message text is required', 400);
+  }
+
+  try {
+    const [appRows] = await pool.query(
+      `SELECT a.*, 
+        CASE
+          WHEN a.opportunity_type = 'INTERNSHIP' THEN (SELECT ip.user_id FROM internships i JOIN industry_profiles ip ON i.industry_id = ip.id WHERE i.id = a.opportunity_id)
+          WHEN a.opportunity_type = 'JOB' THEN (SELECT ip.user_id FROM jobs j JOIN industry_profiles ip ON j.industry_id = ip.id WHERE j.id = a.opportunity_id)
+          WHEN a.opportunity_type = 'RESEARCH' THEN (SELECT ip.user_id FROM research_projects rp JOIN industry_profiles ip ON rp.industry_id = ip.id WHERE rp.id = a.opportunity_id)
+          ELSE NULL
+        END AS industry_user_id,
+        CASE
+          WHEN a.opportunity_type = 'INTERNSHIP' THEN (SELECT title FROM internships WHERE id = a.opportunity_id)
+          WHEN a.opportunity_type = 'JOB' THEN (SELECT title FROM jobs WHERE id = a.opportunity_id)
+          WHEN a.opportunity_type = 'RESEARCH' THEN (SELECT title FROM research_projects WHERE id = a.opportunity_id)
+          ELSE 'Opportunity'
+        END AS opportunity_title
+       FROM applications a
+       WHERE a.id = ? LIMIT 1`,
+      [applicationId]
+    );
+
+    if (appRows.length === 0) {
+      return sendError(res, 'Application not found', 404);
+    }
+    const app = appRows[0];
+
+    const [result] = await pool.query(
+      `INSERT INTO application_messages (application_id, sender_user_id, sender_role, sender_name, message, message_type)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [applicationId, senderId, senderRole, senderName, message.trim(), message_type]
+    );
+
+    // Update timestamp on applications table
+    await pool.query('UPDATE applications SET updated_at = NOW() WHERE id = ?', [applicationId]);
+
+    // Send notification to the other party
+    let recipientUserId = null;
+    let notifLink = '';
+    if (senderRole === 'STUDENT' || senderRole === 'ACADEMICIAN') {
+      recipientUserId = app.industry_user_id;
+      notifLink = '/industry/applications';
+    } else {
+      recipientUserId = app.applicant_id;
+      notifLink = '/student/applications';
+    }
+
+    if (recipientUserId && recipientUserId !== senderId) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message, type, link)
+         VALUES (?, ?, ?, 'APPLICATION_UPDATE', ?)`,
+        [
+          recipientUserId,
+          `New Message on ${app.opportunity_title}`,
+          `${senderName}: "${message.trim().substring(0, 100)}${message.length > 100 ? '...' : ''}"`,
+          notifLink
+        ]
+      );
+    }
+
+    const newMessage = {
+      id: result.insertId,
+      application_id: parseInt(applicationId, 10),
+      sender_user_id: senderId,
+      sender_role: senderRole,
+      sender_name: senderName,
+      message: message.trim(),
+      message_type,
+      created_at: new Date().toISOString(),
+      is_sent_by_me: true
+    };
+
+    return sendSuccess(res, newMessage, 'Message sent successfully', 201);
+  } catch (error) {
+    console.error('[Application sendMessage Error]', error);
+    return sendError(res, 'Failed to send message', 500);
+  }
+}
+
 module.exports = {
   submitApplication,
   getApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getApplicationMessages,
+  sendApplicationMessage
 };
+

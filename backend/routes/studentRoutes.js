@@ -35,4 +35,8 @@ router.delete('/certifications/:id', deleteStudentCertification);
 router.get('/messages', require('../controllers/studentController').getStudentOutreachMessages);
 router.post('/messages/:id/reply', require('../controllers/studentController').replyToIndustryMessage);
 
+// Faculty Academic Guidance routes
+router.get('/faculty-guidance', require('../controllers/academicianController').getStudentGuidanceInbox);
+router.post('/faculty-guidance/reply', require('../controllers/academicianController').replyToAcademicianMessage);
+
 module.exports = router;

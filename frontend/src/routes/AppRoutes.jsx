@@ -29,6 +29,8 @@ import { StudentSkillsGapPage } from '../pages/student/StudentSkillsGapPage';
 import { AcademicianDashboard } from '../pages/academician/AcademicianDashboard';
 import { AcademicianOpportunitiesPage } from '../pages/academician/AcademicianOpportunitiesPage';
 import { AcademicianProfilePage } from '../pages/academician/AcademicianProfilePage';
+import { AcademicianStudentMonitoringPage } from '../pages/academician/AcademicianStudentMonitoringPage';
+import { AcademicianGuestLecturePage } from '../pages/academician/AcademicianGuestLecturePage';
 
 import { IndustryDashboard } from '../pages/industry/IndustryDashboard';
 import { CandidateMatchingPage } from '../pages/industry/CandidateMatchingPage';
@@ -97,6 +99,8 @@ export const AppRoutes = () => {
         <Route element={<DashboardLayout />}>
           <Route path="/academician/dashboard" element={<AcademicianDashboard />} />
           <Route path="/academician/profile" element={<AcademicianProfilePage />} />
+          <Route path="/academician/students" element={<AcademicianStudentMonitoringPage />} />
+          <Route path="/academician/guest-lectures" element={<AcademicianGuestLecturePage />} />
           <Route path="/academician/opportunities" element={<AcademicianOpportunitiesPage />} />
           <Route path="/academician/collaboration" element={<AcademicianOpportunitiesPage />} />
           <Route path="/academician/applications" element={<AcademicianDashboard />} />
