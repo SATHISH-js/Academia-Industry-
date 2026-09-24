@@ -44,6 +44,25 @@ async function runMigrationAndSeed() {
       console.warn(`[Seed Runner] Warning: ${seedPath} not found.`);
     }
 
+    // Step 4: Run supplementary feature migrations
+    const migrationFiles = [
+      'migration_personalized_roadmaps_and_assessments.sql',
+      'migration_institution_mou.sql',
+      'migration_institution_features.sql',
+      'migration_industry_features.sql',
+      'migration_certificate_verification.sql'
+    ];
+
+    for (const migFile of migrationFiles) {
+      const migPath = path.join(__dirname, '..', '..', 'database', migFile);
+      if (fs.existsSync(migPath)) {
+        console.log(`[Seed Runner] Executing migration: ${migFile}`);
+        const migSql = fs.readFileSync(migPath, 'utf8');
+        await connection.query(migSql);
+        console.log(`[Seed Runner] Applied ${migFile} successfully.`);
+      }
+    }
+
     console.log('[Seed Runner] All database migrations completed successfully!');
   } catch (error) {
     console.error('[Seed Runner Error]', error.message);

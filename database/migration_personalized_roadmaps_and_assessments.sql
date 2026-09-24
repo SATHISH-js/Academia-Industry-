@@ -6,10 +6,11 @@ USE academia_industry_portal;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. Extend roadmap_paths with department and domain
+-- 1. Extend roadmap_paths with department, domain, and creator
 ALTER TABLE roadmap_paths 
   ADD COLUMN IF NOT EXISTS department VARCHAR(120) DEFAULT 'ALL',
-  ADD COLUMN IF NOT EXISTS domain VARCHAR(120) DEFAULT 'Full Stack Web';
+  ADD COLUMN IF NOT EXISTS domain VARCHAR(120) DEFAULT 'Full Stack Web',
+  ADD COLUMN IF NOT EXISTS created_by_student_id INT DEFAULT NULL;
 
 -- 2. Extend student_roadmap_tasks with assessment results
 ALTER TABLE student_roadmap_tasks

@@ -30,8 +30,23 @@ import {
   GraduationCap,
   Star,
   CheckCircle,
-  Share2
+  Share2,
+  Plus,
+  Trash2,
+  RefreshCw,
+  Trophy
 } from 'lucide-react';
+
+const POPULAR_PRESETS = [
+  { label: '🌐 Full Stack Web', role: 'Full Stack Web Developer', topics: 'React, Node.js, Express, PostgreSQL, Docker', weeks: 12, diff: 'INTERMEDIATE', company: '' },
+  { label: '🤖 AI & Deep Learning', role: 'AI & Machine Learning Engineer', topics: 'Python, PyTorch, Scikit-Learn, Pandas, FastAPI', weeks: 14, diff: 'ADVANCED', company: '' },
+  { label: '☁️ Cloud & DevOps', role: 'Cloud & DevOps SRE Engineer', topics: 'Docker, Kubernetes, Terraform, AWS, Prometheus', weeks: 10, diff: 'ADVANCED', company: '' },
+  { label: '🚀 Google SDE Prep', role: 'Google SWE (Early Career)', topics: 'Data Structures, Dynamic Programming, System Design, Graphs', weeks: 12, diff: 'ADVANCED', company: 'Google' },
+  { label: '💼 Amazon SDE Track', role: 'Amazon SDE-1 Preparation', topics: 'Java, Object-Oriented Design, High-Throughput APIs, AWS', weeks: 10, diff: 'ADVANCED', company: 'Amazon' },
+  { label: '🛡️ Cyber Security', role: 'Cyber Security Analyst', topics: 'Network Security, OWASP Top 10, Wireshark, Penetration Testing', weeks: 8, diff: 'INTERMEDIATE', company: '' },
+  { label: '📱 Mobile Engineer', role: 'Mobile App Engineer', topics: 'React Native, Flutter, Mobile UI, Offline Storage, REST APIs', weeks: 8, diff: 'INTERMEDIATE', company: '' },
+  { label: '⚡ Embedded IoT', role: 'Embedded Systems & IoT Engineer', topics: 'Embedded C, ARM Cortex, FreeRTOS, I2C, SPI, MQTT', weeks: 10, diff: 'INTERMEDIATE', company: '' }
+];
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -148,6 +163,88 @@ export const StudentRoadmapPage = () => {
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const autoSubmittedRef = useRef(false);
+
+  // Dynamic Roadmap Generator Form States
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [targetRoleInput, setTargetRoleInput] = useState('');
+  const [targetCompanyInput, setTargetCompanyInput] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('INTERMEDIATE');
+  const [selectedWeeks, setSelectedWeeks] = useState(12);
+  const [focusTopicsInput, setFocusTopicsInput] = useState('');
+  const [selectedDeptInput, setSelectedDeptInput] = useState(user?.department || 'ALL');
+  const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
+  const [generatorError, setGeneratorError] = useState('');
+  const [dynamicSuccessMsg, setDynamicSuccessMsg] = useState('');
+
+  // Live Task Filter (All / Pending / Completed)
+  const [taskFilter, setTaskFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'COMPLETED'
+
+  const handleApplyPreset = (preset) => {
+    setTargetRoleInput(preset.role);
+    setFocusTopicsInput(preset.topics);
+    setSelectedWeeks(preset.weeks);
+    setSelectedDifficulty(preset.diff);
+    setTargetCompanyInput(preset.company || '');
+  };
+
+  const handleGenerateRoadmap = async (e) => {
+    if (e) e.preventDefault();
+    if (!targetRoleInput.trim()) {
+      setGeneratorError('Please specify your target career role or learning goal.');
+      return;
+    }
+    try {
+      setGeneratingRoadmap(true);
+      setGeneratorError('');
+      setDynamicSuccessMsg('');
+
+      const payload = {
+        targetRole: targetRoleInput.trim(),
+        companyName: targetCompanyInput.trim() || undefined,
+        difficulty: selectedDifficulty,
+        estimatedWeeks: selectedWeeks,
+        department: selectedDeptInput,
+        focusTopics: focusTopicsInput.trim()
+      };
+
+      const res = await api.post('/roadmaps/generate', payload);
+      if (res.data.success) {
+        const newRoadmap = res.data.data;
+        setRoadmaps(prev => [newRoadmap, ...prev.filter(r => r.id !== newRoadmap.id)]);
+        setSelectedRoadmapId(newRoadmap.id);
+        setRoadmapDetail(newRoadmap);
+        setShowGenerator(false);
+        setDynamicSuccessMsg(`Dynamic roadmap for "${newRoadmap.target_role}" created successfully!`);
+        setTimeout(() => setDynamicSuccessMsg(''), 6000);
+      }
+    } catch (err) {
+      console.error('Failed to generate roadmap', err);
+      setGeneratorError(err.response?.data?.message || 'Failed to generate dynamic roadmap. Please try again.');
+    } finally {
+      setGeneratingRoadmap(false);
+    }
+  };
+
+  const handleDeleteRoadmap = async (roadmapId) => {
+    if (!window.confirm('Are you sure you want to delete this custom generated roadmap?')) return;
+    try {
+      const res = await api.delete(`/roadmaps/${roadmapId}`);
+      if (res.data.success) {
+        const remaining = roadmaps.filter(r => r.id !== roadmapId);
+        setRoadmaps(remaining);
+        if (remaining.length > 0) {
+          setSelectedRoadmapId(remaining[0].id);
+          fetchRoadmapDetail(remaining[0].id);
+        } else {
+          setSelectedRoadmapId(null);
+          setRoadmapDetail(null);
+          setShowGenerator(true);
+        }
+      }
+    } catch (err) {
+      alert('Failed to delete roadmap: ' + (err.response?.data?.message || err.message));
+    }
+  };
 
   // Cycling loading phrases
   useEffect(() => {
@@ -427,6 +524,9 @@ export const StudentRoadmapPage = () => {
   const filteredRoadmaps = useMemo(() => {
     return roadmaps.filter(r => {
       // Category / Type Tab
+      if (activeTab === 'MY_CUSTOM') {
+        if (!r.isCustom && !r.created_by_student_id) return false;
+      }
       if (activeTab === 'COMPANY') {
         const isCompany = r.category === 'COMPANY_TRACK' || r.type === 'COMPANY' || Boolean(r.company_name);
         if (!isCompany) return false;
@@ -508,6 +608,25 @@ export const StudentRoadmapPage = () => {
 
           {/* Quick Switch Filter Tabs */}
           <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.3)', padding: '0.35rem', borderRadius: 'var(--radius-md)', gap: '0.25rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab('MY_CUSTOM')}
+              style={{
+                background: activeTab === 'MY_CUSTOM' ? '#4f46e5' : 'transparent',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.5rem 0.9rem',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Sparkles size={14} color="#a5b4fc" /> My Goals ({roadmaps.filter(r => r.isCustom || r.created_by_student_id).length})
+            </button>
             <button
               onClick={() => setActiveTab('ALL')}
               style={{
@@ -669,6 +788,324 @@ export const StudentRoadmapPage = () => {
         </div>
       </div>
 
+      {/* Dynamic Success Notification */}
+      {dynamicSuccessMsg && (
+        <div style={{
+          padding: '1rem 1.25rem',
+          backgroundColor: '#dcfce7',
+          border: '1.5px solid #86efac',
+          borderRadius: 'var(--radius-md)',
+          color: '#15803d',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          <Sparkles size={20} color="#16a34a" />
+          <span>{dynamicSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* Dynamic Roadmap Generator & Goal Input Card */}
+      {showGenerator ? (
+        <div className="card" style={{
+          background: '#ffffff',
+          borderRadius: 'var(--radius-lg)',
+          padding: '2rem',
+          border: '2px solid var(--primary-500)',
+          boxShadow: 'var(--shadow-lg)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <span className="badge" style={{ backgroundColor: 'var(--primary-100)', color: 'var(--primary-700)', fontWeight: 800 }}>
+                  ✨ AI & Dynamic Milestone Synthesis
+                </span>
+                <span style={{ fontSize: '0.82rem', color: 'var(--slate-500)' }}>
+                  Tailored To Your Input
+                </span>
+              </div>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+                Set Your Career Goal & Generate Dynamic Roadmap
+              </h2>
+              <p style={{ color: 'var(--slate-600)', fontSize: '0.92rem', marginTop: '0.25rem' }}>
+                Enter your desired role, target company, and tech stack — we will synthesize a personalized 4-phase milestone curriculum with hands-on tasks and skill assessments.
+              </p>
+            </div>
+            {roadmaps.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowGenerator(false)}
+                className="btn btn-ghost btn-sm"
+                style={{ color: 'var(--slate-400)' }}
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+
+          {/* Quick-Select Role Presets */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--slate-700)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>
+              💡 Quick-Select Popular Career Tracks:
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {POPULAR_PRESETS.map((p, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleApplyPreset(p)}
+                  style={{
+                    background: targetRoleInput === p.role ? 'var(--primary-50)' : 'var(--slate-50)',
+                    color: targetRoleInput === p.role ? 'var(--primary-700)' : 'var(--slate-700)',
+                    border: `1px solid ${targetRoleInput === p.role ? 'var(--primary-400)' : 'var(--border-color)'}`,
+                    borderRadius: '9999px',
+                    padding: '0.4rem 0.85rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <form onSubmit={handleGenerateRoadmap}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+              {/* Target Role */}
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-800)', display: 'block', marginBottom: '0.4rem' }}>
+                  Target Role or Career Goal <span style={{ color: 'var(--danger-500)' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={targetRoleInput}
+                  onChange={(e) => setTargetRoleInput(e.target.value)}
+                  placeholder="e.g. Full Stack Developer, AI Engineer, SRE, Mobile App Dev..."
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    color: 'var(--slate-900)'
+                  }}
+                />
+              </div>
+
+              {/* Target Company */}
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-800)', display: 'block', marginBottom: '0.4rem' }}>
+                  Target Dream Company <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)', fontWeight: 500 }}>(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={targetCompanyInput}
+                  onChange={(e) => setTargetCompanyInput(e.target.value)}
+                  placeholder="e.g. Google, Amazon, Microsoft, TCS, Startups..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    color: 'var(--slate-900)'
+                  }}
+                />
+              </div>
+
+              {/* Difficulty Level */}
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-800)', display: 'block', marginBottom: '0.4rem' }}>
+                  Skill Level
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                  {[
+                    { id: 'BEGINNER', label: '🌱 Beginner' },
+                    { id: 'INTERMEDIATE', label: '⚡ Intermediate' },
+                    { id: 'ADVANCED', label: '🔥 Advanced' }
+                  ].map(d => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => setSelectedDifficulty(d.id)}
+                      style={{
+                        padding: '0.65rem 0.5rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: `1.5px solid ${selectedDifficulty === d.id ? 'var(--primary-600)' : 'var(--border-color)'}`,
+                        background: selectedDifficulty === d.id ? 'var(--primary-50)' : '#ffffff',
+                        color: selectedDifficulty === d.id ? 'var(--primary-700)' : 'var(--slate-700)',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Target Weeks */}
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-800)', display: 'block', marginBottom: '0.4rem' }}>
+                  Target Duration
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                  {[4, 8, 12, 16].map(w => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => setSelectedWeeks(w)}
+                      style={{
+                        padding: '0.65rem 0.35rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: `1.5px solid ${selectedWeeks === w ? 'var(--primary-600)' : 'var(--border-color)'}`,
+                        background: selectedWeeks === w ? 'var(--primary-50)' : '#ffffff',
+                        color: selectedWeeks === w ? 'var(--primary-700)' : 'var(--slate-700)',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {w} Wks
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Focus Topics */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-800)', display: 'block', marginBottom: '0.4rem' }}>
+                Key Focus Technologies / Concepts <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)', fontWeight: 500 }}>(Comma separated)</span>
+              </label>
+              <input
+                type="text"
+                value={focusTopicsInput}
+                onChange={(e) => setFocusTopicsInput(e.target.value)}
+                placeholder="e.g. React 18, Node.js, Express, PostgreSQL, Docker, Redis, Kubernetes, Next.js"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  color: 'var(--slate-900)'
+                }}
+              />
+            </div>
+
+            {generatorError && (
+              <div style={{ padding: '0.85rem 1rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius-md)', color: '#dc2626', fontSize: '0.88rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <AlertCircle size={16} /> {generatorError}
+              </div>
+            )}
+
+            {/* Submit & Cancel */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', alignItems: 'center' }}>
+              {roadmaps.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowGenerator(false)}
+                  className="btn btn-outline"
+                >
+                  Cancel / View Current
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={generatingRoadmap || !targetRoleInput.trim()}
+                className="btn btn-primary"
+                style={{
+                  padding: '0.75rem 1.75rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: 'var(--shadow-md)'
+                }}
+              >
+                {generatingRoadmap ? (
+                  <>
+                    <RotateCcw className="spin" size={18} />
+                    Synthesizing Dynamic Roadmap...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} />
+                    Generate My Dynamic Roadmap
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="card" style={{
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%)',
+          color: '#ffffff',
+          padding: '1.5rem 2rem',
+          borderRadius: 'var(--radius-lg)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+          boxShadow: 'var(--shadow-md)',
+          border: '1px solid rgba(255, 255, 255, 0.15)'
+        }}>
+          <div style={{ flex: '1 1 500px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+              <span className="badge" style={{ backgroundColor: '#4f46e5', color: '#ffffff', fontWeight: 800 }}>
+                ✨ Dynamic Goal Generator
+              </span>
+              <span style={{ fontSize: '0.82rem', color: '#c7d2fe' }}>
+                Create Custom Milestone Roadmap
+              </span>
+            </div>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 0.35rem 0' }}>
+              What is your target career or learning goal?
+            </h3>
+            <p style={{ color: '#c7d2fe', fontSize: '0.9rem', margin: 0, lineHeight: 1.5 }}>
+              Enter your target role, dream company, or tech stack — generate a tailored 4-phase milestone roadmap with interactive assessments and verifiable mastery badges.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              onClick={() => setShowGenerator(true)}
+              className="btn"
+              style={{
+                backgroundColor: '#4f46e5',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.5)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.4rem',
+                fontSize: '0.95rem'
+              }}
+            >
+              <Sparkles size={18} />
+              Create / Generate Dynamic Roadmap
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Horizontal Roadmap Picker Strip */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -738,6 +1175,11 @@ export const StudentRoadmapPage = () => {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.4rem' }}>
                       <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                        {r.isCustom && (
+                          <span className="badge" style={{ backgroundColor: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                            <Sparkles size={11} color="#059669" /> Custom Goal
+                          </span>
+                        )}
                         <span className="badge" style={{
                           backgroundColor: isCompany ? '#0284c7' : '#e0e7ff',
                           color: isCompany ? '#ffffff' : '#3730a3',
@@ -749,6 +1191,11 @@ export const StudentRoadmapPage = () => {
                         {r.isRecommended && (
                           <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                             <Star size={11} fill="#d97706" color="#d97706" /> Recommended
+                          </span>
+                        )}
+                        {pct === 100 && (
+                          <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontSize: '0.68rem', fontWeight: 800 }}>
+                            ✅ Completed
                           </span>
                         )}
                       </div>
@@ -809,6 +1256,11 @@ export const StudentRoadmapPage = () => {
                     <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--slate-900)' }}>
                       {roadmapInfo?.title}
                     </h2>
+                    {roadmapInfo?.isCustom && (
+                      <span className="badge" style={{ backgroundColor: '#e0e7ff', color: '#4338ca', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Sparkles size={12} /> Custom Generated
+                      </span>
+                    )}
                     <span className="badge badge-primary">{roadmapInfo?.difficulty || roadmapInfo?.difficulty_level || 'INTERMEDIATE'}</span>
                     {roadmapInfo?.department && (
                       <span className="badge" style={{ backgroundColor: 'var(--slate-100)', color: 'var(--slate-700)' }}>
@@ -820,12 +1272,36 @@ export const StudentRoadmapPage = () => {
                     {roadmapInfo?.description}
                   </p>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Target Career Role
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Target Career Role
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-700)' }}>
+                      {roadmapInfo?.target_role}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-700)' }}>
-                    {roadmapInfo?.target_role}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <button
+                      onClick={() => {
+                        setShowGenerator(true);
+                        window.scrollTo({ top: 350, behavior: 'smooth' });
+                      }}
+                      className="btn btn-outline btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem' }}
+                    >
+                      <Plus size={14} /> New Goal
+                    </button>
+                    {roadmapInfo?.isCustom && (
+                      <button
+                        onClick={() => handleDeleteRoadmap(roadmapInfo.id)}
+                        className="btn btn-outline btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--danger-600)', borderColor: 'var(--danger-200)' }}
+                        title="Delete this custom roadmap"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -853,202 +1329,359 @@ export const StudentRoadmapPage = () => {
               </div>
             </div>
 
+            {/* 100% Completion Celebration Banner */}
+            {progressPercentage === 100 && (
+              <div style={{
+                padding: '1.35rem 1.6rem',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: '#ecfdf5',
+                border: '2px solid #10b981',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.25rem',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.18)',
+                animation: 'fadeIn 0.3s ease'
+              }}>
+                <div style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                }}>
+                  <Trophy size={28} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#065f46' }}>
+                      🎉 Congratulations! 100% Track Mastered & Verified!
+                    </h4>
+                    <span className="badge badge-success" style={{ fontWeight: 800 }}>Certified Ready</span>
+                  </div>
+                  <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', color: '#047857', lineHeight: 1.45 }}>
+                    You have completed all {totalTasks} milestones and objectives for <strong>{roadmapInfo?.title}</strong>. Your talent profile, company match rating, and skill matrix are fully verified.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowGenerator(true);
+                    window.scrollTo({ top: 350, behavior: 'smooth' });
+                  }}
+                  className="btn btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', fontWeight: 700 }}
+                >
+                  <Plus size={16} /> Plan Next Goal
+                </button>
+              </div>
+            )}
+
             {/* Milestones & Tasks List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Target size={22} color="var(--primary-600)" /> Structured Milestone Objectives
-                </h3>
-                <span style={{ fontSize: '0.82rem', color: 'var(--slate-500)' }}>
-                  Take 20-Q assessments on each topic to verify mastery automatically
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.85rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Target size={22} color="var(--primary-600)" /> Structured Milestone Objectives
+                  </h3>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--slate-500)' }}>
+                    Take 20-Q assessments on each topic to verify mastery automatically, or mark complete as you progress
+                  </span>
+                </div>
+
+                {/* Live Task Filter Tabs */}
+                <div style={{
+                  display: 'inline-flex',
+                  backgroundColor: 'var(--slate-100)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.25rem',
+                  gap: '0.25rem',
+                  border: '1px solid var(--border-light)'
+                }}>
+                  {[
+                    { id: 'ALL', label: `All (${totalTasks})` },
+                    { id: 'PENDING', label: `Pending (${Math.max(0, totalTasks - completedTasks)})` },
+                    { id: 'COMPLETED', label: `Completed (${completedTasks})` }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setTaskFilter(tab.id)}
+                      style={{
+                        border: 'none',
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        backgroundColor: taskFilter === tab.id ? '#ffffff' : 'transparent',
+                        color: taskFilter === tab.id ? 'var(--primary-700)' : 'var(--slate-600)',
+                        boxShadow: taskFilter === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {milestones.map((milestone, mIdx) => (
-                <div key={milestone.id} className="card" style={{ padding: '1.5rem' }}>
-                  {/* Milestone Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--primary-100)',
-                        color: 'var(--primary-700)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                        fontSize: '0.9rem'
-                      }}>
-                        {mIdx + 1}
+              {milestones.map((milestone, mIdx) => {
+                const mTotal = milestone.tasks?.length || 0;
+                const mDone = milestone.tasks?.filter(t => t.is_completed).length || 0;
+                const mCompleted = mTotal > 0 && mDone === mTotal;
+                const filteredTasks = (milestone.tasks || []).filter(task => {
+                  if (taskFilter === 'COMPLETED') return task.is_completed;
+                  if (taskFilter === 'PENDING') return !task.is_completed;
+                  return true;
+                });
+
+                return (
+                  <div
+                    key={milestone.id}
+                    className="card"
+                    style={{
+                      padding: '1.5rem',
+                      border: mCompleted ? '1.5px solid #a7f3d0' : '1px solid var(--border-color)',
+                      backgroundColor: mCompleted ? '#fafdfb' : '#ffffff',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {/* Milestone Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          backgroundColor: mCompleted ? '#10b981' : 'var(--primary-100)',
+                          color: mCompleted ? '#ffffff' : 'var(--primary-700)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          transition: 'all 0.3s ease'
+                        }}>
+                          {mCompleted ? <Check size={18} /> : mIdx + 1}
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--slate-900)', margin: 0 }}>
+                              {milestone.title}
+                            </h4>
+                            {mCompleted && (
+                              <span className="badge" style={{ backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem' }}>
+                                <CheckCircle2 size={12} /> Milestone Mastered!
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--slate-500)', marginTop: '0.2rem', marginBottom: 0 }}>
+                            {milestone.description}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--slate-900)' }}>
-                          {milestone.title}
-                        </h4>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--slate-500)', marginTop: '0.15rem' }}>
-                          {milestone.description}
-                        </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span className="badge" style={{
+                          backgroundColor: mCompleted ? '#ecfdf5' : 'var(--slate-100)',
+                          color: mCompleted ? '#059669' : 'var(--slate-700)',
+                          fontWeight: 700
+                        }}>
+                          {mDone}/{mTotal} Tasks Completed
+                        </span>
+                        <span className="badge" style={{ backgroundColor: 'var(--slate-100)', color: 'var(--slate-700)' }}>
+                          <Clock size={12} /> {milestone.estimated_weeks || 2} Weeks
+                        </span>
                       </div>
                     </div>
-                    <span className="badge" style={{ backgroundColor: 'var(--slate-100)', color: 'var(--slate-700)' }}>
-                      <Clock size={12} /> {milestone.estimated_weeks || 2} Weeks
-                    </span>
-                  </div>
 
-                  {/* Tasks Checklist */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    {milestone.tasks?.map((task) => {
-                      const isCompleted = task.is_completed;
-                      const isBusy = togglingTaskId === task.id;
-                      const hasBadge = task.badge_awarded;
-                      const hasScore = task.score_percentage !== null && task.score_percentage !== undefined;
+                    {/* Tasks Checklist */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {filteredTasks.length === 0 ? (
+                        <div style={{
+                          padding: '1.25rem',
+                          textAlign: 'center',
+                          color: 'var(--slate-500)',
+                          fontSize: '0.85rem',
+                          backgroundColor: 'var(--slate-50)',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px dashed var(--border-color)'
+                        }}>
+                          No {taskFilter.toLowerCase()} tasks in this milestone.
+                        </div>
+                      ) : filteredTasks.map((task) => {
+                        const isCompleted = task.is_completed;
+                        const isBusy = togglingTaskId === task.id;
+                        const hasBadge = task.badge_awarded;
+                        const hasScore = task.score_percentage !== null && task.score_percentage !== undefined;
 
-                      return (
-                        <div
-                          key={task.id}
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.75rem',
-                            padding: '1rem 1.15rem',
-                            borderRadius: 'var(--radius-md)',
-                            backgroundColor: isCompleted ? 'var(--slate-50)' : '#ffffff',
-                            border: `1px solid ${isCompleted ? 'var(--success-500)' : 'var(--border-color)'}`,
-                            boxShadow: isCompleted ? '0 1px 3px rgba(16, 185, 129, 0.1)' : 'var(--shadow-sm)',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
-                            {/* Checkbox */}
-                            <button
-                              onClick={() => handleToggleTask(task.id)}
-                              disabled={isBusy}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: isBusy ? 'wait' : 'pointer',
-                                padding: 0,
-                                marginTop: '0.15rem',
-                                color: isCompleted ? 'var(--success-600)' : 'var(--slate-400)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0
-                              }}
-                              title={isCompleted ? 'Mark as incomplete' : 'Mark as complete manually'}
-                            >
-                              {isCompleted ? (
-                                <CheckCircle2 size={24} color="#059669" />
-                              ) : (
-                                <Circle size={24} />
-                              )}
-                            </button>
+                        return (
+                          <div
+                            key={task.id}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.75rem',
+                              padding: '1.05rem 1.2rem',
+                              borderRadius: 'var(--radius-md)',
+                              backgroundColor: isCompleted ? '#f0fdf4' : '#ffffff',
+                              border: `1.5px solid ${isCompleted ? '#10b981' : 'var(--border-color)'}`,
+                              boxShadow: isCompleted ? '0 2px 6px rgba(16, 185, 129, 0.12)' : 'var(--shadow-sm)',
+                              transition: 'all 0.25s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                              {/* Checkbox */}
+                              <button
+                                onClick={() => handleToggleTask(task.id)}
+                                disabled={isBusy}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: isBusy ? 'wait' : 'pointer',
+                                  padding: 0,
+                                  marginTop: '0.15rem',
+                                  color: isCompleted ? '#059669' : 'var(--slate-400)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }}
+                                title={isCompleted ? 'Mark as incomplete' : 'Mark as complete manually'}
+                              >
+                                {isCompleted ? (
+                                  <CheckCircle2 size={24} color="#059669" />
+                                ) : (
+                                  <Circle size={24} />
+                                )}
+                              </button>
 
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                <span style={{
-                                  fontSize: '0.96rem',
-                                  fontWeight: 700,
-                                  color: isCompleted ? 'var(--slate-700)' : 'var(--slate-900)'
-                                }}>
-                                  {task.title}
-                                </span>
-                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
-                                    ~{task.estimated_hours}h
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                                    <span style={{
+                                      fontSize: '0.96rem',
+                                      fontWeight: 700,
+                                      color: isCompleted ? '#065f46' : 'var(--slate-900)'
+                                    }}>
+                                      {task.title}
+                                    </span>
+                                    {isCompleted && (
+                                      <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem' }}>
+                                        Completed
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
+                                      ~{task.estimated_hours}h
+                                    </span>
+                                    <span className={`badge ${task.difficulty === 'ADVANCED' ? 'badge-danger' : task.difficulty === 'INTERMEDIATE' ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '0.65rem' }}>
+                                      {task.difficulty}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <p style={{ fontSize: '0.84rem', color: isCompleted ? '#047857' : 'var(--slate-600)', marginTop: '0.3rem', lineHeight: 1.45 }}>
+                                  {task.description}
+                                </p>
+
+                                {task.resource_url && (
+                                  <a
+                                    href={task.resource_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      color: isCompleted ? '#059669' : 'var(--primary-600)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.3rem',
+                                      marginTop: '0.4rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    <ExternalLink size={12} /> Reference Documentation
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Verification & 20-Q Assessment Action Footer */}
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: '0.75rem',
+                              paddingTop: '0.6rem',
+                              borderTop: `1px dashed ${isCompleted ? '#a7f3d0' : 'var(--border-light)'}`,
+                              marginTop: '0.2rem'
+                            }}>
+                              {/* Status Chip */}
+                              {isCompleted && hasScore ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.6rem' }}>
+                                    <CheckCircle size={13} /> Verified: {task.score_percentage}% Score
                                   </span>
-                                  <span className={`badge ${task.difficulty === 'ADVANCED' ? 'badge-danger' : task.difficulty === 'INTERMEDIATE' ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '0.65rem' }}>
-                                    {task.difficulty}
+                                  {hasBadge && (
+                                    <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                      <Award size={13} color="#d97706" /> Mastery Badge
+                                    </span>
+                                  )}
+                                  {task.verification_code && (
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--slate-500)', fontFamily: 'monospace' }}>
+                                      ID: {task.verification_code}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : isCompleted ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.6rem' }}>
+                                    <CheckCircle size={13} /> Completed (Self-Verified)
+                                  </span>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>
+                                    Take the assessment below to earn an official verified certificate badge
                                   </span>
                                 </div>
-                              </div>
+                              ) : (
+                                <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <ShieldCheck size={14} color="var(--primary-600)" />
+                                  Complete 20 topic-specific questions in 10 minutes to verify competency
+                                </div>
+                              )}
 
-                              <p style={{ fontSize: '0.84rem', color: 'var(--slate-600)', marginTop: '0.3rem', lineHeight: 1.45 }}>
-                                {task.description}
-                              </p>
-
-                              {task.resource_url && (
-                                <a
-                                  href={task.resource_url}
-                                  target="_blank"
-                                  rel="noreferrer"
+                              {/* Action Button: Verify Topic or Retake */}
+                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <button
+                                  onClick={() => handleOpenAssessment(task, milestone)}
+                                  className={isCompleted && hasScore ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm'}
                                   style={{
-                                    fontSize: '0.75rem',
-                                    color: 'var(--primary-600)',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '0.3rem',
-                                    marginTop: '0.4rem',
-                                    fontWeight: 600
+                                    gap: '0.4rem',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700
                                   }}
                                 >
-                                  <ExternalLink size={12} /> Reference Documentation
-                                </a>
-                              )}
+                                  <ShieldCheck size={14} />
+                                  {isCompleted && hasScore
+                                    ? 'Retake 20-Q Assessment'
+                                    : isCompleted
+                                      ? 'Take Assessment for Official Badge'
+                                      : 'Verify Topic (20-Q Assessment)'}
+                                </button>
+                              </div>
                             </div>
                           </div>
-
-                          {/* Verification & 20-Q Assessment Action Footer */}
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            flexWrap: 'wrap',
-                            gap: '0.75rem',
-                            paddingTop: '0.6rem',
-                            borderTop: '1px dashed var(--border-light)',
-                            marginTop: '0.2rem'
-                          }}>
-                            {/* Status Chip */}
-                            {isCompleted && hasScore ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.6rem' }}>
-                                  <CheckCircle size={13} /> Verified: {task.score_percentage}% Score
-                                </span>
-                                {hasBadge && (
-                                  <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                                    <Award size={13} color="#d97706" /> Mastery Badge
-                                  </span>
-                                )}
-                                {task.verification_code && (
-                                  <span style={{ fontSize: '0.72rem', color: 'var(--slate-500)', fontFamily: 'monospace' }}>
-                                    ID: {task.verification_code}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <ShieldCheck size={14} color="var(--primary-600)" />
-                                Complete 20 topic-specific questions in 10 minutes to verify competency
-                              </div>
-                            )}
-
-                            {/* Action Button: Verify Topic or Retake */}
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                              <button
-                                onClick={() => handleOpenAssessment(task, milestone)}
-                                className={isCompleted && hasScore ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm'}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.4rem',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 700
-                                }}
-                              >
-                                <ShieldCheck size={14} />
-                                {isCompleted && hasScore ? 'Retake 20-Q Assessment' : 'Verify Topic (20-Q Assessment)'}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
