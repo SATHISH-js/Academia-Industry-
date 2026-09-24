@@ -24,6 +24,7 @@ router.put('/profile', updateStudentProfile);
 router.get('/skills', getStudentSkills);
 router.get('/skill-gap', getStudentSkillGaps);
 router.get('/dashboard-summary', getDashboardSummary);
+router.get('/dashboard', getDashboardSummary);
 
 // Student Certifications & Extra-Curricular Achievements routes
 router.get('/certifications', getStudentCertifications);

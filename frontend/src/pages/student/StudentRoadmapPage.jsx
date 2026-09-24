@@ -297,8 +297,22 @@ export const StudentRoadmapPage = () => {
         if (list.length > 0) {
           const queryId = searchParams.get('id') ? parseInt(searchParams.get('id'), 10) : null;
           const matchQuery = queryId ? list.find(r => r.id === queryId) : null;
-          const stillExists = selectedRoadmapId ? list.find(r => r.id === selectedRoadmapId) : null;
-          const target = matchQuery || stillExists || list.find(r => r.isRecommended) || list[0];
+          const userRole = (user?.profile?.headline || '').toLowerCase();
+          const roleMatch = userRole ? list.find(r => {
+            const rTitle = (r.title || '').toLowerCase();
+            const rTarget = (r.target_role || '').toLowerCase();
+            const rText = `${rTitle} ${rTarget}`;
+            if ((userRole.includes('full') || userRole.includes('web') || userRole.includes('mern')) && (rText.includes('full') || rText.includes('web'))) return true;
+            if ((userRole.includes('data') || userRole.includes('ml') || userRole.includes('ai')) && (rText.includes('data') || rText.includes('machine') || rText.includes('ai'))) return true;
+            if ((userRole.includes('cloud') || userRole.includes('devops')) && (rText.includes('cloud') || rText.includes('devops'))) return true;
+            if ((userRole.includes('cyber') || userRole.includes('security')) && (rText.includes('cyber') || rText.includes('security'))) return true;
+            if ((userRole.includes('embedded') || userRole.includes('iot')) && (rText.includes('embedded') || rText.includes('iot'))) return true;
+            if ((userRole.includes('mobile') || userRole.includes('flutter')) && (rText.includes('mobile') || rText.includes('app'))) return true;
+            if ((userRole.includes('swe') || userRole.includes('software')) && (rText.includes('swe') || rText.includes('software') || rText.includes('google'))) return true;
+            return rText.includes(userRole) || (r.target_role && userRole.includes(r.target_role.toLowerCase()));
+          }) : null;
+
+          const target = matchQuery || stillExists || roleMatch || list.find(r => r.isRecommended) || list[0];
           setSelectedRoadmapId(target.id);
           fetchRoadmapDetail(target.id);
         } else {

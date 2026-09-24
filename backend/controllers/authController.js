@@ -60,20 +60,28 @@ async function register(req, res) {
 
     // Create corresponding profile record
     if (role === 'STUDENT') {
-      const studentHeadline = target_role || 'Student Scholar';
+      const studentHeadline = target_role || 'Full Stack Developer';
       const studentDept = department || 'Computer Science & Engineering';
       const studentDegree = degree || 'B.Tech / B.E';
       const studentGradYear = graduation_year ? parseInt(graduation_year, 10) : 2026;
       const studentEnrollment = enrollment_number || null;
       const { address, city, state, pincode } = req.body;
 
+      // Create completely fresh student profile with 0 scores and no dummy seed data
       const [stuRes] = await connection.query(
-        `INSERT INTO student_profiles (user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number, address, city, state, pincode)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO student_profiles (
+          user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number,
+          address, city, state, pincode,
+          tenth_board, tenth_school, tenth_year, tenth_percentage,
+          twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
+          ug_university, ug_college,
+          overall_skill_score, technical_skill_score, soft_skill_score, profile_completed_pct
+        )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 20)`,
         [
           userId,
           studentHeadline,
-          `Enthusiastic student pursuing ${studentDegree} in ${studentDept}, aspiring to excel as a ${studentHeadline}.`,
+          `Enthusiastic student pursuing ${studentDegree} in ${studentDept}, focusing on ${studentHeadline}.`,
           institution_id || null,
           studentDept,
           studentDegree,
@@ -87,18 +95,7 @@ async function register(req, res) {
       );
       const studentId = stuRes.insertId;
 
-      // Seed initial skills if provided
-      if (Array.isArray(skills) && skills.length > 0) {
-        for (const skillItem of skills) {
-          const sId = typeof skillItem === 'object' ? skillItem.id : parseInt(skillItem, 10);
-          if (sId && !isNaN(sId)) {
-            await connection.query(
-              `INSERT IGNORE INTO student_skills (student_id, skill_id, level, score) VALUES (?, ?, 'INTERMEDIATE', 70)`,
-              [studentId, sId]
-            );
-          }
-        }
-      }
+      // Note: A fresh student registers with clean 0 skills and points until they take an assessment
     } else if (role === 'ACADEMICIAN') {
       const { address, city, state, pincode } = req.body;
       await connection.query(
@@ -133,7 +130,23 @@ async function register(req, res) {
 
     await connection.commit();
 
-    const newUser = { id: userId, name, email, role };
+    // Load newly created profile
+    let profile = null;
+    if (role === 'STUDENT') {
+      const [p] = await pool.query('SELECT * FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'ACADEMICIAN') {
+      const [p] = await pool.query('SELECT * FROM academician_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'INDUSTRY') {
+      const [p] = await pool.query('SELECT * FROM industry_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'INSTITUTION') {
+      const [p] = await pool.query('SELECT * FROM institution_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    }
+
+    const newUser = { id: userId, name, email, role, profile };
     const token = generateToken(newUser);
 
     return sendSuccess(res, { user: newUser, token }, 'Registration successful', 201);
@@ -340,12 +353,14 @@ async function updateProfile(req, res) {
     // Role-specific updates
     if (role === 'STUDENT') {
       const {
-        headline, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id,
+        headline, target_role, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id,
         github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
         twelfth_board, twelfth_college, twelfth_year, twelfth_percentage, ug_university, ug_college,
         address, city, state, pincode, current_semester, section, register_number,
         current_year, active_backlogs, attendance_percentage
       } = roleFields;
+
+      const effectiveHeadline = target_role !== undefined ? target_role : headline;
 
       await pool.query(
         `UPDATE student_profiles SET
@@ -382,7 +397,7 @@ async function updateProfile(req, res) {
           profile_completed_pct = 95
          WHERE user_id = ?`,
         [
-          headline, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id || null,
+          effectiveHeadline !== undefined ? effectiveHeadline : null, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id || null,
           github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
           twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
           ug_university, ug_college, address, city, state, pincode, current_semester, section, register_number,

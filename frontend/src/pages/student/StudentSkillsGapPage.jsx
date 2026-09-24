@@ -126,7 +126,18 @@ export const StudentSkillsGapPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [selectedRoleId, setSelectedRoleId] = useState('fullstack');
+  // Match initial role preset from student's chosen career role
+  const getInitialRoleId = () => {
+    const r = (user?.profile?.headline || '').toLowerCase();
+    if (r.includes('data') || r.includes('ml') || r.includes('ai')) return 'datascience';
+    if (r.includes('cloud') || r.includes('devops')) return 'clouddevops';
+    if (r.includes('cyber') || r.includes('security')) return 'cybersecurity';
+    if (r.includes('embedded') || r.includes('iot')) return 'embedded';
+    if (r.includes('swe') || r.includes('software')) return 'swe';
+    return 'fullstack';
+  };
+
+  const [selectedRoleId, setSelectedRoleId] = useState(getInitialRoleId);
   const [profileSkills, setProfileSkills] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,10 +148,12 @@ export const StudentSkillsGapPage = () => {
   const fetchStudentSkills = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/students/profile');
-      if (res.data.success) {
-        setProfileSkills(res.data.data.skills || []);
-      }
+      const [skillsRes, profRes] = await Promise.all([
+        api.get('/student/skills').catch(() => ({ data: { success: false, data: [] } })),
+        api.get('/students/profile').catch(() => ({ data: { success: false, data: {} } }))
+      ]);
+      const list = skillsRes.data?.data?.length ? skillsRes.data.data : (profRes.data?.data?.skills || []);
+      setProfileSkills(list);
     } catch (err) {
       console.warn('Could not load student skills:', err.message);
     } finally {
@@ -150,15 +163,28 @@ export const StudentSkillsGapPage = () => {
 
   const activeRole = ROLE_PROFILES.find(r => r.id === selectedRoleId) || ROLE_PROFILES[0];
 
+  // Map assessed scores; if student hasn't taken assessment, studentScore is 0
+  const computedSkills = activeRole.skills.map(s => {
+    const match = profileSkills.find(ps => 
+      (ps.skill_name && ps.skill_name.toLowerCase().includes(s.name.toLowerCase().slice(0, 4))) ||
+      (s.name.toLowerCase().includes((ps.skill_name || '').toLowerCase()))
+    );
+    const score = match ? (match.score || 0) : 0;
+    return {
+      ...s,
+      studentScore: score
+    };
+  });
+
   // Calculate Match Score
-  const totalSkills = activeRole.skills.length;
-  const matchedSkillsCount = activeRole.skills.filter(s => s.studentScore >= s.requiredScore).length;
-  const avgStudentScore = Math.round(activeRole.skills.reduce((sum, s) => sum + s.studentScore, 0) / totalSkills);
-  const avgRequiredScore = Math.round(activeRole.skills.reduce((sum, s) => sum + s.requiredScore, 0) / totalSkills);
-  const roleMatchPct = Math.min(100, Math.round((avgStudentScore / avgRequiredScore) * 100));
+  const totalSkills = computedSkills.length;
+  const matchedSkillsCount = computedSkills.filter(s => s.studentScore >= s.requiredScore).length;
+  const avgStudentScore = Math.round(computedSkills.reduce((sum, s) => sum + s.studentScore, 0) / (totalSkills || 1));
+  const avgRequiredScore = Math.round(computedSkills.reduce((sum, s) => sum + s.requiredScore, 0) / (totalSkills || 1));
+  const roleMatchPct = Math.min(100, Math.round((avgStudentScore / (avgRequiredScore || 1)) * 100));
 
   // Chart dataset
-  const chartData = activeRole.skills.map(s => ({
+  const chartData = computedSkills.map(s => ({
     name: s.name.length > 18 ? s.name.substring(0, 16) + '…' : s.name,
     fullName: s.name,
     YourScore: s.studentScore,
@@ -267,6 +293,40 @@ export const StudentSkillsGapPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Fresh Account Notice */}
+      {profileSkills.length === 0 && (
+        <div style={{
+          backgroundColor: '#eff6ff',
+          border: '1.5px solid #bfdbfe',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.25rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Sparkles size={24} color="#2563eb" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e3a8a' }}>
+                Fresh Student Account — No Skills Assessed Yet
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#3b82f6', marginTop: '0.15rem' }}>
+                Your competencies currently start at 0%. Take a quick role assessment to benchmark your skills for <strong>{activeRole.title}</strong> and unlock verified scores!
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/student/assessment')}
+            className="btn btn-primary"
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            Start Skill Assessment <ArrowRight size={15} />
+          </button>
+        </div>
+      )}
 
       {/* Interactive Role Benchmark Selector Pills */}
       <div>

@@ -31,7 +31,10 @@ const ROLE_PRESETS = [
   { id: 'fullstack', label: 'Full Stack Developer', roadmapId: 1 },
   { id: 'datascience', label: 'Data Scientist / ML Engineer', roadmapId: 2 },
   { id: 'clouddevops', label: 'Cloud DevOps Engineer', roadmapId: 3 },
-  { id: 'swe', label: 'Software Engineer (SWE)', roadmapId: 4 }
+  { id: 'swe', label: 'Software Engineer (SWE)', roadmapId: 4 },
+  { id: 'cybersecurity', label: 'Cyber Security Analyst', roadmapId: 10 },
+  { id: 'embedded', label: 'Embedded Systems & IoT', roadmapId: 11 },
+  { id: 'mobile', label: 'Mobile App Developer', roadmapId: 1 }
 ];
 
 export const StudentDashboard = () => {
@@ -46,16 +49,19 @@ export const StudentDashboard = () => {
   const [activeMilestoneIndex, setActiveMilestoneIndex] = useState(0);
   const [loadingRoadmap, setLoadingRoadmap] = useState(true);
 
+  // Fresh user starts with 0 scores and 0 applications
   const [summary, setSummary] = useState({
-    profileCompletion: 80,
-    overallScore: 74,
-    techScore: 78,
-    softScore: 70,
-    totalApplications: 4,
-    shortlisted: 2,
-    activeInternships: 1,
-    certifications: 3
+    profileCompletion: user?.profile?.profile_completed_pct || 20,
+    overallScore: user?.profile?.overall_skill_score || 0,
+    techScore: user?.profile?.technical_skill_score || 0,
+    softScore: user?.profile?.soft_skill_score || 0,
+    totalApplications: 0,
+    shortlisted: 0,
+    activeInternships: 0,
+    certifications: 0
   });
+
+  const [userSkills, setUserSkills] = useState([]);
 
   // Faculty guidance messages
   const [facultyMessages, setFacultyMessages] = useState([]);
@@ -64,45 +70,80 @@ export const StudentDashboard = () => {
   const [sendingReply, setSendingReply] = useState(false);
   const [replyFeedback, setReplyFeedback] = useState(null);
 
-  // Role-specific skill data for chart
-  const getSkillDataForRole = (role) => {
-    if (role.toLowerCase().includes('data') || role.toLowerCase().includes('ml')) {
-      return [
-        { skill: 'Python', score: 85, required: 90 },
-        { skill: 'SQL & DBs', score: 75, required: 85 },
-        { skill: 'Data Analysis', score: 70, required: 80 },
-        { skill: 'Machine Learning', score: 60, required: 80 },
-        { skill: 'Math & Stats', score: 65, required: 75 },
-        { skill: 'Problem Solving', score: 80, required: 85 }
+  // Role-specific benchmark skills with dynamic student scores from real assessment data
+  const getSkillDataForRole = (role, assessed = []) => {
+    let benchmarks = [];
+    const rLower = (role || '').toLowerCase();
+
+    if (rLower.includes('data') || rLower.includes('ml') || rLower.includes('ai')) {
+      benchmarks = [
+        { skill: 'Python', required: 90 },
+        { skill: 'SQL & DBs', required: 85 },
+        { skill: 'Data Analysis', required: 80 },
+        { skill: 'Machine Learning', required: 80 },
+        { skill: 'Math & Stats', required: 75 },
+        { skill: 'Problem Solving', required: 85 }
       ];
-    } else if (role.toLowerCase().includes('cloud') || role.toLowerCase().includes('devops')) {
-      return [
-        { skill: 'Cloud (AWS/GCP)', score: 70, required: 85 },
-        { skill: 'Docker', score: 65, required: 80 },
-        { skill: 'CI/CD Pipelines', score: 55, required: 75 },
-        { skill: 'Linux & Scripting', score: 80, required: 80 },
-        { skill: 'Networking', score: 60, required: 70 },
-        { skill: 'System Design', score: 50, required: 75 }
+    } else if (rLower.includes('cloud') || rLower.includes('devops')) {
+      benchmarks = [
+        { skill: 'Cloud (AWS/GCP)', required: 85 },
+        { skill: 'Docker', required: 80 },
+        { skill: 'CI/CD Pipelines', required: 75 },
+        { skill: 'Linux & Scripting', required: 80 },
+        { skill: 'Networking', required: 70 },
+        { skill: 'System Design', required: 75 }
       ];
-    } else if (role.toLowerCase().includes('software') || role.toLowerCase().includes('swe')) {
-      return [
-        { skill: 'DSA', score: 70, required: 90 },
-        { skill: 'Python/Java', score: 85, required: 85 },
-        { skill: 'OOP Architecture', score: 75, required: 80 },
-        { skill: 'System Design', score: 60, required: 80 },
-        { skill: 'SQL', score: 75, required: 80 },
-        { skill: 'Problem Solving', score: 75, required: 90 }
+    } else if (rLower.includes('software') || rLower.includes('swe')) {
+      benchmarks = [
+        { skill: 'DSA', required: 90 },
+        { skill: 'Python/Java', required: 85 },
+        { skill: 'OOP Architecture', required: 80 },
+        { skill: 'System Design', required: 80 },
+        { skill: 'SQL', required: 80 },
+        { skill: 'Problem Solving', required: 90 }
+      ];
+    } else if (rLower.includes('cyber') || rLower.includes('security')) {
+      benchmarks = [
+        { skill: 'Network Security', required: 85 },
+        { skill: 'OWASP Defense', required: 80 },
+        { skill: 'Linux & Systems', required: 80 },
+        { skill: 'Cryptography', required: 75 },
+        { skill: 'Wireshark & Audit', required: 80 },
+        { skill: 'Python Scripting', required: 75 }
+      ];
+    } else if (rLower.includes('embedded') || rLower.includes('iot')) {
+      benchmarks = [
+        { skill: 'Embedded C/C++', required: 85 },
+        { skill: 'ARM Cortex', required: 80 },
+        { skill: 'RTOS Concurrency', required: 75 },
+        { skill: 'I2C/SPI Protocols', required: 80 },
+        { skill: 'Hardware Debug', required: 75 },
+        { skill: 'IoT Telemetry', required: 70 }
+      ];
+    } else {
+      // Default Full Stack
+      benchmarks = [
+        { skill: 'React.js', required: 80 },
+        { skill: 'Node & Express', required: 80 },
+        { skill: 'SQL & Relational', required: 75 },
+        { skill: 'DSA', required: 75 },
+        { skill: 'API Architecture', required: 80 },
+        { skill: 'Docker Basics', required: 70 }
       ];
     }
-    // Default Full Stack
-    return [
-      { skill: 'React.js', score: 78, required: 80 },
-      { skill: 'Node & Express', score: 72, required: 80 },
-      { skill: 'SQL & Relational', score: 75, required: 75 },
-      { skill: 'DSA', score: 60, required: 75 },
-      { skill: 'API Architecture', score: 70, required: 80 },
-      { skill: 'Docker Basics', score: 55, required: 70 }
-    ];
+
+    // Map real scores: if not assessed, score is 0
+    return benchmarks.map(b => {
+      const match = assessed.find(a => 
+        (a.skill_name && a.skill_name.toLowerCase().includes(b.skill.toLowerCase().slice(0, 4))) ||
+        (b.skill.toLowerCase().includes((a.skill_name || '').toLowerCase()))
+      );
+      return {
+        skill: b.skill,
+        score: match ? (match.score || 0) : 0,
+        required: b.required
+      };
+    });
   };
 
   // Synchronize when user profile updates
@@ -113,9 +154,33 @@ export const StudentDashboard = () => {
   }, [user]);
 
   useEffect(() => {
+    fetchDashboardSummary();
+    fetchStudentSkills();
     fetchRoadmaps();
     fetchFacultyMessages();
   }, [activeRole]);
+
+  const fetchDashboardSummary = async () => {
+    try {
+      const res = await api.get('/student/dashboard-summary');
+      if (res.data.success && res.data.data) {
+        setSummary(prev => ({ ...prev, ...res.data.data }));
+      }
+    } catch (e) {
+      // Keep existing state
+    }
+  };
+
+  const fetchStudentSkills = async () => {
+    try {
+      const res = await api.get('/student/skills');
+      if (res.data.success) {
+        setUserSkills(res.data.data || []);
+      }
+    } catch (e) {
+      // Keep empty
+    }
+  };
 
   const fetchFacultyMessages = async () => {
     try {
@@ -164,13 +229,19 @@ export const StudentDashboard = () => {
 
         // Find best match for activeRole
         let matched = all.find(r => {
-          const rText = `${r.title} ${r.target_role}`.toLowerCase();
+          const rTitle = (r.title || '').toLowerCase();
+          const rTarget = (r.target_role || '').toLowerCase();
+          const rText = `${rTitle} ${rTarget}`;
           const target = activeRole.toLowerCase();
-          if (target.includes('full') && (rText.includes('full') || rText.includes('web'))) return true;
-          if (target.includes('data') && rText.includes('data')) return true;
-          if (target.includes('cloud') && rText.includes('cloud')) return true;
-          if (target.includes('swe') || target.includes('software')) return rText.includes('google') || rText.includes('swe');
-          return rText.includes(target);
+
+          if ((target.includes('full') || target.includes('web') || target.includes('mern')) && (rText.includes('full') || rText.includes('web'))) return true;
+          if ((target.includes('data') || target.includes('ml') || target.includes('ai')) && (rText.includes('data') || rText.includes('machine') || rText.includes('ai'))) return true;
+          if ((target.includes('cloud') || target.includes('devops')) && (rText.includes('cloud') || rText.includes('devops'))) return true;
+          if ((target.includes('cyber') || target.includes('security')) && (rText.includes('cyber') || rText.includes('security'))) return true;
+          if ((target.includes('embedded') || target.includes('iot')) && (rText.includes('embedded') || rText.includes('iot'))) return true;
+          if ((target.includes('mobile') || target.includes('flutter')) && (rText.includes('mobile') || rText.includes('app'))) return true;
+          if ((target.includes('swe') || target.includes('software')) && (rText.includes('swe') || rText.includes('software') || rText.includes('google'))) return true;
+          return rText.includes(target) || (rTarget && target.includes(rTarget));
         });
 
         if (!matched && all.length > 0) {
@@ -198,8 +269,8 @@ export const StudentDashboard = () => {
   const handleSwitchRole = async (newRoleTitle) => {
     setActiveRole(newRoleTitle);
     try {
-      const res = await api.put('/auth/profile', { headline: newRoleTitle });
-      if (res.data.success) {
+      const res = await api.put('/auth/profile', { headline: newRoleTitle, target_role: newRoleTitle });
+      if (res.data.success && res.data.data?.user) {
         updateUser(res.data.data.user);
       }
     } catch (e) {
@@ -242,7 +313,7 @@ export const StudentDashboard = () => {
     }
   };
 
-  const skillData = getSkillDataForRole(activeRole);
+  const skillData = getSkillDataForRole(activeRole, userSkills);
   const currentMilestone = activeRoadmap?.milestones?.[activeMilestoneIndex] || activeRoadmap?.milestones?.[0];
 
   return (
@@ -775,6 +846,31 @@ export const StudentDashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {userSkills.length === 0 && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.85rem 1rem',
+              backgroundColor: 'var(--primary-50, #eef2ff)',
+              borderRadius: 'var(--radius-md, 8px)',
+              border: '1px solid var(--primary-200)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles size={16} color="var(--primary-600)" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: '0.8rem', color: 'var(--slate-700)' }}>
+                  <strong>Fresh Student Account:</strong> 0 skills assessed yet. Complete your first role assessment for <strong>{activeRole}</strong> to earn verified points!
+                </span>
+              </div>
+              <Link to="/student/assessment" className="btn btn-primary" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}>
+                Take Skill Assessment
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Personalized Internship & Assessment Recommendations */}

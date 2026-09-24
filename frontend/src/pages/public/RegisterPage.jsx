@@ -123,7 +123,7 @@ export const RegisterPage = () => {
     degree: 'B.Tech / B.E',
     graduation_year: '2026',
     enrollment_number: '',
-    selectedSkills: [5, 6, 3],
+    selectedSkills: [],
     // Academician specific fields
     designation: 'Assistant Professor',
     employee_id: '',

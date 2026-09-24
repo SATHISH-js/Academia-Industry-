@@ -26,6 +26,8 @@ import {
   Upload,
   Trash2,
   Check,
+  Target,
+  Compass,
   Eye,
   EyeOff,
   Key,
@@ -102,7 +104,7 @@ export const StudentProfilePage = () => {
     cgpa: '',
     graduation_year: '',
     active_backlogs: '0',
-    attendance_percentage: '92.5%',
+    attendance_percentage: '',
     // 12th
     twelfth_board: '',
     twelfth_college: '',
@@ -149,30 +151,30 @@ export const StudentProfilePage = () => {
           linkedin_url: p.linkedin_url || '',
           github_url: p.github_url || '',
           // College Academic Details
-          degree: p.degree || 'B.Tech',
-          department: p.department || 'Computer Science & Engineering',
-          ug_university: p.ug_university || 'Affiliated Technical University',
-          ug_college: p.ug_college || p.institution_name || 'Apex Institute of Technology',
+          degree: p.degree || '',
+          department: p.department || '',
+          ug_university: p.ug_university || '',
+          ug_college: p.ug_college || p.institution_name || '',
           institution_id: p.institution_id ? String(p.institution_id) : '',
-          register_number: p.register_number || p.enrollment_number || 'REG2022CS1045',
-          enrollment_number: p.enrollment_number || '22BCS108',
-          current_semester: p.current_semester || '6th Semester',
-          current_year: p.current_year || '3rd Year',
-          section: p.section || 'Section A',
-          cgpa: p.cgpa || '8.75',
-          graduation_year: p.graduation_year || '2026',
-          active_backlogs: '0 Active Backlogs',
-          attendance_percentage: '93.4%',
+          register_number: p.register_number || p.enrollment_number || '',
+          enrollment_number: p.enrollment_number || '',
+          current_semester: p.current_semester || '',
+          current_year: p.current_year || '',
+          section: p.section || '',
+          cgpa: p.cgpa !== null && p.cgpa !== undefined ? String(p.cgpa) : '',
+          graduation_year: p.graduation_year ? String(p.graduation_year) : '',
+          active_backlogs: p.active_backlogs || '0',
+          attendance_percentage: p.attendance_percentage || '',
           // 12th
-          twelfth_board: p.twelfth_board || 'CBSE',
-          twelfth_college: p.twelfth_college || 'Delhi Public School',
-          twelfth_year: p.twelfth_year || '2022',
-          twelfth_percentage: p.twelfth_percentage || '94.2',
+          twelfth_board: p.twelfth_board || '',
+          twelfth_college: p.twelfth_college || '',
+          twelfth_year: p.twelfth_year ? String(p.twelfth_year) : '',
+          twelfth_percentage: p.twelfth_percentage !== null && p.twelfth_percentage !== undefined ? String(p.twelfth_percentage) : '',
           // 10th
-          tenth_board: p.tenth_board || 'CBSE',
-          tenth_school: p.tenth_school || "St. Xavier's High School",
-          tenth_year: p.tenth_year || '2020',
-          tenth_percentage: p.tenth_percentage || '92.5'
+          tenth_board: p.tenth_board || '',
+          tenth_school: p.tenth_school || '',
+          tenth_year: p.tenth_year ? String(p.tenth_year) : '',
+          tenth_percentage: p.tenth_percentage !== null && p.tenth_percentage !== undefined ? String(p.tenth_percentage) : ''
         });
       }
 
@@ -242,12 +244,12 @@ export const StudentProfilePage = () => {
       setSaving(true);
       setMessage(null);
 
-      const res = await api.put('/auth/profile', formData);
+      const res = await api.put('/auth/profile', { ...formData, target_role: formData.headline });
       if (res.data.success) {
         const updated = res.data.data.user;
         updateUser(updated);
         setProfile(updated.profile || profile);
-        setMessage({ type: 'success', text: 'Student profile, academic credentials & picture updated successfully!' });
+        setMessage({ type: 'success', text: 'Student profile, target role & credentials updated successfully!' });
         setTimeout(() => {
           setActiveTab('OVERVIEW');
         }, 1200);
@@ -581,6 +583,41 @@ export const StudentProfilePage = () => {
          ========================================================================= */}
       {activeTab === 'OVERVIEW' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+          {/* Card 0: Target Career Role & Roadmap Track */}
+          <div className="card" style={{
+            padding: '1.75rem 2rem',
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%)',
+            color: '#ffffff',
+            border: 'none',
+            boxShadow: 'var(--shadow-md)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                  <span className="badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700 }}>
+                    🎯 SELECTED CAREER GOAL
+                  </span>
+                  <span className="badge badge-warning" style={{ fontSize: '0.72rem', fontWeight: 800 }}>
+                    {formData.headline || 'Full Stack Developer'}
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.45rem', fontWeight: 800, margin: '0.2rem 0', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                  {formData.headline || 'Career Role Not Selected'}
+                </h3>
+                <p style={{ fontSize: '0.86rem', color: '#c7d2fe', margin: 0, maxWidth: '620px', lineHeight: 1.5 }}>
+                  Your roadmaps, skills gap assessments, and algorithm-matched internship recommendations are aligned with this chosen track.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveTab('EDIT')}
+                className="btn"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Edit3 size={15} /> Edit Career Role
+              </button>
+            </div>
+          </div>
+
           {/* Card 1: College Affiliation & Academic Standing */}
           <div className="card" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
@@ -600,10 +637,10 @@ export const StudentProfilePage = () => {
               <div>
                 <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase' }}>Affiliated College / Institution</div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary-700)', marginTop: '0.25rem' }}>
-                  {profile?.institution_name || formData.ug_college || 'Apex Institute of Technology'}
+                  {profile?.institution_name || formData.ug_college || 'Not Affiliated Yet'}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.15rem' }}>
-                  NAAC A+ Accredited Campus • AISHE Verified
+                  Academic Campus Affiliation
                 </div>
               </div>
 
@@ -833,6 +870,107 @@ export const StudentProfilePage = () => {
          ========================================================================= */}
       {activeTab === 'EDIT' && (
         <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Section 0: Target Career Role & Roadmap Focus (Requirement 2) */}
+          <div className="card" style={{
+            padding: '2rem',
+            border: '2px solid var(--primary-300)',
+            backgroundColor: '#ffffff',
+            boxShadow: '0 4px 12px -2px rgba(99, 102, 241, 0.12)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: 42,
+                height: 42,
+                borderRadius: '10px',
+                backgroundColor: 'var(--primary-600)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Target size={22} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 }}>
+                  Target Career Role & Roadmap Focus
+                </h2>
+                <p style={{ fontSize: '0.82rem', color: 'var(--slate-600)', margin: '0.15rem 0 0 0' }}>
+                  Select or edit your career aspiration. Your roadmaps, skills gap assessments, and internship recommendations update automatically when you save.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label className="form-label" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--slate-800)', marginBottom: '0.5rem' }}>
+                Quick Select Standard Career Focus Track:
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {[
+                  'Full Stack Developer',
+                  'Data Scientist / ML Engineer',
+                  'Cloud DevOps Engineer',
+                  'Software Engineer (SWE)',
+                  'Cyber Security Analyst',
+                  'Embedded Systems & IoT',
+                  'Mobile App Developer'
+                ].map(preset => {
+                  const isSelected = (formData.headline || '').toLowerCase().includes(preset.toLowerCase().slice(0, 8));
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, headline: preset }))}
+                      style={{
+                        padding: '0.45rem 0.95rem',
+                        borderRadius: '20px',
+                        fontSize: '0.82rem',
+                        fontWeight: isSelected ? 700 : 500,
+                        backgroundColor: isSelected ? 'var(--primary-600)' : 'var(--slate-100)',
+                        color: isSelected ? '#ffffff' : 'var(--slate-700)',
+                        border: isSelected ? '1.5px solid var(--primary-600)' : '1px solid var(--border-color)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {isSelected && <Check size={14} />}
+                      <span>{preset}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--slate-800)' }}>
+                Target Role / Career Headline: <span style={{ color: 'red' }}>*</span>
+              </label>
+              <input
+                type="text"
+                name="headline"
+                value={formData.headline}
+                onChange={handleChange}
+                placeholder="e.g. Full Stack Developer | Aspiring Software Engineer"
+                className="form-control"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1.5px solid var(--primary-400)',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  backgroundColor: '#ffffff'
+                }}
+                required
+              />
+              <div style={{ fontSize: '0.76rem', color: 'var(--slate-500)', marginTop: '0.35rem' }}>
+                This role dictates which dynamic learning roadmaps, skills gap assessments, and algorithm-matched internships are delivered to your portal.
+              </div>
+            </div>
+          </div>
+
           {/* Avatar Customizer */}
           <div className="card" style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
