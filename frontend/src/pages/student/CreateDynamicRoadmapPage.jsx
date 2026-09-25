@@ -66,7 +66,7 @@ export const CreateDynamicRoadmapPage = () => {
   const [department, setDepartment] = useState(user?.department || 'Computer Science & Engineering');
 
   // Interactive Mascot speech state
-  const [dollTip, setDollTip] = useState("Hi! I'm Sparky! 🤖 Choose your target role and dream company, and I'll build your personal roadmap!");
+  const [dollTip, setDollTip] = useState("Hi! I'm Coach Nova! 🤖 Choose your target role and dream company, and I'll build your personal roadmap!");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -131,7 +131,7 @@ export const CreateDynamicRoadmapPage = () => {
       const res = await api.post('/roadmaps/generate', payload);
       if (res.data.success) {
         const newRoadmap = res.data.data;
-        setDollTip("🎉 Roadmap ready! Jump on, Captain Sparky is starting your journey!");
+        setDollTip("🎉 Roadmap ready! Jump in, Coach Nova is starting your journey!");
         setTimeout(() => {
           navigate(`/student/roadmap?id=${newRoadmap.id}`);
         }, 1000);
@@ -387,7 +387,7 @@ export const CreateDynamicRoadmapPage = () => {
                   setCustomCompanyInput(e.target.value);
                   setCompanySelect('CUSTOM');
                   if (e.target.value) {
-                    setDollTip(`Custom target company: ${e.target.value}! Captain Sparky will set up the GPS to this office! 🛵`);
+                    setDollTip(`Custom target company: ${e.target.value}! Coach Nova will set up the curriculum to this office! 🚀`);
                   }
                 }}
                 placeholder="Or enter any custom dream company (e.g. Netflix, Uber, Swiggy, Startup...)"
@@ -462,7 +462,7 @@ export const CreateDynamicRoadmapPage = () => {
                 value={durationWeeks}
                 onChange={(e) => {
                   setDurationWeeks(e.target.value);
-                  setDollTip(`${e.target.value} weeks planned! Captain Sparky will space milestones accordingly! ⏱️`);
+                  setDollTip(`${e.target.value} weeks planned! Coach Nova will space milestones accordingly! ⏱️`);
                 }}
                 style={{
                   width: '100%',
@@ -626,7 +626,7 @@ export const CreateDynamicRoadmapPage = () => {
               {submitting ? (
                 <>
                   <Sparkles size={18} className="animate-spin" />
-                  Generating Route with Captain Sparky...
+                  Generating Route with Coach Nova...
                 </>
               ) : (
                 <>

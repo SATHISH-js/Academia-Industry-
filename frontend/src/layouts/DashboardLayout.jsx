@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/common/Navbar';
 import { Sidebar } from '../components/common/Sidebar';
+import { CoachNovaWidget } from '../components/common/CoachNovaWidget';
 
 export const DashboardLayout = () => {
   // Start open on desktop (>= 1024px), closed on mobile/tablet (< 1024px)
@@ -63,6 +64,7 @@ export const DashboardLayout = () => {
         <main className="dashboard-content">
           <Outlet />
         </main>
+        <CoachNovaWidget />
       </div>
     </div>
   );

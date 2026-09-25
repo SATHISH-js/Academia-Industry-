@@ -5,7 +5,7 @@ import { CompanyLogo } from './CompanyLogo';
 
 /**
  * AiCaptainBikeMap:
- * Tech Sprint Highway Pipeline where Sparky (AI Career Navigator)
+ * Tech Sprint Highway Pipeline where Coach Nova (AI Career Navigator)
  * moves step-by-step along the tech pipeline as tasks and milestones are completed!
  */
 export const AiCaptainBikeMap = ({
@@ -23,7 +23,7 @@ export const AiCaptainBikeMap = ({
   // Calculate ETA remaining based on completion
   const weeksLeft = Math.max(1, Math.round(estimatedWeeks * (1 - progressPercentage / 100)));
 
-  // Calculate which phase Sparky is currently navigating towards
+  // Calculate which phase Coach Nova is currently navigating towards
   const currentPhaseIndex = useMemo(() => {
     if (progressPercentage >= 100) return 4;
     if (milestones.length === 0) return 0;
@@ -109,7 +109,7 @@ export const AiCaptainBikeMap = ({
               </span>
             </div>
             <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
-              Sparky's Tech Pipeline: {targetRole} {companyName ? `@ ${companyName}` : ''}
+              Coach Nova's Tech Pipeline: {targetRole} {companyName ? `@ ${companyName}` : ''}
             </h3>
           </div>
         </div>
@@ -335,7 +335,7 @@ export const AiCaptainBikeMap = ({
           </div>
         </div>
 
-        {/* MOVING HIGH-TECH SPARKY TECH NAVIGATOR */}
+        {/* MOVING HIGH-TECH COACH NOVA TECH NAVIGATOR */}
         <div
           style={{
             position: 'absolute',
@@ -367,7 +367,7 @@ export const AiCaptainBikeMap = ({
             gap: '0.35rem',
             animation: 'floatMarker 2s ease-in-out infinite'
           }}>
-            <span>⚡ Sparky (AI Navigator):</span>
+            <span>⚡ Coach Nova (AI Guide):</span>
             <span style={{ color: '#4f46e5' }}>
               {progressPercentage === 100
                 ? 'Sprint Mastered! 🎉'
@@ -421,7 +421,7 @@ export const AiCaptainBikeMap = ({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ color: '#94a3b8' }}>
-            Complete milestone tasks below to advance Sparky forward along the tech pipeline!
+            Complete milestone tasks below to advance Coach Nova forward along the tech pipeline!
           </span>
         </div>
       </div>

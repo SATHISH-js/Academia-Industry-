@@ -10,6 +10,9 @@ import {
   Bell, 
   Menu, 
   X, 
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronRight,
   Briefcase, 
   Layers, 
   Settings, 
@@ -161,11 +164,26 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
     return true;
   });
 
+  const getPageTitle = (path) => {
+    if (path.includes('/dashboard')) return 'Dashboard';
+    if (path.includes('/roadmap')) return 'Career Roadmap';
+    if (path.includes('/assessment')) return 'Skill Assessments';
+    if (path.includes('/internships')) return 'Internships & Jobs';
+    if (path.includes('/applications')) return 'Applications';
+    if (path.includes('/portfolio')) return 'Digital Portfolio';
+    if (path.includes('/certifications') || path.includes('/certificate-verify')) return 'Certifications';
+    if (path.includes('/profile')) return 'Profile';
+    if (path.includes('/mock-interview')) return 'Mock Interview';
+    if (path.includes('/community')) return 'Community Feed';
+    if (path.includes('/resume')) return 'Resume Builder';
+    return 'Portal';
+  };
+
   return (
     <>
       <header className="app-topbar-fixed">
-        {/* Left Branding / Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Left Branding / Toggle & Breadcrumb Navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'nowrap' }}>
           {isAuthenticated && onToggleSidebar && (
             <button 
               type="button"
@@ -173,15 +191,17 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
               className={`menu-toggle-btn ${isSidebarOpen ? 'is-open' : 'is-closed'}`}
               aria-expanded={isSidebarOpen}
               aria-controls="app-sidebar"
-              aria-label={isSidebarOpen ? "Close side menu" : "Open side menu"}
-              title={isSidebarOpen ? "Close side menu (Ctrl+B)" : "Reopen side menu (Ctrl+B)"}
+              aria-label={isSidebarOpen ? "Collapse sidebar navigation" : "Expand sidebar navigation"}
+              title={isSidebarOpen ? "Collapse sidebar (Ctrl+B)" : "Expand sidebar (Ctrl+B)"}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
             >
-              <div className="menu-toggle-icon-wrap">
-                <Menu size={20} className="menu-icon-svg icon-menu" />
-                <X size={20} className="menu-icon-svg icon-close" />
-              </div>
+              {isSidebarOpen ? (
+                <PanelLeftClose size={18} style={{ color: 'var(--slate-600)' }} />
+              ) : (
+                <PanelLeftOpen size={18} style={{ color: 'var(--slate-600)' }} />
+              )}
               {!isSidebarOpen && (
-                <span className="menu-toggle-label">
+                <span className="menu-toggle-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
                   Menu
                 </span>
               )}
@@ -197,7 +217,8 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff'
+              color: '#ffffff',
+              flexShrink: 0
             }}>
               <GraduationCap size={22} />
             </div>
@@ -210,6 +231,32 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
               </div>
             </div>
           </Link>
+
+          {/* Breadcrumb Navigation */}
+          {isAuthenticated && (
+            <nav aria-label="Breadcrumb" className="navbar-breadcrumb" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              marginLeft: '0.75rem',
+              paddingLeft: '0.75rem',
+              borderLeft: '1px solid var(--slate-200)',
+              fontSize: '0.85rem'
+            }}>
+              <Link 
+                to={getDashboardRoute()} 
+                style={{ color: 'var(--slate-500)', textDecoration: 'none', fontWeight: 500 }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-600)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--slate-500)'}
+              >
+                {user?.role ? `${user.role.charAt(0) + user.role.slice(1).toLowerCase()} Portal` : 'Portal'}
+              </Link>
+              <ChevronRight size={14} style={{ color: 'var(--slate-400)', flexShrink: 0 }} />
+              <span style={{ color: 'var(--slate-800)', fontWeight: 600 }}>
+                {getPageTitle(location.pathname)}
+              </span>
+            </nav>
+          )}
         </div>
 
         {/* Right Controls */}

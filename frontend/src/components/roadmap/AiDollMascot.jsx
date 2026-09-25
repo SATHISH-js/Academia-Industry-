@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, X, ChevronRight, MessageSquare, Compass, ShieldCheck, Zap } from 'lucide-react';
+import { AiInterviewerDollGraphic } from '../interview/AiInterviewerDoll';
 
 /**
- * Animated SVG of the AI Doll Mascot ("Captain Sparky")
+ * Animated SVG of the AI Career Coach ("Coach Nova")
+ * Replacing legacy Captain Sparky with the authentic Coach Nova AI doll
  */
 export const AiDollGraphic = ({ size = 80, isWaving = true, isRidingBike = false, mood = 'happy' }) => {
   if (isRidingBike) {
-    // High-Tech Cyber Hover-Pod / Tech Jet Navigator for Sparky along the Sprint Pipeline
+    // High-Tech Cyber Hover-Pod / Tech Jet Navigator for Coach Nova along the Sprint Pipeline
     return (
       <svg
         width={size * 1.5}
@@ -31,6 +33,11 @@ export const AiDollGraphic = ({ size = 80, isWaving = true, isRidingBike = false
             <stop offset="0%" stopColor="#38bdf8" />
             <stop offset="70%" stopColor="#6366f1" />
             <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="novaHeadsetGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#06b6d4" />
+            <stop offset="50%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#8b5cf6" />
           </linearGradient>
         </defs>
 
@@ -71,136 +78,48 @@ export const AiDollGraphic = ({ size = 80, isWaving = true, isRidingBike = false
           <animate attributeName="r" values="3;4.5;3" dur="1s" repeatCount="indefinite" />
         </circle>
 
-        {/* Sparky Body seated inside Hover-Pod cockpit */}
-        <path d="M68 62 C68 50 74 42 84 42 C94 42 100 50 100 62 C100 70 94 74 84 74 C74 74 68 70 68 62 Z" fill="#4f46e5" />
+        {/* Coach Nova Seated in Cockpit with Blazer & Tie */}
+        {/* Blazer & Torso */}
+        <path d="M68 62 C68 48 76 44 84 44 C92 44 100 48 100 62 L100 74 L68 74 Z" fill="#1e293b" />
+        {/* Shirt & Tie */}
+        <polygon points="81,44 87,44 85,58 83,58" fill="#ffffff" />
+        <polygon points="83.5,46 84.5,46 85,56 83,56" fill="#4f46e5" />
 
         {/* Holographic Controls Console / Pilot Hands */}
         <path d="M72 65 Q84 58 96 65" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" fill="none" />
         <circle cx="72" cy="65" r="3" fill="#38bdf8" />
         <circle cx="96" cy="65" r="3" fill="#38bdf8" />
 
-        {/* Sparky Head */}
-        <circle cx="84" cy="27" r="18" fill="#ffffff" stroke="#c7d2fe" strokeWidth="2.5" />
+        {/* Coach Nova Head (Indigo Body) */}
+        <circle cx="84" cy="27" r="18" fill="#312e81" stroke="#4f46e5" strokeWidth="2" />
 
-        {/* High-Tech Cyber Visor (Neon Cyan / Electric Indigo) */}
-        <path d="M68 22 C68 14 74 9 84 9 C94 9 100 14 100 22 Z" fill="#1e1b4b" stroke="#38bdf8" strokeWidth="2" />
-        <path d="M72 23 Q84 19 96 23 Q84 27 72 23 Z" fill="#38bdf8">
-          <animate attributeName="opacity" values="0.75;1;0.75" dur="1.5s" repeatCount="indefinite" />
-        </path>
+        {/* Face Plate Display */}
+        <rect x="71" y="16" width="26" height="20" rx="7" fill="#0f172a" stroke="#6366f1" strokeWidth="1.5" />
 
-        {/* Cute Sparky Cheeks & Smile */}
-        <circle cx="75" cy="32" r="2.5" fill="#fda4af" />
-        <circle cx="93" cy="32" r="2.5" fill="#fda4af" />
-        <path d="M81 33 Q84 36 87 33" stroke="#4338ca" strokeWidth="2" strokeLinecap="round" fill="none" />
+        {/* Digital Cyan Expressive Eyes */}
+        <ellipse cx="78" cy="25" rx="2.5" ry="3" fill="#38bdf8" />
+        <ellipse cx="90" cy="25" rx="2.5" ry="3" fill="#38bdf8" />
+        <circle cx="79" cy="24" r="0.8" fill="#ffffff" />
+        <circle cx="91" cy="24" r="0.8" fill="#ffffff" />
 
-        {/* Lightning Beacon Antenna */}
-        <line x1="84" y1="9" x2="84" y2="2" stroke="#38bdf8" strokeWidth="2" />
-        <circle cx="84" cy="2" r="3" fill="#facc15">
-          <animate attributeName="fill" values="#facc15;#38bdf8;#facc15" dur="1.2s" repeatCount="indefinite" />
-        </circle>
+        {/* Smiling Cyan Mouth */}
+        <path d="M81 31 Q84 34 87 31" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+
+        {/* Coach Nova Headset Arc */}
+        <path d="M66 26 A19 19 0 0 1 102 26" fill="none" stroke="url(#novaHeadsetGrad)" strokeWidth="3.5" strokeLinecap="round" />
+        {/* Earphone Caps */}
+        <rect x="64" y="21" width="5" height="11" rx="2" fill="#06b6d4" />
+        <rect x="99" y="21" width="5" height="11" rx="2" fill="#8b5cf6" />
+
+        {/* Microphone Boom to Mouth with Glowing Tip */}
+        <path d="M101 27 Q97 39 88 37" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="87" cy="37" r="2.2" fill="#10b981" />
       </svg>
     );
   }
 
-  // Standing / Floating AI Doll Graphic
-  return (
-    <svg
-      width={size}
-      height={size * 1.15}
-      viewBox="0 0 100 115"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{
-        filter: 'drop-shadow(0 6px 12px rgba(79, 70, 229, 0.25))',
-        animation: 'dollFloat 3s ease-in-out infinite'
-      }}
-    >
-      <style>{`
-        @keyframes dollFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-7px); }
-        }
-        @keyframes dollWave {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-15deg); }
-          75% { transform: rotate(15deg); }
-        }
-        @keyframes eyeBlink {
-          0%, 96%, 100% { transform: scaleY(1); }
-          98% { transform: scaleY(0.1); }
-        }
-      `}</style>
-
-      {/* Glow Aura */}
-      <circle cx="50" cy="55" r="42" fill="url(#dollAura)" opacity="0.4" />
-      <defs>
-        <radialGradient id="dollAura" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#818cf8"/>
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0"/>
-        </radialGradient>
-      </defs>
-
-      {/* Floating Shadow */}
-      <ellipse cx="50" cy="108" rx="24" ry="4" fill="#64748b" opacity="0.25" />
-
-      {/* Doll Body */}
-      <rect x="34" y="52" width="32" height="38" rx="16" fill="url(#bodyGrad)" stroke="#4338ca" strokeWidth="2.5" />
-      <defs>
-        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6366f1"/>
-          <stop offset="100%" stopColor="#4338ca"/>
-        </linearGradient>
-      </defs>
-
-      {/* Chest Core Badge */}
-      <circle cx="50" cy="70" r="8" fill="#1e1b4b" stroke="#a5b4fc" strokeWidth="1.5" />
-      <path d="M50 65 L52 69 L56 70 L52 72 L50 76 L48 72 L44 70 L48 69 Z" fill="#fbbf24" />
-
-      {/* Arms */}
-      {/* Left arm resting */}
-      <path d="M34 60 Q24 68 28 78" stroke="#4f46e5" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <circle cx="28" cy="78" r="4" fill="#a5b4fc" />
-
-      {/* Right arm waving */}
-      <g style={{ transformOrigin: '66px 60px', animation: isWaving ? 'dollWave 1.8s ease-in-out infinite' : 'none' }}>
-        <path d="M66 60 Q76 52 82 42" stroke="#4f46e5" strokeWidth="5" strokeLinecap="round" fill="none" />
-        <circle cx="82" cy="42" r="5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
-        {/* Sparkles from waving hand */}
-        <path d="M88 36 L90 32 L92 36 L96 38 L92 40 L90 44 L88 40 L84 38 Z" fill="#f59e0b" />
-      </g>
-
-      {/* Doll Head */}
-      <rect x="25" y="16" width="50" height="42" rx="21" fill="#ffffff" stroke="#c7d2fe" strokeWidth="3" />
-
-      {/* Headset / Helmet band */}
-      <path d="M25 34 C25 20 35 12 50 12 C65 12 75 20 75 34" stroke="#4f46e5" strokeWidth="4" strokeLinecap="round" fill="none" />
-      {/* Earphone caps (Yellow & Indigo) */}
-      <rect x="20" y="28" width="7" height="15" rx="3.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
-      <rect x="73" y="28" width="7" height="15" rx="3.5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
-
-      {/* Antenna with pulsing orb */}
-      <line x1="50" y1="12" x2="50" y2="4" stroke="#4f46e5" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="50" cy="4" r="4" fill="#38bdf8">
-        <animate attributeName="r" values="3.5;5;3.5" dur="1.2s" repeatCount="indefinite" />
-      </circle>
-
-      {/* Animated Face */}
-      <g style={{ transformOrigin: '50px 36px', animation: 'eyeBlink 4s infinite' }}>
-        {/* Big expressive anime-style eyes */}
-        <ellipse cx="40" cy="35" rx="4.5" ry="5.5" fill="#1e1b4b" />
-        <circle cx="38.5" cy="33" r="1.8" fill="#ffffff" />
-        <ellipse cx="60" cy="35" rx="4.5" ry="5.5" fill="#1e1b4b" />
-        <circle cx="58.5" cy="33" r="1.8" fill="#ffffff" />
-      </g>
-
-      {/* Cute Blush */}
-      <circle cx="33" cy="41" r="3.5" fill="#fda4af" opacity="0.8" />
-      <circle cx="67" cy="41" r="3.5" fill="#fda4af" opacity="0.8" />
-
-      {/* Smile */}
-      <path d="M45 42 Q50 48 55 42" stroke="#4338ca" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-    </svg>
-  );
+  // Authentic Coach Nova AI Doll (Standing / Floating)
+  return <AiInterviewerDollGraphic state="idle" size={size} />;
 };
 
 /**
@@ -210,8 +129,8 @@ export const AiDollGreetingModal = ({
   isOpen = false,
   onClose,
   onProceed,
-  title = "Hi there! I'm Sparky! 🤖✨",
-  message = "I'm your AI Career Captain! Ready to construct your personalized dream roadmap with interactive milestones?",
+  title = "Hi there! I'm Coach Nova! 🤖✨",
+  message = "I'm your AI Career Coach! Ready to construct your personalized dream roadmap with interactive milestones?",
   confirmText = "Let's Build My Roadmap! 🚀"
 }) => {
   if (!isOpen) return null;

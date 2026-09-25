@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { CompanyLogo } from '../../components/roadmap/CompanyLogo';
 import {
-  AiInterviewerDollGraphic,
-  AiInterviewCornerDoll
+  AiInterviewerDollGraphic
 } from '../../components/interview/AiInterviewerDoll';
 import {
   Sparkles,
@@ -101,10 +100,8 @@ export const MockInterviewPage = () => {
   const [customRoleInput, setCustomRoleInput] = useState('');
   const [customFocusInput, setCustomFocusInput] = useState('');
 
-  // Word-by-word animation states
+  // Spoken subtitle message
   const [spokenMessage, setSpokenMessage] = useState("Welcome to your AI Mock Interview! I am Coach Nova. Please select your target company and engineering role to begin.");
-  const [activeWordIndex, setActiveWordIndex] = useState(-1);
-  const wordIntervalRef = useRef(null);
 
   useEffect(() => {
     fetchHistory();
@@ -116,7 +113,6 @@ export const MockInterviewPage = () => {
 
     return () => {
       clearTimeout(timer);
-      if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
   }, []);
@@ -133,53 +129,21 @@ export const MockInterviewPage = () => {
   };
 
   /**
-   * Speak aloud with dynamic word-by-word animation tracking
+   * Speak aloud cleanly without word highlighting
    */
   const speakAloud = (text) => {
-    if (speechMuted || !('speechSynthesis' in window)) return;
+    if (speechMuted || !('speechSynthesis' in window) || !text) return;
     window.speechSynthesis.cancel();
-    if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
 
     setSpokenMessage(text);
-    setActiveWordIndex(0);
 
-    const words = text.split(/\s+/).filter(Boolean);
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 1.05;
 
-    let boundaryWordIndex = 0;
-    utterance.onboundary = (event) => {
-      if (event.name === 'word') {
-        setActiveWordIndex(boundaryWordIndex);
-        boundaryWordIndex++;
-      }
-    };
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      // Fallback timer if browser voice engine doesn't fire onboundary
-      const intervalMs = Math.max(180, Math.min(320, Math.round(60000 / (words.length * 150))));
-      wordIntervalRef.current = setInterval(() => {
-        setActiveWordIndex(prev => {
-          if (prev < words.length - 1) return prev + 1;
-          clearInterval(wordIntervalRef.current);
-          return prev;
-        });
-      }, intervalMs);
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
-      setTimeout(() => setActiveWordIndex(-1), 1200);
-    };
-
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      if (wordIntervalRef.current) clearInterval(wordIntervalRef.current);
-      setActiveWordIndex(-1);
-    };
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
   };
@@ -237,8 +201,6 @@ export const MockInterviewPage = () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     navigate(`/student/mock-interview/room?company=${encodeURIComponent(selectedCompany)}&role=${encodeURIComponent(selectedRole)}`);
   };
-
-  const spokenWords = (spokenMessage || '').split(/\s+/).filter(Boolean);
 
   return (
     <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '3.5rem' }}>
@@ -301,7 +263,7 @@ export const MockInterviewPage = () => {
               Select a target company or add your dream firm. Coach Nova speaks questions aloud, listens in real time, diagnoses grammar, evaluates spoken clarity, and maps your path to mastery.
             </p>
 
-            {/* Word-by-word Highlight Live Subtitle Box */}
+            {/* Clean Spoken Message Subtitle Box without word highlighting */}
             {spokenMessage && (
               <div style={{
                 backgroundColor: 'rgba(15, 23, 42, 0.75)',
@@ -326,30 +288,8 @@ export const MockInterviewPage = () => {
                   </button>
                 </div>
 
-                {/* Animated Word Highlight Container */}
                 <div style={{ fontSize: '0.95rem', lineHeight: 1.65, color: '#e0e7ff' }}>
-                  {spokenWords.map((word, wIdx) => {
-                    const isCurrentWord = isSpeaking && activeWordIndex === wIdx;
-                    return (
-                      <span
-                        key={wIdx}
-                        style={{
-                          display: 'inline-block',
-                          marginRight: '0.28rem',
-                          padding: isCurrentWord ? '0.1rem 0.4rem' : '0.1rem 0.05rem',
-                          borderRadius: '6px',
-                          backgroundColor: isCurrentWord ? '#facc15' : 'transparent',
-                          color: isCurrentWord ? '#0f172a' : '#e0e7ff',
-                          fontWeight: isCurrentWord ? 900 : 500,
-                          transform: isCurrentWord ? 'scale(1.14)' : 'scale(1)',
-                          boxShadow: isCurrentWord ? '0 0 14px rgba(250, 204, 21, 0.9)' : 'none',
-                          transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
-                        }}
-                      >
-                        {word}
-                      </span>
-                    );
-                  })}
+                  {spokenMessage}
                 </div>
               </div>
             )}
@@ -812,9 +752,6 @@ export const MockInterviewPage = () => {
           )}
         </div>
       )}
-
-      {/* Floating Corner Companion */}
-      <AiInterviewCornerDoll onLaunchTest={handleLaunchRoom} />
     </div>
   );
 };

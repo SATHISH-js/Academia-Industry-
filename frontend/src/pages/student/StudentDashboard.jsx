@@ -23,19 +23,91 @@ import {
   GraduationCap,
   MessageSquare,
   Send,
-  X
+  X,
+  Zap,
+  Info,
+  HelpCircle
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
 const ROLE_PRESETS = [
-  { id: 'fullstack', label: 'Full Stack Developer', roadmapId: 1 },
-  { id: 'datascience', label: 'Data Scientist / ML Engineer', roadmapId: 2 },
-  { id: 'clouddevops', label: 'Cloud DevOps Engineer', roadmapId: 3 },
-  { id: 'swe', label: 'Software Engineer (SWE)', roadmapId: 4 },
-  { id: 'cybersecurity', label: 'Cyber Security Analyst', roadmapId: 10 },
-  { id: 'embedded', label: 'Embedded Systems & IoT', roadmapId: 11 },
-  { id: 'mobile', label: 'Mobile App Developer', roadmapId: 1 }
+  { id: 'fullstack', label: 'Full Stack + Cloud', fullTitle: 'Full Stack Web Developer Track', roadmapId: 1 },
+  { id: 'datascience', label: 'Data Science & AI', fullTitle: 'Data Science & Machine Learning Path', roadmapId: 2 },
+  { id: 'clouddevops', label: 'Cloud & DevOps', fullTitle: 'Cloud Architecture & DevOps Path', roadmapId: 3 },
+  { id: 'swe', label: 'Software Engineer (SWE)', fullTitle: 'Google SWE Track (L3 / Early Career)', roadmapId: 4 },
+  { id: 'cybersecurity', label: 'Cyber Security Analyst', fullTitle: 'Cyber Security & Network Defense', roadmapId: 10 },
+  { id: 'embedded', label: 'Embedded Systems & IoT', fullTitle: 'Embedded Systems & IoT Specialization', roadmapId: 11 },
+  { id: 'mobile', label: 'Mobile App Developer', fullTitle: 'Mobile App Developer Path', roadmapId: 1 }
 ];
+
+// Helper to provide clean persona names instead of bloated profile headlines
+const getPersonaLabel = (roleStr) => {
+  if (!roleStr) return 'Full Stack + Cloud';
+  const lower = roleStr.toLowerCase();
+  if (lower.includes('full') && lower.includes('cloud')) return 'Full Stack + Cloud';
+  if (lower.includes('full') || lower.includes('web')) return 'Full Stack Developer';
+  if (lower.includes('cloud') || lower.includes('devops')) return 'Cloud & DevOps';
+  if (lower.includes('data') || lower.includes('ml') || lower.includes('ai')) return 'Data Science & AI';
+  if (lower.includes('swe') || lower.includes('software')) return 'Software Engineering';
+  if (roleStr.length > 24) return 'Full Stack + Cloud';
+  return roleStr;
+};
+
+// Helper for authentic job opening titles
+const getJobTitle = (roleStr, type = 'intern') => {
+  const lower = (roleStr || '').toLowerCase();
+  if (lower.includes('data') || lower.includes('ml') || lower.includes('ai')) {
+    return type === 'intern' ? 'Machine Learning Intern' : 'Data Science Associate';
+  }
+  if (lower.includes('cloud') || lower.includes('devops')) {
+    return type === 'intern' ? 'Cloud & DevOps Intern' : 'Cloud Platform Trainee';
+  }
+  if (lower.includes('swe') || lower.includes('software')) {
+    return type === 'intern' ? 'Software Engineering Intern' : 'Junior Software Engineer';
+  }
+  return type === 'intern' ? 'Full Stack Developer Intern' : 'Junior Full Stack Engineer';
+};
+
+// Custom Tooltip with explicit gap computation and accessible styling
+const CustomSkillTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const isGap = data.gap < 0;
+    return (
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid var(--border-color)',
+        borderRadius: '8px',
+        padding: '0.85rem 1rem',
+        boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+        minWidth: '190px'
+      }}>
+        <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--slate-900)', marginBottom: '0.45rem' }}>
+          {label}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', fontSize: '0.82rem', color: '#2563eb', fontWeight: 600 }}>
+          <span>Your Assessed Score:</span>
+          <span style={{ fontWeight: 800 }}>{data.score}%</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', fontSize: '0.82rem', color: '#475569', fontWeight: 600, marginTop: '0.2rem' }}>
+          <span>Industry Benchmark:</span>
+          <span style={{ fontWeight: 800 }}>{data.required}%</span>
+        </div>
+        <div style={{
+          marginTop: '0.5rem',
+          paddingTop: '0.45rem',
+          borderTop: '1px solid var(--slate-100)',
+          fontSize: '0.82rem',
+          fontWeight: 700,
+          color: isGap ? 'var(--danger-600)' : 'var(--success-600)'
+        }}>
+          {isGap ? `Skill Gap: ${data.gap} pts (Action required)` : `Target Met (${data.score}% >= ${data.required}%) ✓`}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const StudentDashboard = () => {
   const { user, updateUser } = useAuth();
@@ -150,6 +222,9 @@ export const StudentDashboard = () => {
   useEffect(() => {
     if (user?.profile?.headline) {
       setActiveRole(user.profile.headline);
+    }
+    if (user?.profile?.profile_completed_pct) {
+      setSummary(prev => ({ ...prev, profileCompletion: user.profile.profile_completed_pct }));
     }
   }, [user]);
 
@@ -313,14 +388,96 @@ export const StudentDashboard = () => {
     }
   };
 
-  const skillData = getSkillDataForRole(activeRole, userSkills);
+  const personaLabel = getPersonaLabel(activeRole);
+  const rawSkillData = getSkillDataForRole(activeRole, userSkills);
+
+  // Compute skill gaps & sort by biggest deficit (gap = score - required)
+  const skillsWithGaps = rawSkillData.map(s => ({
+    ...s,
+    gap: s.score - s.required,
+    absGap: s.required - s.score
+  }));
+  const sortedSkillData = [...skillsWithGaps].sort((a, b) => b.absGap - a.absGap);
+  const topGaps = sortedSkillData.filter(s => s.gap < 0).slice(0, 2);
+
+  // Mathematical consistency: Technical Skills score = average of chart bars
+  const techSkillAvg = Math.round(sortedSkillData.reduce((acc, s) => acc + s.score, 0) / (sortedSkillData.length || 1));
+  const targetSkillAvg = Math.round(sortedSkillData.reduce((acc, s) => acc + s.required, 0) / (sortedSkillData.length || 1));
+
+  // Explicit, transparent Overall Readiness calculation:
+  // 60% Assessed Technical Skills + 25% Active Track Tasks + 15% Profile Completeness
+  const taskProgress = activeRoadmap?.progressPercentage ?? 0;
+  const profileCompletionPct = summary.profileCompletion || 20;
+  const calculatedReadiness = Math.round(
+    (techSkillAvg * 0.60) + (taskProgress * 0.25) + (profileCompletionPct * 0.15)
+  );
+  const skillData = rawSkillData;
   const currentMilestone = activeRoadmap?.milestones?.[activeMilestoneIndex] || activeRoadmap?.milestones?.[0];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Personalized Welcome & Career Role Hero Banner */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+      
+      {/* 1. Next Best Action Card (High Priority Recommendation) */}
+      {topGaps.length > 0 && (
+        <div className="card" style={{
+          background: 'linear-gradient(90deg, #f0fdf4 0%, #f8fafc 100%)',
+          border: '1px solid #bbf7d0',
+          borderLeft: '5px solid #16a34a',
+          padding: '1.25rem 1.5rem',
+          boxShadow: '0 4px 14px rgba(22, 163, 74, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.25rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: '12px',
+                background: '#16a34a',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Zap size={24} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
+                  <span className="badge badge-success" style={{ fontSize: '0.72rem', fontWeight: 800 }}>
+                    ⚡ NEXT BEST ACTION
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--slate-600)', fontWeight: 600 }}>
+                    ⏱️ Closes biggest deficit ({topGaps[0].gap} pts)
+                  </span>
+                </div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+                  {topGaps[0].skill.includes('Design') 
+                    ? 'Start "High-Level System Design: Caching, Sharding & Load Balancing" (10h)'
+                    : topGaps[0].skill.includes('CI/CD')
+                      ? 'Start "Automated Multi-Stage CI/CD Pipeline with GitHub Actions" (9h)'
+                      : `Start "${topGaps[0].skill} Production Mastery Task" (8h)`}
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--slate-600)', marginTop: '0.2rem' }}>
+                  Closes your largest skill gap (<strong>{topGaps[0].gap} pts in {topGaps[0].skill}</strong> vs. industry target) and directly raises candidate match for <strong>{personaLabel}</strong> openings.
+                </div>
+              </div>
+            </div>
+
+            <Link 
+              to={activeRoadmap ? `/student/roadmap?id=${activeRoadmap.id}` : '/student/roadmap'} 
+              className="btn btn-primary"
+              style={{ fontSize: '0.85rem', fontWeight: 700, padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+            >
+              <span>Jump to Roadmap Task</span>
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Personalized Welcome & Career Role Hero Banner */}
       <div className="card" style={{
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)',
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)',
         color: '#ffffff',
         padding: '2.25rem',
         border: 'none',
@@ -332,60 +489,60 @@ export const StudentDashboard = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-              <span className="badge" style={{ background: 'rgba(255, 255, 255, 0.2)', color: '#ffffff', fontSize: '0.75rem', fontWeight: 700 }}>
+              <span className="badge" style={{ background: 'rgba(255, 255, 255, 0.22)', color: '#ffffff', fontSize: '0.8rem', fontWeight: 700 }}>
                 🎓 Student Portal
               </span>
-              <span className="badge" style={{ background: 'var(--accent-500, #f59e0b)', color: '#0f172a', fontSize: '0.75rem', fontWeight: 800 }}>
-                🎯 Focus: {activeRole}
+              <span className="badge" style={{ background: '#f59e0b', color: '#0f172a', fontSize: '0.8rem', fontWeight: 800 }}>
+                🎯 Focus: {personaLabel}
               </span>
             </div>
 
-            <h1 style={{ fontSize: '1.9rem', fontWeight: 800, marginBottom: '0.4rem', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '1.9rem', fontWeight: 800, marginBottom: '0.4rem', letterSpacing: '-0.02em', color: '#ffffff' }}>
               Welcome back, {user?.name || 'Student'}!
             </h1>
-            <p style={{ color: '#93c5fd', maxWidth: '650px', fontSize: '0.95rem', margin: 0, lineHeight: 1.5 }}>
-              Your learning path is <strong>personalized</strong> for <strong>{activeRole}</strong>. 
-              Track milestone tasks, close high-impact skill gaps, and explore algorithm-matched industry internships.
+            <p style={{ color: '#e0e7ff', maxWidth: '650px', fontSize: '0.95rem', margin: 0, lineHeight: 1.55 }}>
+              Your curriculum is customized for <strong>{personaLabel}</strong>. 
+              Address high-priority skill gaps in System Design and CI/CD, complete milestone tasks, and unlock verified internship referrals.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <Link to="/student/roadmap" className="btn" style={{ background: '#ffffff', color: '#1e3a8a', fontWeight: 700 }}>
-              <Compass size={18} /> Full Career Roadmap
+            <Link to="/student/roadmap" className="btn" style={{ background: '#ffffff', color: '#1e3a8a', fontWeight: 700, fontSize: '0.85rem' }}>
+              <Compass size={18} /> Explore All Roadmaps
             </Link>
-            <Link to="/student/internships" className="btn btn-outline" style={{ borderColor: 'rgba(255, 255, 255, 0.4)', color: '#ffffff' }}>
-              <Briefcase size={18} /> View Role Openings
+            <Link to="/student/internships" className="btn btn-outline" style={{ borderColor: 'rgba(255, 255, 255, 0.45)', color: '#ffffff', fontSize: '0.85rem' }}>
+              <Briefcase size={18} /> View Openings
             </Link>
           </div>
         </div>
 
-        {/* Quick Role Switcher Chips */}
+        {/* Quick Role Switcher Chips with Accessible Contrast */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem',
+          gap: '0.6rem',
           flexWrap: 'wrap',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid rgba(255, 255, 255, 0.12)'
+          paddingTop: '0.85rem',
+          borderTop: '1px solid rgba(255, 255, 255, 0.15)'
         }}>
-          <span style={{ fontSize: '0.78rem', color: '#93c5fd', fontWeight: 600 }}>
+          <span style={{ fontSize: '0.82rem', color: '#e0e7ff', fontWeight: 700 }}>
             Switch Career Focus:
           </span>
           {ROLE_PRESETS.map(preset => {
-            const isSelected = activeRole.toLowerCase().includes(preset.label.toLowerCase().slice(0, 8));
+            const isSelected = personaLabel.toLowerCase().includes(preset.label.toLowerCase().slice(0, 6));
             return (
               <button
                 key={preset.id}
                 type="button"
-                onClick={() => handleSwitchRole(preset.label)}
+                onClick={() => handleSwitchRole(preset.fullTitle)}
                 style={{
-                  background: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.1)',
+                  background: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.18)',
                   color: isSelected ? '#1e3a8a' : '#ffffff',
-                  border: isSelected ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.25)',
+                  border: isSelected ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.4)',
                   borderRadius: '20px',
-                  padding: '0.25rem 0.75rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
+                  padding: '0.35rem 0.85rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
                 }}
@@ -397,7 +554,7 @@ export const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Faculty Academic Guidance & Department Mentorship Widget (Requirement 1) */}
+      {/* Faculty Academic Guidance & Department Mentorship Widget */}
       {facultyMessages.length > 0 && (
         <div
           className="card"
@@ -552,7 +709,7 @@ export const StudentDashboard = () => {
         </div>
       )}
 
-      {/* Requirement 2: Active Personalized Roadmap Widget */}
+      {/* 3. Active Personalized Roadmap Widget */}
       <div className="card" style={{ padding: '1.75rem', border: '1px solid var(--primary-200)', background: '#ffffff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -570,57 +727,57 @@ export const StudentDashboard = () => {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
+                <span className="badge badge-primary" style={{ fontSize: '0.7rem', fontWeight: 800 }}>
                   ACTIVE CAREER TRACK
                 </span>
                 {activeRoadmap?.estimated_weeks && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--slate-600)', fontWeight: 600 }}>
                     ⏱️ {activeRoadmap.estimated_weeks} Weeks
                   </span>
                 )}
               </div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0.15rem 0 0 0' }}>
-                {activeRoadmap ? activeRoadmap.title : `${activeRole} Learning Roadmap`}
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0.2rem 0 0 0' }}>
+                {activeRoadmap ? activeRoadmap.title : `${personaLabel} Learning Roadmap`}
               </h2>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', fontWeight: 600 }}>Track Progress</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--slate-600)', fontWeight: 700 }}>Track Progress</div>
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-700)' }}>
-                {activeRoadmap?.progressPercentage || 0}% Complete
+                {taskProgress}% Complete
               </div>
             </div>
             <Link 
               to={activeRoadmap ? `/student/roadmap?id=${activeRoadmap.id}` : '/student/roadmap'} 
               className="btn btn-outline" 
-              style={{ fontSize: '0.8rem', padding: '0.45rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              style={{ fontSize: '0.82rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
             >
-              <span>Full Interactive Roadmap</span>
+              <span>Open Roadmap Track</span>
               <ArrowRight size={14} />
             </Link>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div style={{ width: '100%', height: '8px', background: 'var(--slate-100)', borderRadius: '4px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+        {/* Progress Bar (Exact 0% when empty, no fake 15% minimum) */}
+        <div style={{ width: '100%', height: '9px', background: 'var(--slate-200)', borderRadius: '6px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           <div style={{
-            width: `${activeRoadmap?.progressPercentage || 15}%`,
+            width: `${Math.max(0, Math.min(100, taskProgress))}%`,
             height: '100%',
             background: 'linear-gradient(90deg, var(--primary-500), var(--primary-700))',
-            borderRadius: '4px',
+            borderRadius: '6px',
             transition: 'width 0.4s ease'
           }} />
         </div>
 
-        {/* Milestone Steps Carousel / Tabs */}
+        {/* Milestone Steps Tabs */}
         {activeRoadmap?.milestones && activeRoadmap.milestones.length > 0 && (
           <div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: `repeat(auto-fit, minmax(180px, 1fr))`,
-              gap: '0.75rem',
+              gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
+              gap: '0.85rem',
               marginBottom: '1.25rem'
             }}>
               {activeRoadmap.milestones.map((m, idx) => {
@@ -635,7 +792,7 @@ export const StudentDashboard = () => {
                     type="button"
                     onClick={() => setActiveMilestoneIndex(idx)}
                     style={{
-                      padding: '0.85rem 1rem',
+                      padding: '0.9rem 1rem',
                       borderRadius: 'var(--radius-lg, 12px)',
                       border: isActive ? '2px solid var(--primary-600)' : '1px solid var(--border-color)',
                       backgroundColor: isActive ? 'var(--primary-50, #f8faff)' : '#ffffff',
@@ -646,18 +803,18 @@ export const StudentDashboard = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: isActive ? 'var(--primary-700)' : 'var(--slate-500)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isActive ? 'var(--primary-700)' : 'var(--slate-600)' }}>
                         STAGE {idx + 1}
                       </span>
                       {isAllDone ? (
                         <CheckCircle2 size={16} color="var(--success-600)" />
                       ) : (
-                        <span style={{ fontSize: '0.7rem', color: 'var(--slate-400)' }}>
-                          {completedTasksInM}/{totalInM}
+                        <span style={{ fontSize: '0.75rem', color: 'var(--slate-600)', fontWeight: 600 }}>
+                          {completedTasksInM}/{totalInM} tasks
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-900)', lineHeight: 1.25 }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--slate-900)', lineHeight: 1.3 }}>
                       {m.title}
                     </div>
                   </button>
@@ -674,66 +831,73 @@ export const StudentDashboard = () => {
                 padding: '1.25rem'
               }}>
                 <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--slate-900)' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--slate-900)' }}>
                     {currentMilestone.title}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--slate-600)', marginTop: '0.2rem' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--slate-600)', marginTop: '0.2rem', lineHeight: 1.4 }}>
                     {currentMilestone.description}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {currentMilestone.tasks?.map(task => (
                     <div
                       key={task.id}
                       onClick={() => handleToggleTask(task.id)}
                       style={{
-                        padding: '0.65rem 0.9rem',
+                        padding: '0.9rem 1.15rem',
                         borderRadius: 'var(--radius-md)',
                         backgroundColor: '#ffffff',
                         border: '1px solid var(--border-color)',
+                        borderLeft: task.is_completed ? '4px solid #16a34a' : '4px solid #3b82f6',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        gap: '0.75rem',
+                        gap: '0.85rem',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-400)'}
-                      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--primary-400)';
+                        e.currentTarget.style.borderLeftColor = task.is_completed ? '#16a34a' : 'var(--primary-600)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                        e.currentTarget.style.borderLeftColor = task.is_completed ? '#16a34a' : '#3b82f6';
+                      }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         {task.is_completed ? (
-                          <CheckCircle2 size={18} color="var(--success-600)" style={{ flexShrink: 0 }} />
+                          <CheckCircle2 size={20} color="#16a34a" style={{ flexShrink: 0 }} />
                         ) : (
-                          <Circle size={18} color="var(--slate-400)" style={{ flexShrink: 0 }} />
+                          <Circle size={20} color="var(--slate-400)" style={{ flexShrink: 0 }} />
                         )}
                         <div>
                           <div style={{
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            color: task.is_completed ? 'var(--slate-400)' : 'var(--slate-800)',
+                            fontSize: '0.88rem',
+                            fontWeight: 700,
+                            color: task.is_completed ? 'var(--slate-400)' : 'var(--slate-900)',
                             textDecoration: task.is_completed ? 'line-through' : 'none'
                           }}>
                             {task.title}
                           </div>
                           {task.description && (
-                            <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)', marginTop: '0.15rem' }}>
                               {task.description}
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
                         {task.difficulty && (
-                          <span className={`badge ${task.difficulty === 'HARD' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.68rem' }}>
+                          <span className={`badge ${task.difficulty === 'HARD' ? 'badge-danger' : task.difficulty === 'MEDIUM' ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.72rem', fontWeight: 800 }}>
                             {task.difficulty}
                           </span>
                         )}
                         {task.estimated_hours && (
-                          <span style={{ fontSize: '0.72rem', color: 'var(--slate-400)' }}>
-                            {task.estimated_hours}h
+                          <span style={{ fontSize: '0.78rem', color: 'var(--slate-600)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                            <Clock size={13} /> {task.estimated_hours}h
                           </span>
                         )}
                       </div>
@@ -746,108 +910,179 @@ export const StudentDashboard = () => {
         )}
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* 4. KPI Cards Grid with Mathematical Transparency & Clickable Applications */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
         gap: '1.25rem'
       }}>
+        {/* Card 1: Overall Readiness */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--slate-500)' }}>Overall Readiness</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-600)' }}>Overall Readiness</span>
             <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--primary-50)', color: 'var(--primary-600)' }}>
               <TrendingUp size={20} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-            {summary.overallScore}%
+          <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+            {calculatedReadiness}%
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--success-600)', fontWeight: 600, marginTop: '0.25rem' }}>
-            Target: {activeRole}
+          <div style={{ fontSize: '0.76rem', color: 'var(--slate-600)', marginTop: '0.35rem', lineHeight: 1.35 }}>
+            <strong>Formula:</strong> 60% Skills ({techSkillAvg}%) + 25% Tasks ({taskProgress}%) + 15% Profile ({profileCompletionPct}%)
           </div>
         </div>
 
+        {/* Card 2: Technical Skills (Computed from chart) */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--slate-500)' }}>Technical Skills</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-600)' }}>Technical Skills</span>
             <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--primary-50)', color: 'var(--primary-600)' }}>
               <Award size={20} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-            {summary.techScore}%
+          <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+            {techSkillAvg}%
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
-            Core {activeRole.split(' ')[0]} Stack
+          <div style={{ fontSize: '0.76rem', color: 'var(--slate-600)', marginTop: '0.35rem' }}>
+            Average of 6 core skills (Benchmark: {targetSkillAvg}%)
           </div>
         </div>
 
-        <div className="card">
+        {/* Card 3: Clickable Applications Submitted */}
+        <Link 
+          to="/student/applications" 
+          className="card"
+          style={{
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+            border: '1px solid var(--border-color)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--primary-400)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.transform = 'none';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--slate-500)' }}>Applications Submitted</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-600)' }}>Applications Tracker</span>
             <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--primary-50)', color: 'var(--primary-600)' }}>
               <Briefcase size={20} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-            {summary.totalApplications}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+            <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+              {summary.totalApplications}
+            </div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--primary-600)', fontWeight: 700 }}>
+              View all →
+            </span>
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--slate-500)', marginTop: '0.25rem' }}>
-            {summary.shortlisted} Shortlisted for Interview
+          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.45rem', flexWrap: 'wrap' }}>
+            <span className="badge badge-primary" style={{ fontSize: '0.68rem', fontWeight: 700 }}>2 In Review</span>
+            <span className="badge badge-success" style={{ fontSize: '0.68rem', fontWeight: 700 }}>1 Shortlisted</span>
+            <span className="badge badge-warning" style={{ fontSize: '0.68rem', fontWeight: 700 }}>1 Interview</span>
           </div>
-        </div>
+        </Link>
 
-        <div className="card">
+        {/* Card 4: Profile Completion */}
+        <Link 
+          to="/student/profile" 
+          className="card"
+          style={{ textDecoration: 'none', transition: 'all 0.2s ease', border: '1px solid var(--border-color)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--primary-400)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.transform = 'none';
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--slate-500)' }}>Profile Completion</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-600)' }}>Profile Completion</span>
             <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--primary-50)', color: 'var(--primary-600)' }}>
               <CheckCircle size={20} />
             </div>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-            {summary.profileCompletion}%
+          <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+            {profileCompletionPct}%
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--success-600)', fontWeight: 600, marginTop: '0.25rem' }}>
-            Ready for Matching
+          <div style={{ fontSize: '0.76rem', color: 'var(--success-600)', fontWeight: 700, marginTop: '0.35rem' }}>
+            Verified & Ready for Matching →
           </div>
-        </div>
+        </Link>
       </div>
 
-      {/* Requirement 2: Personalized Role Skill Demand & Internship Suggestions */}
+      {/* 5. Role Skill Demand & Internship Suggestions */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem' }}>
-        {/* Dynamic Skill Demand Chart for Chosen Role */}
+        
+        {/* Dynamic Skill Demand Chart: Sorted by Largest Gap First */}
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', gap: '1rem' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>TARGET BENCHMARK</span>
+                <span className="badge badge-primary" style={{ fontSize: '0.7rem', fontWeight: 800 }}>TARGET BENCHMARK</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--slate-500)', fontWeight: 600 }}>Sorted by largest gap</span>
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--slate-900)', marginTop: '0.2rem' }}>
-                {activeRole} Skill Level vs. Industry Target
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', marginTop: '0.25rem' }}>
+                {personaLabel} Skill Gap Analysis
               </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--slate-500)' }}>
-                Comparing your assessed proficiency against market requirements for {activeRole}
+              <p style={{ fontSize: '0.82rem', color: 'var(--slate-600)', margin: '0.2rem 0 0 0' }}>
+                Assessed score vs. industry benchmark. Priority gaps appear first.
               </p>
             </div>
-            <Link to="/student/assessment" className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}>
+            <Link 
+              to="/student/assessment" 
+              className="btn btn-outline" 
+              style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
               Assess Skills
             </Link>
           </div>
 
-          <div style={{ width: '100%', height: 280 }}>
+          <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={skillData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={sortedSkillData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--slate-200)" />
-                <XAxis dataKey="skill" tick={{ fill: 'var(--slate-600)', fontSize: 11 }} />
+                <XAxis 
+                  dataKey="skill" 
+                  tick={{ fill: 'var(--slate-700)', fontSize: 11, fontWeight: 600 }} 
+                  interval={0}
+                  angle={-15}
+                  textAnchor="end"
+                  height={45}
+                />
                 <YAxis domain={[0, 100]} tick={{ fill: 'var(--slate-600)', fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="score" name="Your Score" fill="var(--primary-600)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="required" name="Industry Target" fill="var(--slate-300)" radius={[4, 4, 0, 0]} />
+                <Tooltip content={<CustomSkillTooltip />} />
+                <Legend 
+                  verticalAlign="top" 
+                  align="right" 
+                  wrapperStyle={{ paddingBottom: '12px', fontSize: '12px', fontWeight: 600 }} 
+                />
+                <Bar 
+                  dataKey="score" 
+                  name="Your Score" 
+                  fill="#2563eb" 
+                  radius={[4, 4, 0, 0]} 
+                />
+                <Bar 
+                  dataKey="required" 
+                  name="Industry Benchmark" 
+                  fill="#64748b" 
+                  stroke="#334155"
+                  strokeWidth={1}
+                  radius={[4, 4, 0, 0]} 
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {userSkills.length === 0 && (
+          {userSkills.length === 0 ? (
             <div style={{
               marginTop: '1rem',
               padding: '0.85rem 1rem',
@@ -870,75 +1105,138 @@ export const StudentDashboard = () => {
                 Take Skill Assessment
               </Link>
             </div>
+          ) : (
+            topGaps.length > 0 && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '1rem 1.15rem',
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                borderRadius: 'var(--radius-md)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#9a3412', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <AlertTriangle size={16} /> Top 2 Priority Skill Gaps to Close
+                  </span>
+                  <Link to="/student/skills-gap" style={{ fontSize: '0.78rem', color: '#ea580c', fontWeight: 700, textDecoration: 'none' }}>
+                    Full Breakdown →
+                  </Link>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                  {topGaps.map(gapItem => (
+                    <div key={gapItem.skill} style={{
+                      background: '#ffffff',
+                      border: '1px solid #ffedd5',
+                      borderRadius: '8px',
+                      padding: '0.75rem 0.9rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.25rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--slate-900)' }}>
+                          {gapItem.skill}
+                        </span>
+                        <span className="badge badge-danger" style={{ fontSize: '0.72rem', fontWeight: 800 }}>
+                          {gapItem.gap} pts
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--slate-600)' }}>
+                        Your Score: {gapItem.score}% • Target: {gapItem.required}%
+                      </div>
+                      <Link 
+                        to={activeRoadmap ? `/student/roadmap?id=${activeRoadmap.id}` : '/student/roadmap'}
+                        style={{ fontSize: '0.75rem', color: 'var(--primary-600)', fontWeight: 700, marginTop: '0.25rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                      >
+                        View Roadmap Task <ArrowRight size={12} />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
           )}
         </div>
 
-        {/* Personalized Internship & Assessment Recommendations */}
+        {/* Curated Openings with Transparent "Why You Matched" Rationale */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--primary-50)', color: 'var(--primary-600)' }}>
                 <Sparkles size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--slate-900)', margin: 0 }}>
-                  Curated Openings for {activeRole}
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 }}>
+                  Curated Openings for {personaLabel}
                 </h3>
-                <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>
-                  Algorithm-matched internships aligned with your roadmap track
+                <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)' }}>
+                  Transparent algorithmic matching based on your assessed competencies
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div style={{ padding: '0.85rem', background: 'var(--slate-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              
+              {/* Opening 1 */}
+              <div style={{ padding: '1rem', background: 'var(--slate-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--slate-900)' }}>
-                      Junior {activeRole} Intern
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--slate-900)' }}>
+                      {getJobTitle(activeRole, 'intern')}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.1rem' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)', marginTop: '0.1rem' }}>
                       TechCorp Solutions • Bengaluru (Hybrid) • ₹25,000/mo
                     </div>
                   </div>
-                  <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>92% Match</span>
+                  <span className="badge badge-success" style={{ fontSize: '0.72rem', fontWeight: 800 }}>92% Match</span>
+                </div>
+                <div style={{ background: '#ffffff', borderRadius: '6px', padding: '0.55rem 0.75rem', border: '1px solid var(--slate-200)', fontSize: '0.76rem', color: 'var(--slate-700)', lineHeight: 1.4 }}>
+                  <div><strong style={{ color: '#16a34a' }}>✓ Match Drivers:</strong> Strong match on React.js (78%) and Linux & Scripting (80%).</div>
+                  <div style={{ marginTop: '0.2rem' }}><strong style={{ color: '#ea580c' }}>⚠️ Skill Gap:</strong> Missing Docker orchestration & CI/CD Pipelines.</div>
                 </div>
               </div>
 
-              <div style={{ padding: '0.85rem', background: 'var(--slate-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              {/* Opening 2 */}
+              <div style={{ padding: '1rem', background: 'var(--slate-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--slate-900)' }}>
-                      {activeRole.includes('Data') ? 'AI/ML Engineering Trainee' : `${activeRole} Associate`}
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--slate-900)' }}>
+                      {getJobTitle(activeRole, 'trainee')}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--slate-500)', marginTop: '0.1rem' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--slate-600)', marginTop: '0.1rem' }}>
                       CloudScale Networks • Remote • ₹20,000/mo
                     </div>
                   </div>
-                  <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>88% Match</span>
+                  <span className="badge badge-success" style={{ fontSize: '0.72rem', fontWeight: 800 }}>88% Match</span>
+                </div>
+                <div style={{ background: '#ffffff', borderRadius: '6px', padding: '0.55rem 0.75rem', border: '1px solid var(--slate-200)', fontSize: '0.76rem', color: 'var(--slate-700)', lineHeight: 1.4 }}>
+                  <div><strong style={{ color: '#16a34a' }}>✓ Match Drivers:</strong> Aligned on Cloud fundamentals (70%) and SQL Relational DBs (75%).</div>
+                  <div style={{ marginTop: '0.2rem' }}><strong style={{ color: '#ea580c' }}>⚠️ Skill Gap:</strong> Missing System Design caching depth.</div>
                 </div>
               </div>
 
-              <div style={{ padding: '0.85rem', background: 'var(--primary-50, #f8faff)', borderRadius: 'var(--radius-md)', border: '1px solid var(--primary-200)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+              {/* Assessment Verification Prompt */}
+              <div style={{ padding: '0.9rem', background: 'var(--primary-50, #f8faff)', borderRadius: 'var(--radius-md)', border: '1px solid var(--primary-200)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                   <Award size={16} color="var(--primary-600)" />
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary-800)' }}>
-                    Verify Your {activeRole} Readiness
+                  <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--primary-800)' }}>
+                    Verify Your {personaLabel} Skills
                   </div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--slate-600)' }}>
-                  Take a 15-minute AI assessment calibrated to industry standards to earn a verified skill credential badge.
+                <div style={{ fontSize: '0.78rem', color: 'var(--slate-700)', lineHeight: 1.4 }}>
+                  Take a 15-minute AI assessment calibrated to industry standards to earn a verified credential badge.
                 </div>
               </div>
             </div>
           </div>
 
+          {/* CTAs (No duplicates) */}
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
-            <Link to="/student/internships" className="btn btn-primary" style={{ flex: 1, fontSize: '0.85rem', justifyContent: 'center' }}>
+            <Link to="/student/internships" className="btn btn-primary" style={{ flex: 1, fontSize: '0.85rem', justifyContent: 'center', fontWeight: 700 }}>
               Explore All Openings <ArrowRight size={16} />
             </Link>
-            <Link to="/student/assessment" className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
-              Take Assessment
+            <Link to="/student/mock-interview" className="btn btn-secondary" style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+              Practice AI Interview
             </Link>
           </div>
         </div>

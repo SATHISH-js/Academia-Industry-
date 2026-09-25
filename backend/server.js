@@ -33,6 +33,7 @@ const resumeRoutes = require('./routes/resumeRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 const industryRoutes = require('./routes/industryRoutes');
 const certificateVerificationRoutes = require('./routes/certificateVerificationRoutes');
+const coachNovaRoutes = require('./routes/coachNovaRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -86,6 +87,7 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/industry', industryRoutes);
 app.use('/api/certificate-verify', certificateVerificationRoutes);
+app.use('/api/coach-nova', coachNovaRoutes);
 
 // Serve frontend static build in production (Single-service deployment)
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
