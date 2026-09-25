@@ -8,10 +8,11 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const { testConnection } = require('./config/db');
+const { pool, testConnection } = require('./config/db');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
 const { sendSuccess } = require('./utils/responseHandler');
 const { initKeepAlive } = require('./utils/keepAlive');
+const { ensureSchemaInitialized } = require('./database/autoMigrate');
 
 // Route Handlers
 const authRoutes = require('./routes/authRoutes');
@@ -57,13 +58,41 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {
   const dbStatus = await testConnection();
+  let activeDb = 'unknown';
+  let tablesReady = false;
+  
+  if (dbStatus) {
+    try {
+      const [dbRow] = await pool.query('SELECT DATABASE() as currentDb');
+      activeDb = dbRow[0]?.currentDb || 'unknown';
+      const [check] = await pool.query(
+        'SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
+        [activeDb, 'users']
+      );
+      tablesReady = (check[0]?.count > 0);
+    } catch (e) {
+      console.warn('[Health Check] DB query error:', e.message);
+    }
+  }
+
   sendSuccess(res, {
     status: 'online',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
     databaseConnected: dbStatus,
+    activeDatabase: activeDb,
+    tablesInitialized: tablesReady,
     version: '1.0.0'
   }, 'Academia-Industry Collaboration Portal API is healthy');
+});
+
+// Admin DB Init / Migration Endpoint
+app.post('/api/admin/init-db', async (req, res) => {
+  const success = await ensureSchemaInitialized();
+  if (success) {
+    return sendSuccess(res, { initialized: true }, 'Database schema verified and initialized successfully');
+  }
+  return res.status(500).json({ success: false, message: 'Database schema initialization failed' });
 });
 
 // Mount Feature API Routes
@@ -128,6 +157,8 @@ const server = app.listen(PORT, async () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`====================================================`);
   await testConnection();
+  // Automatically check and initialize schema/tables if missing (e.g. fresh cloud DB)
+  await ensureSchemaInitialized();
   // Initialize keep-alive self-ping to prevent Render 15-minute spin-down
   initKeepAlive();
 });
