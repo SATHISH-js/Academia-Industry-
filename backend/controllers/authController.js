@@ -68,64 +68,121 @@ async function register(req, res) {
       const { address, city, state, pincode } = req.body;
 
       // Create completely fresh student profile with 0 scores and no dummy seed data
-      const [stuRes] = await connection.query(
-        `INSERT INTO student_profiles (
-          user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number,
-          address, city, state, pincode,
-          tenth_board, tenth_school, tenth_year, tenth_percentage,
-          twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
-          ug_university, ug_college,
-          overall_skill_score, technical_skill_score, soft_skill_score, profile_completed_pct
-        )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 20)`,
-        [
-          userId,
-          studentHeadline,
-          `Enthusiastic student pursuing ${studentDegree} in ${studentDept}, focusing on ${studentHeadline}.`,
-          institution_id || null,
-          studentDept,
-          studentDegree,
-          studentGradYear,
-          studentEnrollment,
-          address || null,
-          city || null,
-          state || null,
-          pincode || null
-        ]
-      );
-      const studentId = stuRes.insertId;
+      try {
+        const [stuRes] = await connection.query(
+          `INSERT INTO student_profiles (
+            user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number,
+            address, city, state, pincode,
+            tenth_board, tenth_school, tenth_year, tenth_percentage,
+            twelfth_board, twelfth_college, twelfth_year, twelfth_percentage,
+            ug_university, ug_college,
+            overall_skill_score, technical_skill_score, soft_skill_score, profile_completed_pct
+          )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 20)`,
+          [
+            userId,
+            studentHeadline,
+            `Enthusiastic student pursuing ${studentDegree} in ${studentDept}, focusing on ${studentHeadline}.`,
+            institution_id || null,
+            studentDept,
+            studentDegree,
+            studentGradYear,
+            studentEnrollment,
+            address || null,
+            city || null,
+            state || null,
+            pincode || null
+          ]
+        );
+      } catch (stuErr) {
+        if (stuErr.message && stuErr.message.includes("Unknown column 'city'")) {
+          await connection.query(
+            `INSERT INTO student_profiles (
+              user_id, headline, bio, institution_id, department, degree, graduation_year, enrollment_number,
+              address,
+              overall_skill_score, technical_skill_score, soft_skill_score, profile_completed_pct
+            )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 20)`,
+            [
+              userId,
+              studentHeadline,
+              `Enthusiastic student pursuing ${studentDegree} in ${studentDept}, focusing on ${studentHeadline}.`,
+              institution_id || null,
+              studentDept,
+              studentDegree,
+              studentGradYear,
+              studentEnrollment,
+              address || null
+            ]
+          );
+        } else {
+          throw stuErr;
+        }
+      }
 
       // Note: A fresh student registers with clean 0 skills and points until they take an assessment
     } else if (role === 'ACADEMICIAN') {
       const { address, city, state, pincode } = req.body;
-      await connection.query(
-        `INSERT INTO academician_profiles (user_id, institution_id, designation, department, employee_id, qualification, experience_years, specialization, address, city, state, pincode)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          userId,
-          institution_id || null,
-          designation || 'Assistant Professor',
-          department || 'Computer Science & Engineering',
-          employee_id || null,
-          qualification || 'Ph.D. in Engineering',
-          experience_years ? parseInt(experience_years, 10) : 5,
-          specialization || 'Applied Research & Curriculum Alignment',
-          address || null,
-          city || null,
-          state || null,
-          pincode || null
-        ]
-      );
+      try {
+        await connection.query(
+          `INSERT INTO academician_profiles (user_id, institution_id, designation, department, employee_id, qualification, experience_years, specialization, address, city, state, pincode)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId,
+            institution_id || null,
+            designation || 'Assistant Professor',
+            department || 'Computer Science & Engineering',
+            employee_id || null,
+            qualification || 'Ph.D. in Engineering',
+            experience_years ? parseInt(experience_years, 10) : 5,
+            specialization || 'Applied Research & Curriculum Alignment',
+            address || null,
+            city || null,
+            state || null,
+            pincode || null
+          ]
+        );
+      } catch (acadErr) {
+        if (acadErr.message && acadErr.message.includes("Unknown column 'city'")) {
+          await connection.query(
+            `INSERT INTO academician_profiles (user_id, institution_id, designation, department, employee_id, qualification, experience_years, specialization)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              userId,
+              institution_id || null,
+              designation || 'Assistant Professor',
+              department || 'Computer Science & Engineering',
+              employee_id || null,
+              qualification || 'Ph.D. in Engineering',
+              experience_years ? parseInt(experience_years, 10) : 5,
+              specialization || 'Applied Research & Curriculum Alignment'
+            ]
+          );
+        } else {
+          throw acadErr;
+        }
+      }
     } else if (role === 'INDUSTRY') {
       await connection.query(
         'INSERT INTO industry_profiles (user_id, company_name, industry_domain, description) VALUES (?, ?, ?, ?)',
         [userId, company_name || name, industry_domain || 'Information Technology', 'Technology and Solutions Provider']
       );
     } else if (role === 'INSTITUTION') {
-      await connection.query(
-        'INSERT INTO institution_profiles (user_id, institution_name, institution_type, city, state) VALUES (?, ?, ?, ?, ?)',
-        [userId, institution_name || name, institution_type || 'COLLEGE', city || null, state || null]
-      );
+      try {
+        await connection.query(
+          'INSERT INTO institution_profiles (user_id, institution_name, institution_type, city, state) VALUES (?, ?, ?, ?, ?)',
+          [userId, institution_name || name, institution_type || 'COLLEGE', city || null, state || null]
+        );
+      } catch (instErr) {
+        if (instErr.message && instErr.message.includes("Unknown column 'city'")) {
+          await connection.query(
+            'INSERT INTO institution_profiles (user_id, institution_name, institution_type) VALUES (?, ?, ?)',
+            [userId, institution_name || name, institution_type || 'COLLEGE']
+          );
+        } else {
+          throw instErr;
+        }
+      }
     }
 
     await connection.commit();
