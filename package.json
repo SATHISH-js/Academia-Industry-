@@ -4,7 +4,7 @@
   "private": true,
   "description": "Full-stack Academia-Industry Collaboration Portal",
   "scripts": {
-    "render-build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "render-build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install",
     "start": "npm --prefix backend start",
     "build:frontend": "npm --prefix frontend run build",
     "install:all": "npm --prefix backend install && npm --prefix frontend install",
