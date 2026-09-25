@@ -1,0 +1,36 @@
+name: Keep Render Web Service Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes (Render free web services spin down after 15 minutes of inactivity)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows manual one-click testing from the Actions tab
+
+jobs:
+  ping-service:
+    name: Ping Render Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend Endpoint
+        env:
+          SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL || vars.RENDER_SERVICE_URL }}
+        run: |
+          TARGET_URL="${SERVICE_URL}"
+          if [ -z "$TARGET_URL" ]; then
+            echo "Warning: RENDER_SERVICE_URL secret/variable is not configured yet."
+            echo "Please go to: GitHub Repo -> Settings -> Secrets and variables -> Actions, and add RENDER_SERVICE_URL"
+            echo "Example: https://your-app-name.onrender.com"
+            exit 0
+          fi
+
+          ENDPOINT="${TARGET_URL%/}/api/health"
+          echo "Sending keep-alive request to: $ENDPOINT"
+
+          HTTP_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 45 "$ENDPOINT")
+          echo "Render response HTTP Status: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "SUCCESS: Render service is warm, active, and healthy!"
+          else
+            echo "WARNING: Service returned HTTP $HTTP_STATUS. If it was sleeping, this ping triggers its wake-up."
+          fi

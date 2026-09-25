@@ -1,7 +1,19 @@
 import axios from 'axios';
 
+// Dynamically resolve base URL:
+// 1. If VITE_API_URL is configured (e.g. https://my-backend.onrender.com), use it.
+// 2. Otherwise default to '/api' (for local Vite dev proxy or unified full-stack hosting).
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    const cleanUrl = envUrl.trim().replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  }
+  return '/api';
+};
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json'
   }

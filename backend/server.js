@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -10,6 +11,7 @@ dotenv.config();
 const { testConnection } = require('./config/db');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
 const { sendSuccess } = require('./utils/responseHandler');
+const { initKeepAlive } = require('./utils/keepAlive');
 
 // Route Handlers
 const authRoutes = require('./routes/authRoutes');
@@ -85,6 +87,32 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/industry', industryRoutes);
 app.use('/api/certificate-verify', certificateVerificationRoutes);
 
+// Serve frontend static build in production (Single-service deployment)
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(frontendDist)) {
+  console.log(`[Static Serve] Frontend build found at ${frontendDist}. Serving static assets.`);
+  app.use(express.static(frontendDist));
+  // Client-side SPA routing fallback: serve index.html for non-API and non-upload routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  // Helpful root endpoint when running API-only mode
+  app.get('/', (req, res) => {
+    sendSuccess(res, {
+      name: 'Academia-Industry Collaboration Portal API',
+      status: 'online',
+      endpoints: {
+        health: '/api/health',
+        auth: '/api/auth'
+      }
+    }, 'Backend API Server is running');
+  });
+}
+
 // 404 & Error Handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -98,6 +126,8 @@ const server = app.listen(PORT, async () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`====================================================`);
   await testConnection();
+  // Initialize keep-alive self-ping to prevent Render 15-minute spin-down
+  initKeepAlive();
 });
 
 server.on('error', (err) => {
