@@ -1,8 +1,8 @@
 {
-  "name": "academia-industry-portal",
+  "name": "training-competency-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "Full-stack Academia-Industry Collaboration Portal",
+  "description": "Full-stack training and competency platform",
   "scripts": {
     "render-build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install",
     "start": "npm --prefix backend start",

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node database/seedRunner.js"
+    "seed": "node database/seedRunner.js",
+    "create-admin": "node scripts/createAdmin.js"
   },
   "dependencies": {
     "@google/genai": "^2.23.0",

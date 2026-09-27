@@ -32,8 +32,8 @@ const registerValidator = [
     .trim()
     .notEmpty()
     .withMessage('Role selection is required')
-    .isIn(['STUDENT', 'ACADEMICIAN', 'INDUSTRY', 'INSTITUTION'])
-    .withMessage('Role must be one of: STUDENT, ACADEMICIAN, INDUSTRY, INSTITUTION')
+    .isIn(['TRAINEE', 'TRAINER'])
+    .withMessage('Role must be TRAINEE or TRAINER. Administrator accounts are provisioned separately.')
 ];
 
 const loginValidator = [

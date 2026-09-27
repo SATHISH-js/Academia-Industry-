@@ -18,7 +18,7 @@ export const PublicLayout = () => {
         fontSize: '0.875rem'
       }}>
         <div className="container">
-          <p>© {new Date().getFullYear()} Academia–Industry Collaboration Portal. Bridging Education & Enterprise.</p>
+          <p>© {new Date().getFullYear()} Training and Competency Platform.</p>
         </div>
       </footer>
     </div>

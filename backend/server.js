@@ -13,6 +13,7 @@ const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware'
 const { sendSuccess } = require('./utils/responseHandler');
 const { initKeepAlive } = require('./utils/keepAlive');
 const { ensureSchemaInitialized } = require('./database/autoMigrate');
+const { ensureTrainingSchema } = require('./database/trainingMigration');
 
 // Route Handlers
 const authRoutes = require('./routes/authRoutes');
@@ -35,6 +36,8 @@ const activityRoutes = require('./routes/activityRoutes');
 const industryRoutes = require('./routes/industryRoutes');
 const certificateVerificationRoutes = require('./routes/certificateVerificationRoutes');
 const coachNovaRoutes = require('./routes/coachNovaRoutes');
+const trainingRoutes = require('./routes/trainingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -83,16 +86,7 @@ app.get('/api/health', async (req, res) => {
     activeDatabase: activeDb,
     tablesInitialized: tablesReady,
     version: '1.0.0'
-  }, 'Academia-Industry Collaboration Portal API is healthy');
-});
-
-// Admin DB Init / Migration Endpoint
-app.post('/api/admin/init-db', async (req, res) => {
-  const success = await ensureSchemaInitialized();
-  if (success) {
-    return sendSuccess(res, { initialized: true }, 'Database schema verified and initialized successfully');
-  }
-  return res.status(500).json({ success: false, message: 'Database schema initialization failed' });
+  }, 'Training and Competency Platform API is healthy');
 });
 
 // Mount Feature API Routes
@@ -117,6 +111,8 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/industry', industryRoutes);
 app.use('/api/certificate-verify', certificateVerificationRoutes);
 app.use('/api/coach-nova', coachNovaRoutes);
+app.use('/api/training', trainingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Serve frontend static build in production (Single-service deployment)
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
@@ -134,7 +130,7 @@ if (fs.existsSync(frontendDist)) {
   // Helpful root endpoint when running API-only mode
   app.get('/', (req, res) => {
     sendSuccess(res, {
-      name: 'Academia-Industry Collaboration Portal API',
+      name: 'Training and Competency Platform API',
       status: 'online',
       endpoints: {
         health: '/api/health',
@@ -151,7 +147,7 @@ app.use(errorHandler);
 // Start Server
 const server = app.listen(PORT, async () => {
   console.log(`====================================================`);
-  console.log(`Academia–Industry Collaboration Portal Backend Server`);
+    console.log(`Training and Competency Platform API`);
   console.log(`Running on: http://localhost:${PORT}`);
   console.log(`Health Check: http://localhost:${PORT}/api/health`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -159,6 +155,7 @@ const server = app.listen(PORT, async () => {
   await testConnection();
   // Automatically check and initialize schema/tables if missing (e.g. fresh cloud DB)
   await ensureSchemaInitialized();
+  await ensureTrainingSchema();
   // Initialize keep-alive self-ping to prevent Render 15-minute spin-down
   initKeepAlive();
 });

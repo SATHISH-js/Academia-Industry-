@@ -118,10 +118,9 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
   const getDashboardRoute = () => {
     if (!user) return '/login';
     switch (user.role) {
-      case 'STUDENT': return '/student/dashboard';
-      case 'ACADEMICIAN': return '/academician/dashboard';
-      case 'INDUSTRY': return '/industry/dashboard';
-      case 'INSTITUTION': return '/institution/dashboard';
+      case 'TRAINEE': return '/trainee/dashboard';
+      case 'TRAINER': return '/trainer/dashboard';
+      case 'ADMIN': return '/admin/dashboard';
       default: return '/';
     }
   };
@@ -224,7 +223,7 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
             </div>
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--slate-900)', lineHeight: 1.1 }}>
-                Academia<span style={{ color: 'var(--primary-600)' }}>Industry</span>
+                Training<span style={{ color: 'var(--primary-600)' }}>Platform</span>
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)', fontWeight: 500 }}>
                 Collaboration Portal

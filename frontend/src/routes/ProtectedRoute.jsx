@@ -22,10 +22,9 @@ export const ProtectedRoute = ({ allowedRoles = [] }) => {
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     // Redirect user to their own role-specific dashboard if they attempt to access another role's routes
     const roleRoutes = {
-      STUDENT: '/student/dashboard',
-      ACADEMICIAN: '/academician/dashboard',
-      INDUSTRY: '/industry/dashboard',
-      INSTITUTION: '/institution/dashboard'
+      TRAINEE: '/trainee/dashboard',
+      TRAINER: '/trainer/dashboard',
+      ADMIN: '/admin/dashboard'
     };
     return <Navigate to={roleRoutes[user.role] || '/login'} replace />;
   }

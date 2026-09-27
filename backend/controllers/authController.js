@@ -35,6 +35,9 @@ async function register(req, res) {
     city,
     state
   } = req.body;
+  if (!['TRAINEE', 'TRAINER'].includes(role)) {
+    return sendError(res, 'Only trainee and trainer accounts can register here. Admin accounts are provisioned separately.', 400);
+  }
   const connection = await pool.getConnection();
 
   try {
@@ -58,8 +61,12 @@ async function register(req, res) {
     );
     const userId = userResult.insertId;
 
-    // Create corresponding profile record
-    if (role === 'STUDENT') {
+    // New platform profiles. Trainer accounts require admin approval before managing content.
+    if (role === 'TRAINEE') {
+      await connection.query('INSERT INTO trainee_profiles (user_id) VALUES (?)', [userId]);
+    } else if (role === 'TRAINER') {
+      await connection.query('INSERT INTO trainer_profiles (user_id, approval_status) VALUES (?, \'PENDING\')', [userId]);
+    } else if (role === 'STUDENT') {
       const studentHeadline = target_role || 'Full Stack Developer';
       const studentDept = department || 'Computer Science & Engineering';
       const studentDegree = degree || 'B.Tech / B.E';
@@ -189,7 +196,13 @@ async function register(req, res) {
 
     // Load newly created profile
     let profile = null;
-    if (role === 'STUDENT') {
+    if (role === 'TRAINEE') {
+      const [p] = await pool.query('SELECT * FROM trainee_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'TRAINER') {
+      const [p] = await pool.query('SELECT * FROM trainer_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'STUDENT') {
       const [p] = await pool.query('SELECT * FROM student_profiles WHERE user_id = ? LIMIT 1', [userId]);
       profile = p[0] || null;
     } else if (role === 'ACADEMICIAN') {
@@ -266,7 +279,13 @@ async function login(req, res) {
 
     // Load role profile details
     let profile = null;
-    if (user.role === 'STUDENT') {
+    if (user.role === 'TRAINEE') {
+      const [p] = await pool.query('SELECT * FROM trainee_profiles WHERE user_id = ? LIMIT 1', [user.id]);
+      profile = p[0] || null;
+    } else if (user.role === 'TRAINER') {
+      const [p] = await pool.query('SELECT * FROM trainer_profiles WHERE user_id = ? LIMIT 1', [user.id]);
+      profile = p[0] || null;
+    } else if (user.role === 'STUDENT') {
       const [p] = await pool.query('SELECT * FROM student_profiles WHERE user_id = ? LIMIT 1', [user.id]);
       profile = p[0] || null;
     } else if (user.role === 'ACADEMICIAN') {
@@ -329,7 +348,13 @@ async function getMe(req, res) {
     const currentUser = userRows[0] || req.user;
 
     let profile = null;
-    if (role === 'STUDENT') {
+    if (role === 'TRAINEE') {
+      const [p] = await pool.query('SELECT * FROM trainee_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'TRAINER') {
+      const [p] = await pool.query('SELECT * FROM trainer_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      profile = p[0] || null;
+    } else if (role === 'STUDENT') {
       const [p] = await pool.query(
         `SELECT sp.*, u.name, u.email, u.phone, u.avatar_url, ip.institution_name
          FROM student_profiles sp
@@ -408,7 +433,13 @@ async function updateProfile(req, res) {
     }
 
     // Role-specific updates
-    if (role === 'STUDENT') {
+    if (role === 'TRAINEE') {
+      const { headline } = roleFields;
+      await pool.query('UPDATE trainee_profiles SET headline = COALESCE(?, headline) WHERE user_id = ?', [headline, userId]);
+    } else if (role === 'TRAINER') {
+      const { expertise, bio } = roleFields;
+      await pool.query('UPDATE trainer_profiles SET expertise = COALESCE(?, expertise), bio = COALESCE(?, bio) WHERE user_id = ?', [expertise, bio, userId]);
+    } else if (role === 'STUDENT') {
       const {
         headline, target_role, bio, department, degree, enrollment_number, graduation_year, cgpa, institution_id,
         github_url, linkedin_url, tenth_board, tenth_school, tenth_year, tenth_percentage,
@@ -542,7 +573,13 @@ async function updateProfile(req, res) {
     const updatedUser = userRows[0];
 
     let updatedProfile = null;
-    if (role === 'STUDENT') {
+    if (role === 'TRAINEE') {
+      const [p] = await pool.query('SELECT * FROM trainee_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      updatedProfile = p[0] || null;
+    } else if (role === 'TRAINER') {
+      const [p] = await pool.query('SELECT * FROM trainer_profiles WHERE user_id = ? LIMIT 1', [userId]);
+      updatedProfile = p[0] || null;
+    } else if (role === 'STUDENT') {
       const [p] = await pool.query(
         `SELECT sp.*, u.name, u.email, u.phone, u.avatar_url, ip.institution_name
          FROM student_profiles sp

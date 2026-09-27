@@ -4,6 +4,7 @@ import {
   Award, 
   BarChart3, 
   Briefcase, 
+  BookOpen,
   Building2, 
   CheckCircle2, 
   GraduationCap, 
@@ -16,10 +17,10 @@ import {
 
 export const LandingPage = () => {
   const stats = [
-    { label: 'Registered Students', value: '5,000+' },
-    { label: 'Partner Companies', value: '200+' },
-    { label: 'Active Opportunities', value: '1,200+' },
-    { label: 'Accredited Institutions', value: '50+' },
+    { label: 'Guided learning', value: 'Programs' },
+    { label: 'Expert support', value: 'Trainers' },
+    { label: 'Progress tracking', value: 'Skills' },
+    { label: 'Achievement records', value: 'Credentials' },
   ];
 
   const features = [
@@ -30,61 +31,51 @@ export const LandingPage = () => {
     },
     {
       icon: BarChart3,
-      title: 'Dynamic Skill-Gap Analysis',
-      description: 'Real-time comparison between student competencies and industry requirements to highlight priority areas.'
+      title: 'Competency Progress',
+      description: 'Track learning progress and build evidence of practical skills over time.'
     },
     {
       icon: Sparkles,
-      title: 'Intelligent Matching Engine',
-      description: 'Algorithmic compatibility scoring that matches qualified candidates with industry internships and jobs.'
+      title: 'Guided Programs',
+      description: 'Join structured programs designed around clear competencies and skill levels.'
     },
     {
-      icon: Briefcase,
-      title: 'Recruitment & Placements',
-      description: 'Streamlined application workflow from application review, shortlisting, and interviews to final hiring.'
+      icon: BookOpen,
+      title: 'Practical Learning',
+      description: 'Build knowledge through focused lessons, exercises, and measurable milestones.'
     },
     {
       icon: Users,
-      title: 'Academician Collaborations',
-      description: 'Faculty industrial training, FDPs, consultancies, guest lectures, and joint research sponsorships.'
+      title: 'Trainer Workspace',
+      description: 'Publish training programs and support learners as they build new competencies.'
     },
     {
       icon: TrendingUp,
-      title: 'Institutional Analytics',
-      description: 'Deep visibility into department-level skill readiness, placement statistics, and corporate engagement.'
+      title: 'Platform Administration',
+      description: 'Review trainer applications and manage platform accounts.'
     }
   ];
 
   const steps = [
     { step: '01', title: 'Assess', desc: 'Complete verified skill tests in coding, tech stacks, and soft skills.' },
-    { step: '02', title: 'Discover Gaps', desc: 'Identify exact missing proficiencies required by top hiring companies.' },
-    { step: '03', title: 'Learn', desc: 'Upskill through curated learning recommendations, workshops, and courses.' },
-    { step: '04', title: 'Connect', desc: 'Bridge with industry mentors, hackathons, and research projects.' },
-    { step: '05', title: 'Apply', desc: 'Submit applications for high-compatibility internships and career roles.' },
-    { step: '06', title: 'Grow', desc: 'Track placement outcomes and build a verified lifelong digital portfolio.' },
+    { step: '02', title: 'Choose', desc: 'Find a program suited to your current skill level.' },
+    { step: '03', title: 'Learn', desc: 'Follow guided programs created by trainers.' },
+    { step: '04', title: 'Practice', desc: 'Apply new concepts through focused practice.' },
+    { step: '05', title: 'Track', desc: 'Record your progress as you work through a program.' },
+    { step: '06', title: 'Grow', desc: 'Build skills with a clear record of completed learning.' },
   ];
 
   const roles = [
     {
-      title: 'For Students',
-      desc: 'Verify your skills, discover where you stand, eliminate skill gaps, and land internships & high-growth jobs.',
-      link: '/register?role=STUDENT'
+      title: 'For Trainees',
+      desc: 'Build practical skills, join guided programs, and track your competency progress.',
+      link: '/register?role=TRAINEE'
     },
     {
-      title: 'For Academicians',
-      desc: 'Connect with leading industries for sponsored research, faculty development programs, and guest lectures.',
-      link: '/register?role=ACADEMICIAN'
+      title: 'For Trainers',
+      desc: 'Share your expertise through structured programs and support learner growth.',
+      link: '/register?role=TRAINER'
     },
-    {
-      title: 'For Industries',
-      desc: 'Access pre-assessed, verified student talent with instant compatibility rankings and hire without friction.',
-      link: '/register?role=INDUSTRY'
-    },
-    {
-      title: 'For Institutions',
-      desc: 'Track student readiness, monitor placement trends, benchmark departments, and formalize corporate MoUs.',
-      link: '/register?role=INSTITUTION'
-    }
   ];
 
   return (
@@ -110,7 +101,7 @@ export const LandingPage = () => {
             marginBottom: '1.5rem',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <Sparkles size={16} /> Intelligent Higher-Ed & Corporate Ecosystem
+            <Sparkles size={16} /> Training and competency platform
           </div>
           <h1 style={{
             fontSize: 'clamp(2.2rem, 4vw, 3.6rem)',
@@ -120,7 +111,7 @@ export const LandingPage = () => {
             marginBottom: '1.5rem',
             letterSpacing: '-0.02em'
           }}>
-            Bridging Academia and Industry Through <span style={{ color: 'var(--primary-600)' }}>Skills, Opportunities</span> and Collaboration
+            Build practical skills through <span style={{ color: 'var(--primary-600)' }}>guided training</span> and measurable progress
           </h1>
           <p style={{
             fontSize: '1.15rem',
@@ -129,7 +120,7 @@ export const LandingPage = () => {
             margin: '0 auto 2.5rem',
             lineHeight: 1.6
           }}>
-            Connect students, academicians, institutions, and industry leaders through one unified platform with automated skill assessments, gap analysis, matching algorithms, and analytics.
+            Join structured training programs, learn from experienced trainers, and track competency growth in one place.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <Link to="/register" className="btn btn-primary" style={{ padding: '0.85rem 1.75rem', fontSize: '1rem' }}>

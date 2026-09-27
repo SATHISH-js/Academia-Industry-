@@ -1,40 +1,31 @@
-# System Architecture
+# Platform architecture
 
-## 1. High-Level Architecture
-The Academia–Industry Collaboration Portal follows a 3-tier, decoupled architecture:
+The application remains a JavaScript modular monolith:
 
 ```text
-[React + Vite Frontend (SPA)]
-          │  HTTP / REST (JSON) + JWT
-          ▼
-[Node.js + Express.js API Gateway]
-    ├── Authentication (JWT + Bcrypt)
-    ├── Role-Based Access Control (RBAC Middleware)
-    ├── Business Services (Matching Engine, Recommendations)
-    └── Validation (Express-Validator)
-          │  MySQL2 Pool
-          ▼
-[MySQL 8.0 Relational Database]
+React + Vite
+     ↓ HTTP / JSON + JWT
+Node.js + Express API
+     ↓
+Routes → authentication / role checks → controllers → domain services
+     ↓
+MySQL repositories (being introduced as modules are adapted)
 ```
 
-## 2. Core Subsystems
-1. **Authentication & Authorization**:
-   - Single source of truth in `users` table.
-   - Stateless JWT tokens passed via HTTP `Authorization: Bearer <token>` header.
-   - Centralized RBAC middleware checking user roles (`STUDENT`, `ACADEMICIAN`, `INDUSTRY`, `INSTITUTION`).
+The current backend reuses a shared `mysql2` pool. Older controllers still contain SQL directly; the new training controller also uses that pool directly as a transitional pattern. Extract repositories as the training modules grow rather than changing the entire application at once.
 
-2. **Skill Assessment & Gap Analysis Engine**:
-   - Structured tests with multiple-choice questions.
-   - Automated scoring calculating technical & soft skill proficiencies (0-100%).
-   - Dynamic comparison against industry expectations calculating skill gaps.
+## Active role modules
 
-3. **Skill Compatibility Matching Engine**:
-   - Compares candidate skill vectors against opportunity requirements.
-   - Computes match percentage:
-     `MatchScore = (Σ min(100, student_score / required_score * 100) * weight) / Σ weight`
-   - Classifies skills into Matched vs. Gap items.
+- **TRAINEE:** catalog, enrollment, modules, and completion tracking.
+- **TRAINER:** trainer approval, program authoring, modules, and learner enrollment counts.
+- **ADMIN:** trainer approval and account status management.
 
-4. **Recruitment & Opportunity Lifecycle**:
-   - Internships, Jobs, Mentorships, Research Projects.
-   - Unified `applications` table tracking progression: `APPLIED` → `UNDER_REVIEW` → `SHORTLISTED` → `INTERVIEW` → `SELECTED` / `REJECTED`.
-   - Automated notification triggers upon status updates.
+Authentication remains in `authController` with JWTs, bcrypt password hashes, `authenticateUser`, and `requireRole`. New accounts use separate trainee and trainer profiles. Admin accounts are created through the backend CLI, not public registration.
+
+## Training data
+
+The additive training migration creates `trainee_profiles`, `trainer_profiles`, `training_programs`, `training_modules`, `training_module_completions`, and `training_enrollments`. Learning progress is computed from completed modules. The legacy schema and feature modules remain available for data preservation but are outside the active dashboard routes.
+
+## Deployment and migration
+
+The backend applies the additive training migration at startup. The legacy `database/schema.sql` is destructive and should only be used on an empty database. Existing accounts keep their legacy roles; a separate data-mapping decision is needed before migrating them into the new roles.

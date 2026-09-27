@@ -39,47 +39,20 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
 
   const getNavLinks = () => {
     switch (user.role) {
-      case 'STUDENT':
+      case 'TRAINEE':
         return [
-          { name: 'Profile', path: '/student/profile', icon: User },
-          { name: 'Roadmap', path: '/student/roadmap', icon: Compass },
-          { name: 'Skills & Gap Analysis', path: '/student/skills-gap', icon: BarChart2 },
-          { name: 'Certificate Verifier', path: '/student/certificate-verify', icon: ShieldCheck },
-          { name: 'Certifications', path: '/student/certifications', icon: Award },
-          { name: 'Internships / Jobs', path: '/student/opportunities', icon: Briefcase },
-          { name: 'Applications', path: '/student/applications', icon: FileText },
-          { name: 'AI Mock Interview', path: '/student/mock-interview', icon: Sparkles },
-          { name: 'Resume Builder', path: '/student/resume-builder', icon: FileText },
-          { name: 'Learning Programs', path: '/student/learning', icon: BookOpen },
-          { name: 'Digital Portfolio', path: '/student/portfolio', icon: FolderGit2 }
+          { name: 'My learning', path: '/trainee/dashboard', icon: BookOpen },
+          { name: 'Training catalog', path: '/trainee/programs', icon: Compass }
         ];
-      case 'ACADEMICIAN':
+      case 'TRAINER':
         return [
-          { name: 'Academic Profile', path: '/academician/profile', icon: User },
-          { name: 'Student Monitoring', path: '/academician/students', icon: GraduationCap },
-          { name: 'Guest Lecture Exchange', path: '/academician/guest-lectures', icon: BookOpen },
-          { name: 'Opportunities', path: '/academician/opportunities', icon: Compass },
-          { name: 'Collaborations', path: '/academician/collaboration', icon: Users },
-          { name: 'My Applications', path: '/academician/applications', icon: FileText }
+          { name: 'Trainer dashboard', path: '/trainer/dashboard', icon: LayoutDashboard },
+          { name: 'My programs', path: '/trainer/programs', icon: BookOpen }
         ];
-      case 'INDUSTRY':
+      case 'ADMIN':
         return [
-          { name: 'Company Profile', path: '/industry/profile', icon: User },
-          { name: 'Candidate Matching', path: '/industry/candidates', icon: Sparkles },
-          { name: 'Post & Manage Roles', path: '/industry/opportunities', icon: Briefcase },
-          { name: 'Institution Placements', path: '/industry/placements', icon: Building2 },
-          { name: 'Direct Outreach', path: '/industry/outreach', icon: FileText },
-          { name: 'Applications Received', path: '/industry/applications', icon: Layers },
-          { name: 'Recruitment Analytics', path: '/industry/analytics', icon: TrendingUp }
-        ];
-      case 'INSTITUTION':
-        return [
-          { name: 'Campus Profile', path: '/institution/profile', icon: User },
-          { name: 'Student Roster & Activity', path: '/institution/students', icon: Users },
-          { name: 'Faculty Directory', path: '/institution/academicians', icon: GraduationCap },
-          { name: 'Industry MoUs & Partners', path: '/institution/partners', icon: Handshake },
-          { name: 'Training Programs', path: '/institution/training-programs', icon: BookOpen },
-          { name: 'Placement Analytics', path: '/institution/placements', icon: TrendingUp }
+          { name: 'Administration', path: '/admin/dashboard', icon: ShieldCheck },
+          { name: 'Users and trainers', path: '/admin/users', icon: Users }
         ];
       default:
         return [];
@@ -203,11 +176,7 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div
               onClick={() => {
-                const profileRoute = user.role === 'STUDENT' ? '/student/profile'
-                  : user.role === 'ACADEMICIAN' ? '/academician/profile'
-                  : user.role === 'INDUSTRY' ? '/industry/profile'
-                  : user.role === 'INSTITUTION' ? '/institution/profile'
-                  : '/settings';
+                const profileRoute = '/settings';
                 navigate(profileRoute);
                 if (window.innerWidth < 1024 && onClose) onClose();
               }}

@@ -49,12 +49,11 @@ export const LoginPage = () => {
   useEffect(() => {
     if (isAuthenticated && user?.role) {
       const roleRoutes = {
-        STUDENT: '/student/dashboard',
-        ACADEMICIAN: '/academician/dashboard',
-        INDUSTRY: '/industry/dashboard',
-        INSTITUTION: '/institution/dashboard'
+        TRAINEE: '/trainee/dashboard',
+        TRAINER: '/trainer/dashboard',
+        ADMIN: '/admin/dashboard'
       };
-      navigate(roleRoutes[user.role] || '/student/dashboard', { replace: true });
+      navigate(roleRoutes[user.role] || '/', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -105,10 +104,9 @@ export const LoginPage = () => {
 
         // Immediate real-time redirection based on backend verified role
         const roleRoutes = {
-          STUDENT: '/student/dashboard',
-          ACADEMICIAN: '/academician/dashboard',
-          INDUSTRY: '/industry/dashboard',
-          INSTITUTION: '/institution/dashboard'
+          TRAINEE: '/trainee/dashboard',
+          TRAINER: '/trainer/dashboard',
+          ADMIN: '/admin/dashboard'
         };
         navigate(roleRoutes[authUser.role] || '/');
       }
@@ -173,7 +171,7 @@ export const LoginPage = () => {
             Sign In to Portal
           </h2>
           <p style={{ color: 'var(--slate-500)', fontSize: '0.92rem', margin: 0 }}>
-            Unified real-time authentication for Students, Faculty, Industry & Institutions
+            Sign in to continue your training and competency journey
           </p>
         </div>
 
@@ -390,20 +388,17 @@ export const LoginPage = () => {
         {/* Supported Roles Indicator */}
         <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--slate-100)' }}>
           <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--slate-400)', fontWeight: 700, letterSpacing: '0.05em', textAlign: 'center', marginBottom: '0.75rem' }}>
-            Single Sign-On Across All Portals
+            One account for every platform role
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem', textAlign: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem', textAlign: 'center' }}>
             <div style={{ padding: '0.4rem 0.25rem', backgroundColor: 'var(--slate-50)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.72rem', color: 'var(--slate-700)', fontWeight: 600 }}>
-              🎓 Student
+              🎓 Trainee
             </div>
             <div style={{ padding: '0.4rem 0.25rem', backgroundColor: 'var(--slate-50)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.72rem', color: 'var(--slate-700)', fontWeight: 600 }}>
-              👨‍🏫 Faculty
+              👨‍🏫 Trainer
             </div>
             <div style={{ padding: '0.4rem 0.25rem', backgroundColor: 'var(--slate-50)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.72rem', color: 'var(--slate-700)', fontWeight: 600 }}>
-              🏢 Industry
-            </div>
-            <div style={{ padding: '0.4rem 0.25rem', backgroundColor: 'var(--slate-50)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.72rem', color: 'var(--slate-700)', fontWeight: 600 }}>
-              🏛️ Campus
+              🛡️ Admin
             </div>
           </div>
         </div>

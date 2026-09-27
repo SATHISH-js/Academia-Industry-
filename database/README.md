@@ -27,10 +27,16 @@ Alternatively, you can open `database/schema.sql` and `database/seed.sql` inside
 
 ---
 
-## Demo Credentials
-Password for all demo accounts: `Password123!`
+## Training platform setup
 
-- **Student**: `student@example.com`
-- **Academician**: `academician@example.com`
-- **Industry**: `industry@example.com`
-- **Institution**: `institution@example.com`
+On server startup, the backend applies additive training tables and extends the user role enum while retaining legacy values and records. Do not run the destructive `schema.sql` against a database containing data: it contains `DROP TABLE` statements for the original portal tables.
+
+Create the first administrator from the repository root after setting the backend database environment variables:
+
+```bash
+npm --prefix backend run create-admin
+```
+
+The command prompts for the admin name, email, and password; it does not permit public admin registration. Trainee and trainer accounts register through the web app. New trainers need admin approval before publishing.
+
+The existing demo seed data and legacy role records are retained for reference. They are not converted automatically to TRAINEE, TRAINER, or ADMIN.
