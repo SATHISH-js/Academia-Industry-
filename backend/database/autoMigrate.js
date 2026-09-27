@@ -180,8 +180,17 @@ async function ensureSchemaInitialized() {
         .replace(/USE\s+[^;]+;/gi, '');
     };
 
-    if (tableCheck[0]?.count === 0) {
+    if (Number(tableCheck[0]?.count) === 0) {
       console.log(`[Database Auto-Init] Core table "users" NOT found in "${currentDb}". Running full schema initialization...`);
+
+      const [existingTables] = await pool.query(
+        `SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema = ?`,
+        [currentDb]
+      );
+      if (Number(existingTables[0]?.count) > 0) {
+        console.error(`[Database Auto-Init] Refusing to run destructive schema.sql in non-empty database "${currentDb}" without a users table.`);
+        return false;
+      }
 
       // Execute schema.sql
       const schemaPath = path.join(__dirname, '..', '..', 'database', 'schema.sql');
@@ -192,14 +201,7 @@ async function ensureSchemaInitialized() {
         console.log(`[Database Auto-Init] Core schema and tables created.`);
       }
 
-      // Execute seed.sql
-      const seedPath = path.join(__dirname, '..', '..', 'database', 'seed.sql');
-      if (fs.existsSync(seedPath)) {
-        console.log(`[Database Auto-Init] Seeding initial data...`);
-        const seedSql = sanitizeSql(fs.readFileSync(seedPath, 'utf8'));
-        await pool.query(seedSql);
-        console.log(`[Database Auto-Init] Seed data inserted.`);
-      }
+      // Do not seed accounts with published demo credentials automatically.
     } else {
       console.log(`[Database Auto-Init] Core tables found in "${currentDb}".`);
     }

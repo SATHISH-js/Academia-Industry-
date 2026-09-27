@@ -7,16 +7,23 @@ const fs = require('fs');
 const dotenv = require('dotenv');
 
 dotenv.config();
-
+require('dotenv').config();
 const { pool, testConnection } = require('./config/db');
 const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
 const { sendSuccess } = require('./utils/responseHandler');
 const { initKeepAlive } = require('./utils/keepAlive');
 const { ensureSchemaInitialized } = require('./database/autoMigrate');
-const { ensureTrainingSchema } = require('./database/trainingMigration');
+const { ensureAuthSchema } = require('./database/authMigration');
+const { ensureTraineeProfileSchema } = require('./database/traineeProfileMigration');
+const { ensureCourseLearningSchema } = require('./database/courseLearningMigration');
+const { ensureTrainerProfileSchema } = require('./database/trainerProfileMigration');
 
 // Route Handlers
 const authRoutes = require('./routes/authRoutes');
+const traineeProfileRoutes = require('./routes/traineeProfileRoutes');
+const traineeCourseRoutes = require('./routes/traineeCourseRoutes');
+const trainerRoutes = require('./routes/trainerRoutes');
+const adminTrainerCourseRoutes = require('./routes/adminTrainerCourseRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const assessmentRoutes = require('./routes/assessmentRoutes');
 const skillRoutes = require('./routes/skillRoutes');
@@ -36,18 +43,23 @@ const activityRoutes = require('./routes/activityRoutes');
 const industryRoutes = require('./routes/industryRoutes');
 const certificateVerificationRoutes = require('./routes/certificateVerificationRoutes');
 const coachNovaRoutes = require('./routes/coachNovaRoutes');
-const trainingRoutes = require('./routes/trainingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+let authSchemaReady = false;
+let traineeProfileSchemaReady = false;
+let courseLearningSchemaReady = false;
+let trainerProfileSchemaReady = false;
 
 // Security & Utility Middlewares
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+  .split(',').map(origin => origin.trim()).filter(Boolean);
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -90,7 +102,22 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Mount Feature API Routes
+app.use('/api/auth', (req, res, next) => authSchemaReady
+  ? next()
+  : res.status(503).json({ success: false, error: 'Authentication service is initializing. Retry shortly.' }));
 app.use('/api/auth', authRoutes);
+app.use('/api/trainee/profile', (req, res, next) => traineeProfileSchemaReady
+  ? next()
+  : res.status(503).json({ success: false, error: 'Trainee profile service is initializing. Retry shortly.' }));
+app.use('/api/trainee', traineeProfileRoutes);
+app.use('/api/trainee/courses', (req, res, next) => courseLearningSchemaReady
+  ? next()
+  : res.status(503).json({ success: false, error: 'Course learning service is initializing. Retry shortly.' }));
+app.use('/api/trainee', traineeCourseRoutes);
+app.use('/api/trainer', (req, res, next) => trainerProfileSchemaReady && courseLearningSchemaReady
+  ? next()
+  : res.status(503).json({ success: false, error: 'Trainer services are initializing. Retry shortly.' }));
+app.use('/api/trainer', trainerRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/assessments', assessmentRoutes);
@@ -111,8 +138,14 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/industry', industryRoutes);
 app.use('/api/certificate-verify', certificateVerificationRoutes);
 app.use('/api/coach-nova', coachNovaRoutes);
-app.use('/api/training', trainingRoutes);
+app.use('/api/admin', (req, res, next) => authSchemaReady
+  ? next()
+  : res.status(503).json({ success: false, error: 'Authentication service is initializing. Retry shortly.' }));
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/trainer-courses', (req, res, next) => courseLearningSchemaReady
+  ? next()
+  : res.status(503).json({ success: false, error: 'Trainer course service is initializing. Retry shortly.' }));
+app.use('/api/admin/trainer-courses', adminTrainerCourseRoutes);
 
 // Serve frontend static build in production (Single-service deployment)
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
@@ -154,8 +187,12 @@ const server = app.listen(PORT, async () => {
   console.log(`====================================================`);
   await testConnection();
   // Automatically check and initialize schema/tables if missing (e.g. fresh cloud DB)
-  await ensureSchemaInitialized();
-  await ensureTrainingSchema();
+  const legacySchemaReady = await ensureSchemaInitialized();
+  authSchemaReady = legacySchemaReady && await ensureAuthSchema();
+  traineeProfileSchemaReady = authSchemaReady && await ensureTraineeProfileSchema();
+  courseLearningSchemaReady = authSchemaReady && await ensureCourseLearningSchema();
+  trainerProfileSchemaReady = authSchemaReady && await ensureTrainerProfileSchema();
+  if (!authSchemaReady) console.error('[Startup] Auth endpoints remain unavailable until database initialization succeeds.');
   // Initialize keep-alive self-ping to prevent Render 15-minute spin-down
   initKeepAlive();
 });

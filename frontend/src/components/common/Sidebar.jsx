@@ -32,8 +32,8 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -41,19 +41,19 @@ export const Sidebar = ({ isOpen, onClose, isReopening = false }) => {
     switch (user.role) {
       case 'TRAINEE':
         return [
-          { name: 'My learning', path: '/trainee/dashboard', icon: BookOpen },
-          { name: 'Training catalog', path: '/trainee/programs', icon: Compass }
+          { name: 'Account', path: '/trainee/dashboard', icon: User },
+          { name: 'Professional profile', path: '/trainee/profile', icon: User },
+          { name: 'Course catalog', path: '/trainee/courses', icon: BookOpen },
+          { name: 'My Courses', path: '/trainee/courses/my', icon: GraduationCap }
         ];
       case 'TRAINER':
         return [
-          { name: 'Trainer dashboard', path: '/trainer/dashboard', icon: LayoutDashboard },
-          { name: 'My programs', path: '/trainer/programs', icon: BookOpen }
+          { name: 'Account', path: '/trainer/dashboard', icon: User },
+          { name: 'Professional profile', path: '/trainer/profile', icon: User },
+          { name: 'Course management', path: '/trainer/courses', icon: BookOpen }
         ];
       case 'ADMIN':
-        return [
-          { name: 'Administration', path: '/admin/dashboard', icon: ShieldCheck },
-          { name: 'Users and trainers', path: '/admin/users', icon: Users }
-        ];
+        return [{ name: 'Accounts and approvals', path: '/admin/users', icon: ShieldCheck }];
       default:
         return [];
     }

@@ -23,12 +23,19 @@ async function authenticateUser(req, res, next) {
 
     // Verify user exists and is active in database
     const [rows] = await pool.query(
-      'SELECT id, name, email, role, avatar_url, phone, is_active FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, name, email, role, avatar_url, phone, is_active, account_status, token_version FROM users WHERE id = ? LIMIT 1',
       [decoded.id]
     );
 
-    if (rows.length === 0 || !rows[0].is_active) {
-      return sendError(res, 'User account not found or deactivated.', 401);
+    if (rows.length === 0) {
+      return sendError(res, 'User account not found.', 401);
+    }
+    if (rows[0].account_status !== 'ACTIVE' || !rows[0].is_active) {
+      const status = rows[0].account_status || (rows[0].is_active ? 'ACTIVE' : 'DISABLED');
+      return sendError(res, status === 'PENDING' ? 'Your account is pending administrator approval.' : 'Your account is disabled.', 401);
+    }
+    if (Number(decoded.tokenVersion) !== Number(rows[0].token_version)) {
+      return sendError(res, 'Session has been revoked. Please log in again.', 401);
     }
 
     // Attach verified user to request
@@ -52,10 +59,10 @@ async function optionalAuth(req, res, next) {
       const decoded = verifyToken(token);
       if (decoded && decoded.id) {
         const [rows] = await pool.query(
-          'SELECT id, name, email, role, avatar_url, phone, is_active FROM users WHERE id = ? LIMIT 1',
+          'SELECT id, name, email, role, avatar_url, phone, is_active, account_status, token_version FROM users WHERE id = ? LIMIT 1',
           [decoded.id]
         );
-        if (rows.length > 0 && rows[0].is_active) {
+        if (rows.length > 0 && rows[0].is_active && rows[0].account_status === 'ACTIVE' && Number(decoded.tokenVersion) === Number(rows[0].token_version)) {
           req.user = rows[0];
         }
       }

@@ -100,9 +100,9 @@ export const Navbar = ({ onToggleSidebar, isSidebarOpen = false }) => {
   }, []);
 
   // Sign out redirect to landing page (User Request: "if signout means show landing page")
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDropdownOpen(false);
-    logout();
+    await logout();
     navigate('/');
   };
 

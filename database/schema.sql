@@ -22,6 +22,10 @@ CREATE TABLE users (
     email VARCHAR(160) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('STUDENT', 'ACADEMICIAN', 'INDUSTRY', 'INSTITUTION', 'TRAINEE', 'TRAINER', 'ADMIN') NOT NULL,
+    account_status ENUM('PENDING', 'ACTIVE', 'DISABLED') NOT NULL DEFAULT 'ACTIVE',
+    token_version INT UNSIGNED NOT NULL DEFAULT 0,
+    approved_by INT DEFAULT NULL,
+    approved_at TIMESTAMP NULL DEFAULT NULL,
     avatar_url VARCHAR(255) DEFAULT NULL,
     phone VARCHAR(25) DEFAULT NULL,
     is_active BOOLEAN DEFAULT TRUE,
@@ -716,75 +720,6 @@ CREATE TABLE institution_placement_requests (
     CONSTRAINT fk_ipr_institution FOREIGN KEY (institution_id) REFERENCES institution_profiles(id) ON DELETE CASCADE,
     INDEX idx_ipr_ind (industry_id),
     INDEX idx_ipr_inst (institution_id)
-) ENGINE=InnoDB;
-
--- ----------------------------------------------------------
--- 25. Training & Competency Platform (additive migration)
--- ----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS trainee_profiles (
-    user_id INT PRIMARY KEY,
-    headline VARCHAR(180) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_trainee_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS trainer_profiles (
-    user_id INT PRIMARY KEY,
-    expertise VARCHAR(255) DEFAULT NULL,
-    bio TEXT DEFAULT NULL,
-    approval_status ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_trainer_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS training_programs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    trainer_id INT NOT NULL,
-    title VARCHAR(180) NOT NULL,
-    description TEXT NOT NULL,
-    competency VARCHAR(160) DEFAULT NULL,
-    level ENUM('BEGINNER', 'INTERMEDIATE', 'ADVANCED') NOT NULL DEFAULT 'BEGINNER',
-    duration_hours INT NOT NULL DEFAULT 1,
-    status ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED') NOT NULL DEFAULT 'PUBLISHED',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_program_trainer FOREIGN KEY (trainer_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_program_status (status), INDEX idx_program_trainer (trainer_id)
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS training_modules (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    program_id INT NOT NULL,
-    title VARCHAR(180) NOT NULL,
-    description TEXT DEFAULT NULL,
-    resource_url VARCHAR(500) DEFAULT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_module_program FOREIGN KEY (program_id) REFERENCES training_programs(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS training_module_completions (
-    module_id INT NOT NULL,
-    trainee_id INT NOT NULL,
-    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (module_id, trainee_id),
-    CONSTRAINT fk_module_completion_module FOREIGN KEY (module_id) REFERENCES training_modules(id) ON DELETE CASCADE,
-    CONSTRAINT fk_module_completion_trainee FOREIGN KEY (trainee_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS training_enrollments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    program_id INT NOT NULL,
-    trainee_id INT NOT NULL,
-    status ENUM('ACTIVE', 'COMPLETED', 'WITHDRAWN') NOT NULL DEFAULT 'ACTIVE',
-    progress_percent TINYINT UNSIGNED NOT NULL DEFAULT 0,
-    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT fk_enrollment_program FOREIGN KEY (program_id) REFERENCES training_programs(id) ON DELETE CASCADE,
-    CONSTRAINT fk_enrollment_trainee FOREIGN KEY (trainee_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_program_trainee (program_id, trainee_id),
-    INDEX idx_enrollment_trainee (trainee_id, status)
 ) ENGINE=InnoDB;
 
 -- Re-enable foreign key checks

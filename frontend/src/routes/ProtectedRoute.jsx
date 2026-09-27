@@ -19,6 +19,10 @@ export const ProtectedRoute = ({ allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
+  if (user.account_status !== 'ACTIVE') {
+    return <Navigate to="/login" replace />;
+  }
+
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     // Redirect user to their own role-specific dashboard if they attempt to access another role's routes
     const roleRoutes = {

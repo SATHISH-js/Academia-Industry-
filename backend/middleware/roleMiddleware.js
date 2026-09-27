@@ -3,7 +3,7 @@ const { sendError } = require('../utils/responseHandler');
 /**
  * Role-Based Access Control (RBAC) Middleware
  * Enforces that req.user has one of the required roles
- * Usage: requireRole('INDUSTRY'), requireRole('STUDENT', 'ACADEMICIAN')
+ * Use only the active roles: TRAINEE, TRAINER, and ADMIN.
  */
 function requireRole(...allowedRoles) {
   return (req, res, next) => {

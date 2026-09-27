@@ -11,12 +11,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
-      const cachedUser = localStorage.getItem('user');
 
-      if (token && cachedUser) {
+      if (token) {
         try {
-          setUser(JSON.parse(cachedUser));
-          // Refresh user data from /api/auth/me
+          // The API is authoritative for current account status and role.
           const response = await api.get('/auth/me');
           if (response.data.success) {
             setUser(response.data.data.user);
@@ -41,10 +39,16 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    try {
+      if (localStorage.getItem('token')) await api.post('/auth/logout');
+    } catch (error) {
+      // Local logout still completes when the API is unavailable or the token expired.
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+    }
   };
 
   const updateUser = (updatedFields) => {

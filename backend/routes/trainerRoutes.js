@@ -1,0 +1,24 @@
+const express = require('express');
+const router = express.Router();
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { requireRole } = require('../middleware/roleMiddleware');
+const { validateRequest } = require('../middleware/validationMiddleware');
+const v = require('../validators/trainerValidator');
+const c = require('../controllers/trainerController');
+
+router.use(authenticateUser, requireRole('TRAINER'));
+router.get('/profile', c.getProfile);
+router.put('/profile', v.profile, validateRequest, c.updateProfile);
+router.post('/profile/items', v.item, validateRequest, c.addItem);
+router.delete('/profile/items/:id', v.positiveId, validateRequest, c.removeItem);
+router.post('/profile/experiences', v.experience, validateRequest, c.addExperience);
+router.put('/profile/experiences/:id', v.positiveId, v.experience, validateRequest, c.updateExperience);
+router.delete('/profile/experiences/:id', v.positiveId, validateRequest, c.removeExperience);
+router.get('/courses', c.listCourses);
+router.post('/courses', v.course, validateRequest, c.createCourse);
+router.get('/courses/:courseId', v.courseId, validateRequest, c.getCourse);
+router.put('/courses/:courseId', v.courseId, v.course, validateRequest, c.updateCourse);
+router.patch('/courses/:courseId/publish', v.courseId, validateRequest, c.transition('publish'));
+router.patch('/courses/:courseId/unpublish', v.courseId, validateRequest, c.transition('unpublish'));
+router.patch('/courses/:courseId/archive', v.courseId, validateRequest, c.transition('archive'));
+module.exports = router;

@@ -1,28 +1,31 @@
-# Training and Competency Platform
+# SIH JavaScript project
 
-An existing JavaScript application evolved into a modular training platform with three roles: trainees, trainers, and administrators.
+This repository remains a React/Vite frontend and Node.js/Express API backed by MySQL. Implemented workflows include authentication, trainee professional profiles, and trainee course learning for the `TRAINEE`, `TRAINER`, and `ADMIN` roles.
 
-## Stack
+## Local setup
 
-- React 18 and Vite frontend
-- Node.js and Express 4 API
-- MySQL through `mysql2`
-- JWT authentication and role-based route protection
+Install dependencies with `npm run install:all`, then run both local servers together:
 
-## Local development
+```bash
+npm run dev
+```
 
-Install dependencies with `npm run install:all`. Configure database connection values in `backend/.env` using `backend/.env.example` as a reference, then start the backend and frontend in separate terminals with `npm run dev:backend` and `npm run dev:frontend`.
+This creates `backend/.env` with a local-only random JWT secret if the file is missing. Confirm the MySQL settings in that file; local MySQL defaults target `localhost:3306/academia_industry_portal`. Open `http://localhost:5173`. The login-attempt limiter is disabled only when `NODE_ENV=development`; production keeps it enabled. Password hashing, JWT authentication, backend role checks, and account-status checks remain enabled.
 
-The backend creates or updates the platform tables on startup. Create the first administrator with `npm --prefix backend run create-admin`. Trainees can register from the app; trainer applications require admin approval before publishing.
+Create an administrator account from an interactive terminal:
 
-## Current training workflows
+```bash
+npm --prefix backend run create-admin
+```
 
-- Trainees browse programs, enroll, view modules, and mark module completion. Completion is derived from completed modules.
-- Approved trainers publish programs and add learning modules and resource links.
-- Admins approve trainers and activate or deactivate platform accounts.
+Trainees and trainers can register and sign in immediately. Admin approval and reactivation controls are temporarily unavailable. Admin accounts cannot self-register.
 
-The legacy student, academician, industry, and institution tables and feature code remain in the repository for data preservation and future migration work. The new active dashboard routes use TRAINEE, TRAINER, and ADMIN. Legacy account roles are not automatically converted.
+The trainee course workflow uses the existing `learning_programs` catalog. On backend startup, published programs receive a starter resource placeholder if they do not already have resources. Trainees can browse, enroll, and track resource completion; course publishing and trainer authoring are not part of this workflow.
 
-## Database safety
+## Auth API
 
-The legacy `database/schema.sql` contains destructive `DROP TABLE` statements for the original portal. Do not run it on a database containing data. The runtime training migration is additive and retains existing tables and rows. See [database setup](database/README.md) and [role permissions](docs/roles-and-permissions.md).
+See [the API contract](docs/api.md) and [roles and permissions](docs/roles-and-permissions.md). Backend authorization is enforced using the current database role and account status for each authenticated request.
+
+## Existing data
+
+Startup applies additive auth columns and maps existing `STUDENT` accounts to `TRAINEE`; existing `ACADEMICIAN`, `INDUSTRY`, and `INSTITUTION` accounts become `TRAINER`. Pending trainer accounts are activated while approval is temporarily disabled. User rows, password hashes, and legacy profile data are retained. The standalone `database/schema.sql` contains destructive legacy `DROP TABLE` statements and must not be run against a populated database.
